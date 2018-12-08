@@ -1,0 +1,14 @@
+# This actually tells Travis to use the fast container-based test runner instead of the slow VM-based runner.
+sudo: false
+
+language: go
+
+go:
+  - 1.11.x
+
+# Only clone the most recent commit.
+git:
+  depth: 1
+
+script:
+  - go test -v -race ./...
