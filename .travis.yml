@@ -6,9 +6,18 @@ language: go
 go:
   - 1.11.x
 
+# Force-enable Go modules. This will be unnecessary when Go 1.12 lands.
+env:
+  - GO111MODULE=on
+
 # Only clone the most recent commit.
 git:
   depth: 1
 
+# Make sure golangci-lint is vendored.
+before_script:
+  - go install -mod vendor github.com/golangci/golangci-lint/cmd/golangci-lint
+
 script:
+  - golangci-lint run
   - go test -v -race ./...
