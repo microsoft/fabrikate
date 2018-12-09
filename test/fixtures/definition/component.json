@@ -1,0 +1,10 @@
+{
+    "name": "microservices-workload",
+    "version": "1.0.0",
+    "components": [
+        {
+            "name": "infra",
+            "source": "./infra"
+        }
+    ]
+}

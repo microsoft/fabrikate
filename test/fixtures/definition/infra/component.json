@@ -1,0 +1,10 @@
+{
+    "name": "infra",
+    "type": "component",
+    "subcomponents": [
+        {
+            "name": "efk",
+            "source": "https://github.com/Microsoft/marina-elasticsearch-fluentd-kibana"
+        }
+    ]
+}
