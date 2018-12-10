@@ -24,7 +24,7 @@ they are missing.
 
 */
 
-type ComponentFunc func(component *models.Component) (result string, err error)
+type ComponentFunc func(path string, component *models.Component) (result string, err error)
 
 func IterateComponentTree(startingPath string, componentFunc ComponentFunc) (results []models.ComponentResult, err error) {
 	queue := make([]models.ComponentResult, 0)
@@ -50,7 +50,7 @@ func IterateComponentTree(startingPath string, componentFunc ComponentFunc) (res
 			return nil, err
 		}
 
-		currentComponentResult.Result, err = componentFunc(component)
+		currentComponentResult.Result, err = componentFunc(currentComponentResult.PhysicalPath, component)
 		if err != nil {
 			return nil, err
 		}

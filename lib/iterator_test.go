@@ -9,7 +9,7 @@ import (
 
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
-	results, err := IterateComponentTree("../test/fixtures/iterator", func(component *models.Component) (result string, err error) {
+	results, err := IterateComponentTree("../test/fixtures/iterator", func(path string, component *models.Component) (result string, err error) {
 		callbackCount++
 		return "test", nil
 	})

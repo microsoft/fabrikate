@@ -1,6 +1,8 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Component struct {
 	Name          string
@@ -14,4 +16,14 @@ func ParseComponentFromJson(componentJson []byte) (component *Component, err err
 	}
 
 	return component, nil
+}
+
+func (c *Component) Install(path string) (err error) {
+	for _, subcomponent := range c.Subcomponents {
+		if err := subcomponent.Install(path); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
