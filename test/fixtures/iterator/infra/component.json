@@ -1,6 +1,6 @@
 {
     "name": "infra",
-    "type": "component",
+    "version": "1.0.0",
     "subcomponents": [
         {
             "name": "efk",

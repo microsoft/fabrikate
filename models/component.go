@@ -8,10 +8,10 @@ type Component struct {
 	Subcomponents []Subcomponent
 }
 
-func ParseComponentFromJson(componentJson []byte) (component *Component) {
+func ParseComponentFromJson(componentJson []byte) (component *Component, err error) {
 	if err := json.Unmarshal(componentJson, &component); err != nil {
-		return nil
+		return nil, err
 	}
 
-	return component
+	return component, nil
 }
