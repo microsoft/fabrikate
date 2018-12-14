@@ -12,14 +12,14 @@ import (
 
 type Component struct {
 	Name          string
-	Type          string
+	Generator     string
 	Subcomponents []Subcomponent
 	Repo          string
 	Path          string
 	PhysicalPath  string
 	LogicalPath   string
 	Config        ComponentConfig
-	Definition    string
+	Manifest      string
 }
 
 func (c *Component) LoadComponent() (mergedComponent Component, err error) {

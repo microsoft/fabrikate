@@ -35,14 +35,14 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 			return "", err
 		}
 
-		namespacedManifests += fmt.Sprintf("---\n%s", updatedManifest)
+		namespacedManifests += fmt.Sprintf("---\n%s\n", updatedManifest)
 	}
 
 	return namespacedManifests, nil
 }
 
-func GenerateHelmComponent(component *core.Component) (definition string, err error) {
-	emoji.Printf(":truck: generating component %s with helm with repo %s\n", component.Name, component.Repo)
+func GenerateHelmComponent(component *core.Component) (manifest string, err error) {
+	emoji.Printf(":truck: generating component '%s' with helm with repo %s\n", component.Name, component.Repo)
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
@@ -71,7 +71,7 @@ func GenerateHelmComponent(component *core.Component) (definition string, err er
 
 	stringManifests := string(manifests)
 
-	// helm template doesn't inject namespace, so if a namespace was configured, manually inject it.
+	// helm template doesn't support injecting namespaces, so if a namespace was configured, manually inject it.
 	if component.Config.Config["namespace"] != nil {
 		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Config["namespace"].(string))
 	}

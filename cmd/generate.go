@@ -16,9 +16,13 @@ import (
 func Generate(startPath string, environment string) (components []core.Component, err error) {
 	// Iterate through component tree and generate
 	components, err = core.IterateComponentTree(startPath, environment, func(path string, component *core.Component) (err error) {
-		if component.Type == "helm" {
-			component.Definition, err = generators.GenerateHelmComponent(component)
+		switch component.Generator {
+		case "helm":
+			component.Manifest, err = generators.GenerateHelmComponent(component)
+		case "static":
+			component.Manifest, err = generators.GenerateStaticComponent(component)
 		}
+
 		return err
 	})
 
@@ -34,7 +38,7 @@ func Generate(startPath string, environment string) (components []core.Component
 		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
 		componentYAMLFilePath := path.Join(componentGenerationPath, componentYAMLFilename)
 
-		ioutil.WriteFile(componentYAMLFilePath, []byte(component.Definition), 0644)
+		ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
 	}
 
 	emoji.Printf(":raised_hands: finished generate\n")

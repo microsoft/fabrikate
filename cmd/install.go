@@ -16,7 +16,8 @@ func Install(path string) (err error) {
 			return err
 		}
 
-		if component.Type == "helm" {
+		switch component.Generator {
+		case "helm":
 			err = generators.InstallHelmComponent(component)
 		}
 
