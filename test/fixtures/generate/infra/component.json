@@ -1,0 +1,10 @@
+{
+    "name": "infra",
+    "subcomponents": [
+        {
+            "name": "efk",
+            "method": "git",
+            "source": "https://github.com/timfpark/marina-elasticsearch-fluentd-kibana"
+        }
+    ]
+}

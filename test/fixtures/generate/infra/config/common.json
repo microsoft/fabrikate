@@ -1,0 +1,34 @@
+{
+    "config": {
+        "importantValue": 4
+    },
+    "subcomponents": {
+        "efk": {
+            "config": {},
+            "subcomponents": {
+                "elasticsearch": {
+                    "config": {
+                        "master": {
+                            "persistence": {
+                                "storageClass": "default",
+                                "size": "4Gi"
+                            }
+                        }
+                    }
+                },
+                "fluentd": {
+                    "config": {
+                        "namespace": "fluentd",
+                        "elasticsearch_client_endpoint": "elasticsearch-client.elasticsearch.svc.cluster.local"
+                    }
+                },
+                "kibana": {
+                    "config": {
+                        "namespace": "kibana",
+                        "elasticsearch_client_endpoint": "elasticsearch-client.elasticsearch.svc.cluster.local"
+                    }
+                }
+            }
+        }
+    }
+}

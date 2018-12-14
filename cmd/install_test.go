@@ -1,4 +1,4 @@
-package lib
+package cmd
 
 import (
 	"testing"
@@ -7,8 +7,7 @@ import (
 )
 
 func TestInstall(t *testing.T) {
-
-	_, err := Install("../test/fixtures/install")
+	err := Install("../test/fixtures/install")
 
 	assert.Nil(t, err)
 }
