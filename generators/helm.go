@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 
 	"github.com/Microsoft/fabrikate/core"
+	"github.com/kyokomi/emoji"
 	"gopkg.in/yaml.v2"
 )
 
 func GenerateHelmComponent(component *core.Component) (definition string, err error) {
-	fmt.Printf("ooo generating component %s with helm with repo %s\n", component.Name, component.Repo)
+	emoji.Printf(":truck: generating component %s with helm with repo %s\n", component.Name, component.Repo)
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
@@ -44,6 +45,6 @@ func InstallHelmComponent(component *core.Component) (err error) {
 		return err
 	}
 
-	fmt.Printf("vvv install helm repo %s for %s into %s\n", component.Repo, component.Name, helmRepoPath)
+	emoji.Printf(":helicopter: install helm repo %s for %s into %s\n", component.Repo, component.Name, helmRepoPath)
 	return exec.Command("git", "clone", component.Repo, helmRepoPath, "--depth", "1").Run()
 }

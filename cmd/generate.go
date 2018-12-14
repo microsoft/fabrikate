@@ -9,6 +9,7 @@ import (
 
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/Microsoft/fabrikate/generators"
+	"github.com/kyokomi/emoji"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +36,8 @@ func Generate(startPath string, environment string) (components []core.Component
 
 		ioutil.WriteFile(componentYAMLFilePath, []byte(component.Definition), 0644)
 	}
+
+	emoji.Printf(":raised_hands: finished generate\n")
 
 	return components, err
 }

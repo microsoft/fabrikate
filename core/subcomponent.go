@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 	"path"
+
+	"github.com/kyokomi/emoji"
 )
 
 type Subcomponent struct {
@@ -32,7 +34,7 @@ func (sc *Subcomponent) Install(componentPath string) (err error) {
 			return err
 		}
 
-		fmt.Printf("vvv installing component %s with git from %s\n", sc.Name, sc.Source)
+		emoji.Printf(":helicopter: installing component %s with git from %s\n", sc.Name, sc.Source)
 		if err = exec.Command("git", "clone", sc.Source, subcomponentPath).Run(); err != nil {
 			return err
 		}
