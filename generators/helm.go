@@ -6,11 +6,40 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/kyokomi/emoji"
 	"gopkg.in/yaml.v2"
 )
+
+func AddNamespaceToManifests(manifests string, namespace string) (namespacedManifests string, err error) {
+	splitManifest := strings.Split(manifests, "---")
+
+	for _, manifest := range splitManifest {
+		parsedManifest := make(map[interface{}]interface{})
+		yaml.Unmarshal([]byte(manifest), &parsedManifest)
+
+		// strip any empty entries
+		if len(parsedManifest) == 0 {
+			continue
+		}
+
+		if parsedManifest["metadata"] != nil {
+			metadataMap := parsedManifest["metadata"].(map[interface{}]interface{})
+			metadataMap["namespace"] = namespace
+		}
+
+		updatedManifest, err := yaml.Marshal(&parsedManifest)
+		if err != nil {
+			return "", err
+		}
+
+		namespacedManifests += fmt.Sprintf("---\n%s", updatedManifest)
+	}
+
+	return namespacedManifests, nil
+}
 
 func GenerateHelmComponent(component *core.Component) (definition string, err error) {
 	emoji.Printf(":truck: generating component %s with helm with repo %s\n", component.Name, component.Repo)
@@ -29,14 +58,25 @@ func GenerateHelmComponent(component *core.Component) (definition string, err er
 
 	volumeMount := fmt.Sprintf("%s:/app/chart", chartPath)
 
-	// docker run --rm -v `pwd`/fluentd-elasticsearch:/app/chart alpine/helm:latest template /app/chart --set 'namespace=prom,master.persistence.size=4Gi'
-	output, err := exec.Command("docker", "run", "--rm", "-v", volumeMount, "alpine/helm:latest", "template", "/app/chart", "--values", "/app/chart/overriddenValues.yaml").Output()
+	name := component.Name
+	if component.Config.Config["name"] != nil {
+		name = component.Config.Config["name"].(string)
+	}
+
+	manifests, err := exec.Command("docker", "run", "--rm", "-v", volumeMount, "alpine/helm:latest", "template", "/app/chart", "--values", "/app/chart/overriddenValues.yaml", "--name", name).Output()
 
 	if err != nil {
 		return "", err
 	}
 
-	return string(output), nil
+	stringManifests := string(manifests)
+
+	// helm template doesn't inject namespace, so if a namespace was configured, manually inject it.
+	if component.Config.Config["namespace"] != nil {
+		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Config["namespace"].(string))
+	}
+
+	return stringManifests, err
 }
 
 func InstallHelmComponent(component *core.Component) (err error) {
