@@ -5,7 +5,7 @@
         {
             "name": "efk",
             "method": "git",
-            "source": "https://github.com/Microsoft/marina-elasticsearch-fluentd-kibana"
+            "source": "https://github.com/Microsoft/fabrikate-elasticsearch-fluentd-kibana"
         }
     ]
 }

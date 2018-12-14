@@ -7,7 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/Microsoft/marina/core"
+	"github.com/Microsoft/fabrikate/core"
 	"gopkg.in/yaml.v2"
 )
 

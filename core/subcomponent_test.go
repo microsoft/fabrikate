@@ -10,7 +10,7 @@ func TestRelativePathToGitComponent(t *testing.T) {
 	subcomponent := Subcomponent{
 		Name:   "efk",
 		Method: "git",
-		Source: "https://github.com/Microsoft/marina-elasticsearch-fluentd-kibana",
+		Source: "https://github.com/Microsoft/fabrikate-elasticsearch-fluentd-kibana",
 	}
 
 	assert.Equal(t, subcomponent.RelativePathTo(), "components/efk")

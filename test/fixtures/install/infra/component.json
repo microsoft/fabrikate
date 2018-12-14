@@ -4,7 +4,7 @@
         {
             "name": "efk",
             "method": "git",
-            "source": "https://github.com/timfpark/marina-elasticsearch-fluentd-kibana"
+            "source": "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana"
         }
     ]
 }

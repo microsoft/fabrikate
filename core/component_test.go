@@ -20,7 +20,7 @@ func TestLoadComponent(t *testing.T) {
 	assert.Equal(t, component.Type, "component")
 	assert.Equal(t, len(component.Subcomponents), 1)
 	assert.Equal(t, component.Subcomponents[0].Name, "efk")
-	assert.Equal(t, component.Subcomponents[0].Source, "https://github.com/Microsoft/marina-elasticsearch-fluentd-kibana")
+	assert.Equal(t, component.Subcomponents[0].Source, "https://github.com/Microsoft/fabrikate-elasticsearch-fluentd-kibana")
 }
 
 func TestLoadConfig(t *testing.T) {

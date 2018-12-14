@@ -1,4 +1,4 @@
-module github.com/Microsoft/marina
+module github.com/Microsoft/fabrikate
 
 require (
 	github.com/imdario/mergo v0.3.6

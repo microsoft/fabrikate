@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Microsoft/marina/core"
-	"github.com/Microsoft/marina/generators"
+	"github.com/Microsoft/fabrikate/core"
+	"github.com/Microsoft/fabrikate/generators"
 	"github.com/spf13/cobra"
 )
 
