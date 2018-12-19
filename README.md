@@ -1,113 +1,130 @@
-# marina
+# fabrikate
 
-NOTE: The description here is aspirational, under active development, and an initial release is not yet available. In the meantime, we welcome your feedback and pull requests to help shape how this tool evolves.
+Fabrikate makes GitOps devops for Kubernetes clusters easier. It allows you to write [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) resource definitions and configuration for multiple environments, capturing common resource definitions into abstracted and shareable components, and enabling a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment workflow that both simplifies and makes deployments more auditable.
 
-Marina makes devops for cloud native applications on Kubernetes easier. It enables writing [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) resource definitions and configuration, capturing common resource definitions into abstracted and shareable components, and building a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment workflow that both simplifies operations and makes deployments more auditable.
+In particular, Fabrikate simplifies the frontend of the GitOps workflow: it takes a high level description of your deployment, a target environment (eg. `dev` or `prod`), and renders the Kubernetes resource manifests for that deployment. It is intended to run as part of your CI/CD pipeline such that with every commit to your deployment project triggers the generation of Kubernetes resource manifests that a tool like [Flux](https://github.com/weaveworks/flux) then automatically reconciles with the current state of your Kubernetes cluster.
 
-In particular, Marina simplifies the frontend of the GitOps workflow: it takes a high level description of your deployment, a target environment (eg. `dev` or `prod`), and renders the resource definitions for that deployment. It is intended to run as part of your CI/CD pipeline such that with every commit to your Marina deployment project triggers the generation of Kubernetes resource descriptions that is then reconciled with the current state of your Kubernetes cluster using a tool like [Flux](https://github.com/weaveworks/flux).
+## Getting Started
 
-The best way to understand what Marina provides is see it in practice, so let's walk through the creation and use of a simple workload.
+First, install the latest `fab` cli on your local machine from [our releases](https://github.com/Microsoft/fabrikate/releases), unzipping the appropriate binary for your operating system and placing `fab` in your path.  The `fab` cli tool, `docker`, and `git` are the only tools you need to have installed.  Any other tooling dependencies will be fetched via `docker` images and/or `git`.
 
-## Developer Experience
-
-First off, install the `marina` cli on your local machine.  This CLI tool, `docker`, and `git` are the only tools you need to have installed: any other dependencies will be fetched via `docker` images and/or `git`.
+Let's walk through an example project to see how Fabrikate works in practice.
 
 ```
-$ curl -sL https://run.marina.io/install | sh
+$ git clone https://github.com/Microsoft/fabrikate
+$ cd fabrikate/examples/getting-started
 ```
 
-Let's next create our first project, in this case for a hypothetical microservices workload that we want to operationalize.
-
-```
-$ cd ~/dev (or wherever you like to keep your development projects)
-$ marina scaffold component microservices-workload
-$ cd microservces-workload
-```
-
-This creates a folder called `microservices-workload`, a `config` folder that holds configuration data for different environments using this definition, and a `component.json` file in the current directory that looks like this:
+This directory is the root of a Fabrikate deployment project and contains a `component.json` file for the current component. A component in Fabrikate is the definition for building the Kubernetes resource definitions for its directory tree scope.
 
 ```
 {
-    "name": "microservices-workload",
-    "version": "1.0.0",
-    "components": []
+    "name": "microservices",
+    "subcomponents": [
+        {
+            "name": "infra",
+            "source": "./infra"
+        },
+        {
+            "name": "services",
+            "source": "./services"
+        }
+    ]
 }
 ```
 
-A component in Marina houses the definition for building the Kubernetes resource definitions for its directory tree scope. 
+In this case, it defines a component called "microservices" that consists of two subcomponents, "infra" and "services".
 
-Let's say we are setting up a cluster running a number of microservices, so the first thing we'd like to define is to add a component to manage the common infrastructure pieces that makes all of our infrastructure more observable.
-
-We want to house all of these in a separate subcomponent called `infra`, so in the same way that we created the top level component of this project, let's scaffold that as well:
-
-```
-$ marina scaffold component infra
-```
-
-This updates the top level project to include a component:
+Let's look at the `infra` directory.  This directory defines the common application infrastructure that all of the microservices in our deployment will use. 
 
 ```
 {
-     "name": "microservices-workload",
-     "version": "1.0.0",
-     "components": [{
-         "name": "infra",
-         "source": "./infra"
-     }]
+    "name": "cloud-native-infra",
+    "subcomponents": [
+        {
+            "name": "elasticsearch-fluentd-kibana",
+            "source": "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana",
+            "method": "git"
+        },
+        {
+            "name": "prometheus-grafana",
+            "source": "https://github.com/timfpark/fabrikate-prometheus-grafana",
+            "method": "git"
+        }
+    ]
 }
 ```
 
-and creates a subcomponent called `infra` with a similarly scaffolded out `component.json`:
+In this case, it will build resource manifests for both Elasticsearch / FluentD / Kibana (EFK) log management and Prometheus / Grafana metrics monitoring stacks using components in an external git repo.  Fabrikate enables linking out to components in an external repo like this as a way of sharing common subcomponents between deployment projects.
+
+Looking at the [backing repo](https://github.com/timfpark/fabrikate/elasticsearch-fluentd-kibana) for the EFK component, we can see that it also defines a `component.json`:
 
 ```
-$ cd infra
-$ cat component.json
 {
-    "name": "infra",
-    "version": "1.0.0",
-    "components": []
+    "name": "elasticsearch-fluentd-kibana",
+    "generator": "static",
+    "path": "./manifests",
+    "subcomponents": [
+        {
+            "name": "elasticsearch",
+            "generator": "helm",
+            "repo": "https://github.com/helm/charts",
+            "path": "stable/elasticsearch"
+        },
+        {
+            "name": "fluentd-elasticsearch",
+            "generator": "helm",
+            "repo": "https://github.com/helm/charts",
+            "path": "stable/fluentd-elasticsearch"
+        },
+        {
+            "name": "kibana",
+            "generator": "helm",
+            "repo": "https://github.com/helm/charts",
+            "path": "stable/kibana"
+        }
+    ]
 }
 ```
 
-Next, let's add an Elasticsearch, Fluentd, and Kibana based logging system as base logging infrastructure for our cluster. We can do that with:
+But in this case, it defines subcomponents that are backed by a helm chart on the project repo. Fabrikate will clone the helm repo and generate the resource manifests from them.  The `elasticsearch-fluentd-kibana` component itself is a static component and has a number of manifests in the `./manifest` that will directly be included in the generated overall manifests.
 
-```
-$ marina add efk https://github.com/Microsoft/marina-elasticsearch-fluentd-kibana
-```
-
-This updates the `component.json` for our `infra` project to include this component:
+With generalized helm charts like the ones used here, its often necessary to provide them with configuration values that vary by environment. This component provides a reasonable set of defaults for its subcomponents in `config/common.json`:
 
 ```
 {
-    "name": "infra",
-    "type": "component",
-    "components": [{
-        "name": "efk",
-        "source": "https://github.com/Microsoft/marina-elasticsearch-fluentd-kibana",
-        "tag": "^1.4.1"
-    }]
-}
-```
-
-This looks similar to our own infra subcomponent but instead of the source location being local, it is instead a git endpoint that this component should be fetched from. This enables us to share components between projects, but also do semver locking of them to a specific version to limit the risk of them from evolving underneath us and breaking our deployments, while still picking up small improvements.
-
-This component also takes a number of inputs. Marina has automatically scaffolded these configuration properties into `config/common.json` when we added the component to the project. In a config folder, `common.json` are the defaults that will be applied for all environments in the absence of an overriding definition for the specific environment you are building.
-
-```
-{
-    "config": {
-        "efk": {
-            "elasticsearch": {
+    "config": {},
+    "subcomponents": {
+        "elasticsearch": {
+            "config": {
                 "namespace": "elasticsearch",
-                "master-storage-class": "default",
-                "master-storage-size": "4Gi",
-                "data-storage-class": "default",
-                "data-storage-size": "4Gi"
-            },
-            "fluentd": {
+                "data": {
+                    "persistence": {
+                        "storageClass": "default"
+                    }
+                },
+                "master": {
+                    "persistence": {
+                        "storageClass": "default"
+                    }
+                }
+            }
+        },
+        "fluentd-elasticsearch": {
+            "config": {
+                "elasticsearch": {
+                    "host": "elasticsearch-client.elasticsearch.svc.cluster.local"
+                },
                 "namespace": "fluentd"
-            },
-            "kibana": {
+            }
+        },
+        "kibana": {
+            "config": {
+                "files": {
+                    "kibana.yml": {
+                        "elasticsearch.url": "http://elasticsearch-client.elasticsearch.svc.cluster.local:9200"
+                    }
+                },
                 "namespace": "kibana"
             }
         }
@@ -115,148 +132,54 @@ This component also takes a number of inputs. Marina has automatically scaffolde
 }
 ```
 
-Using shared components like this also provides a level of abstraction away from the implementation.  This component's subcomponents use helm to template out the resource descriptions but we don't have to be concerned with that: we can just focus on providing reasonable values for the inputs to the component and Marina will handle the rest under the hood.
-
-We know that these default sizes and storage classes are not large or fast enough for our `prod` cluster and we want to override them. Let's scaffold out a new `prod` config to fix this:
-
-```
-$ marina scaffold config prod
-```
-
-This scaffolds out `config/prod.json` for us that has sections for all of our subcomponents (and their subcomponents):
+These values can be overridden by more specific environments (eg. a `prod.json` in this directory) or configuration higher in the directory tree for the deployment definition. Our example uses this to override the Elasticsearch `storageClass` to use `managed-premium` (Azure's SSD storage class) for the `prod` deployment in `infra/config/prod.json`: 
 
 ```
 {
-    "config": {
-        "efk": {
-            "elasticsearch": {},
-            "fluentd": {},
-            "kibana": {}
+    "config": {},
+    "subcomponents": {
+        "elasticsearch-fluentd-kibana": {
+            "config": {},
+            "subcomponents": {
+                "elasticsearch": {
+                    "config": {
+                        "data": {
+                            "persistence": {
+                                "storageClass": "managed-premium"
+                            }
+                        },
+                        "master": {
+                            "persistence": {
+                                "storageClass": "managed-premium"
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
-```
-
-Let's update the elasticsearch section to have a more `prod` like configuration:
 
 ```
-{
-    "config": {
-        "efk": {
-            "elasticsearch": {
-                "master-storage-class": "managed-premium",
-                "master-storage-size": "16Gi",
-                "data-storage-class": "managed-premium",
-                "data-storage-size": "64Gi"
-            },
-            "fluentd": {},
-            "kibana": {}
-        }
-    }
-}
-```
 
-When the `prod` environment is rendered for our project, any values in `prod.json` will override the values in `common.json`. 
-
-Moving back to the root of our project, let's scaffold out a component to deploy all our microservices.
+With that explanation done, let's install the remote components by going to the `~/examples/getting-started` root of our definition:
 
 ```
-$ marina scaffold component services --type "static"
+$ fab install
 ```
 
-Like the `infra` component we created earlier, this is an umbrella component for all our microservices for all the common elements of our services.  It has a type of `static`, which is a subclass of `component` that includes static file based resource definitions that are specified by the `path` property.  It also defines a hook that is run after this and every child component, which we leverage to introduce a Linkerd filter to inject a service mesh sidecar into all of our service deployments.
+With those installed, we can now generate the manifests for our deployment with:
 
 ```
-{
-    "name": "services",
-    "type": "static",
-    "path": "./resources",
-    "version": "1.0.0",
-    "components": [{
-        "name": "simple-service",
-        "source": "./simple-service"
-    }],
-    "hooks": [{
-        "after": [{
-            "name": "linkerd",
-            "source": "https://github.com/Microsoft/marina-linkerd-filter"
-        }]
-    }]
-}
+$ fab generate prod
 ```
 
-With our umbrella component defined, let's scaffold out a concrete microservice.
+This will iterate through our deployment definition, collecting configuration values and generating manifests as it descends breadth first.  You can see the generated manifests in `./generated`, which has the same logical directory structure as your deployment definition.
+
+These manifests are meant to be generated as part of a CI / CD pipeline and then applied from a daemon within the cluster like [Flux](https://github.com/weaveworks/flux), but if you have a Kubernetes cluster up and running you can also apply them directly with:
 
 ```
-$ marina scaffold component simple-service --type=helm
-```
-
-This service is templated with helm charts, so instead of choosing the generic component type, we instead specify a more specific `helm` type.  Like the `static` type above, the `helm` type is a subclass of `component` and has `helm` specific properties like the location of the chart to use to deploy the application.
-
-```
-{
-    "name": "simple-service",
-    "type": "helm",
-    "chart": "./chart",
-    "version": "1.0.0"
-}
-```
-
- A `helm` component knows how to take a chart and apply the values specified in the environment's config and materialize the resource definitions from them. All of the config traits we used as we were defining our logging infrastructure apply to this as well.  For example, if we define `config/common.json` as:
-
-```
-{
-    "config": {
-        "simple-service": {
-            "serviceName": "simple-service",
-            ...
-        }
-    }
-}
-```
-
-and a `config/dev.json` as:
-
-```
-{
-    "config": {
-        "simple-service": {
-            "replicas": 1,
-            "imageName": "timfpark/simple-service:edge"
-            ...
-        }
-    }
-}
-```
-
-and a `config/prod.json` that looks like:
-
-```
-{
-    "config": {
-        "simple-service": {
-            "replicas": 6,
-            "imageName": "timfpark/simple-service:stable"
-            ...
-        }
-    }
-}
-```
-
-Then the rendered resource definitions will have `prod` deployments with 6 replicas running the `stable` tagged image, the `dev` environment will only 1 replica running the `edge` tagged image, but both will have a service name of `simple-service`.
-
-With this - the grand finale (and the real purpose for all of this definition) -- generating all the resource descriptions for all of the components we defined.  You can now do that by simply going to the root of our project and executing:
-
-```
-$ marina generate dev
-```
-
-In this invocation we are generating all of the resource definitions with a `dev` config.  By default, all of the resulting resource definitions will be placed in a directory called `generated/dev` at the root of the project and organized with the same directory structure as the project itself.
-
-As we mentioned at the beginning, Marina is intended to be executed as part of a CI/CD pipeline with downstream tooling to manage reconciling the resource definitions in our cluster, but if you have a Kubernetes cluster handy, you can also apply the generated resource descriptions directly with:
-
-```
-$ cd generated/dev
+$ cd generated/prod
 $ kubectl apply --recursive -f .
 ```
 

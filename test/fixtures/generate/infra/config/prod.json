@@ -1,0 +1,22 @@
+{
+    "config": {
+        "importantValue": 4
+    },
+    "subcomponents": {
+        "efk": {
+            "config": {},
+            "subcomponents": {
+                "elasticsearch": {
+                    "config": {
+                        "master": {
+                            "persistence": {
+                                "storageClass": "managed-premium",
+                                "size": "32Gi"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

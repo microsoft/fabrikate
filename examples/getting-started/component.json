@@ -1,0 +1,9 @@
+{
+    "name": "microservices",
+    "subcomponents": [
+        {
+            "name": "infra",
+            "source": "./infra"
+        }
+    ]
+}
