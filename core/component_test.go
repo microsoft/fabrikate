@@ -6,6 +6,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRelativePathToGitComponent(t *testing.T) {
+	subcomponent := Component{
+		Name:   "efk",
+		Method: "git",
+		Source: "https://github.com/Microsoft/fabrikate-elasticsearch-fluentd-kibana",
+	}
+
+	assert.Equal(t, subcomponent.RelativePathTo(), "components/efk")
+}
+
+func TestRelativePathToDirectoryComponent(t *testing.T) {
+	subcomponent := Component{
+		Name:   "infra",
+		Source: "./infra",
+	}
+
+	assert.Equal(t, subcomponent.RelativePathTo(), "infra")
+}
+
 func TestLoadComponent(t *testing.T) {
 	component := Component{
 		PhysicalPath: "../test/fixtures/definition/infra",
@@ -17,10 +36,10 @@ func TestLoadComponent(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, component.Name, "infra")
-	assert.Equal(t, component.Type, "component")
 	assert.Equal(t, len(component.Subcomponents), 1)
 	assert.Equal(t, component.Subcomponents[0].Name, "efk")
 	assert.Equal(t, component.Subcomponents[0].Source, "https://github.com/Microsoft/fabrikate-elasticsearch-fluentd-kibana")
+	assert.Equal(t, component.Subcomponents[0].Method, "git")
 }
 
 func TestLoadConfig(t *testing.T) {

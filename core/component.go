@@ -5,21 +5,27 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 
+	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
 )
 
 type Component struct {
-	Name          string
+	Name   string
+	Source string
+	Method string
+
 	Generator     string
-	Subcomponents []Subcomponent
+	Subcomponents []Component
 	Repo          string
 	Path          string
 	PhysicalPath  string
 	LogicalPath   string
 	Config        ComponentConfig
-	Manifest      string
+
+	Manifest string
 }
 
 func (c *Component) LoadComponent() (mergedComponent Component, err error) {
@@ -80,14 +86,37 @@ func (c *Component) LoadConfig(environment string) (err error) {
 	return nil
 }
 
-func (c *Component) Install(path string) (err error) {
+func (c *Component) RelativePathTo() string {
+	if c.Method == "git" {
+		return fmt.Sprintf("components/%s", c.Name)
+	} else if c.Source != "" {
+		return c.Name
+	} else {
+		return "./"
+	}
+}
+
+func (c *Component) Install(componentPath string) (err error) {
 	for _, subcomponent := range c.Subcomponents {
-		if err := subcomponent.Install(path); err != nil {
-			return err
+		if subcomponent.Method == "git" {
+			componentsPath := fmt.Sprintf("%s/components", componentPath)
+			if err := exec.Command("mkdir", "-p", componentsPath).Run(); err != nil {
+				return err
+			}
+
+			subcomponentPath := path.Join(componentPath, subcomponent.RelativePathTo())
+			if err = exec.Command("rm", "-rf", subcomponentPath).Run(); err != nil {
+				return err
+			}
+
+			emoji.Printf(":helicopter: installing component %s with git from %s\n", subcomponent.Name, subcomponent.Source)
+			if err = exec.Command("git", "clone", subcomponent.Source, subcomponentPath).Run(); err != nil {
+				return err
+			}
 		}
 	}
 
-	return err
+	return nil
 }
 
 type ComponentIteration func(path string, component *Component) (err error)
@@ -100,9 +129,6 @@ type ComponentIteration func(path string, component *Component) (err error)
 // For each component path in the queue, it parses the component at that path into a Component, calls componentFunc on that,
 // and then for each subcomponent specified it determines if it is a simple subdirectory of if it (<subcomponent path>) is
 // an installed component in components and requires a two level path addition (components/<subcomponent name>).
-
-// Note: Because it is going a breadth first search, this enables an install operation to install components before the iteration discovers
-// they are missing.
 
 func IterateComponentTree(startingPath string, environment string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
 	queue := make([]Component, 0)
