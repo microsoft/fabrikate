@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rm -rf releases/$1
+mkdir -p releases/$1
+
+echo "Building for Mac"
+GOOS=darwin GOARCH=amd64 go build -o fab
+zip releases/$1/fab-v$1-darwin-amd64.zip fab
+
+echo "Building for Linux"
+GOOS=linux GOARCH=amd64 go build -o fab
+zip releases/$1/fab-v$1-linux-amd64.zip fab
+
+echo "Building for Windows"
+GOOS=windows GOARCH=amd64 go build -o fab.exe
+zip releases/$1/fab-v$1-windows-amd64.zip fab.exe
+
+echo "Release zip files can be found in releases/$1"
