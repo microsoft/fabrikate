@@ -16,7 +16,7 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:   "fab",
 	Short: "Scalable GitOps for Kubernetes clusters",
-	Long:  `fab generate <env>`,
+	Long:  "Scalable GitOps for Kubernetes clusters",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
