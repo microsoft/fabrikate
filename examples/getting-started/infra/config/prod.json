@@ -1,0 +1,24 @@
+{
+    "config": {},
+    "subcomponents": {
+        "elasticsearch-fluentd-kibana": {
+            "config": {},
+            "subcomponents": {
+                "elasticsearch": {
+                    "config": {
+                        "data": {
+                            "persistence": {
+                                "storageClass": "managed-premium"
+                            }
+                        },
+                        "master": {
+                            "persistence": {
+                                "storageClass": "managed-premium"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
