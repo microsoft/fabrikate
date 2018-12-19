@@ -10,6 +10,7 @@ import (
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/Microsoft/fabrikate/generators"
 	"github.com/kyokomi/emoji"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +42,7 @@ func Generate(startPath string, environment string) (components []core.Component
 		ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
 	}
 
-	emoji.Printf(":raised_hands: finished generate\n")
+	log.Info(emoji.Sprintf(":raised_hands: finished generate"))
 
 	return components, err
 }

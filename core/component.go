@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type Component struct {
@@ -109,7 +110,7 @@ func (c *Component) Install(componentPath string) (err error) {
 				return err
 			}
 
-			emoji.Printf(":helicopter: installing component %s with git from %s\n", subcomponent.Name, subcomponent.Source)
+			log.Println(emoji.Sprintf(":helicopter: installing component %s with git from %s", subcomponent.Name, subcomponent.Source))
 			if err = exec.Command("git", "clone", subcomponent.Source, subcomponentPath).Run(); err != nil {
 				return err
 			}
@@ -165,12 +166,19 @@ func IterateComponentTree(startingPath string, environment string, componentIter
 		completedComponents = append(completedComponents, component)
 
 		for _, subcomponent := range component.Subcomponents {
+			// if subcomponent is inlined, it doesn't need further processing and we are done.
+			if subcomponent.Source == "" {
+				continue
+			}
+
 			componentToQueue := Component{
+				Name:         subcomponent.Name,
 				PhysicalPath: path.Join(component.PhysicalPath, subcomponent.RelativePathTo()),
 				LogicalPath:  path.Join(component.LogicalPath, subcomponent.Name),
 				Config:       component.Config.Subcomponents[subcomponent.Name],
 			}
 
+			log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", componentToQueue.Name, componentToQueue.PhysicalPath, componentToQueue.LogicalPath)
 			queue = append(queue, componentToQueue)
 		}
 	}

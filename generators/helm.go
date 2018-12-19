@@ -10,6 +10,7 @@ import (
 
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/kyokomi/emoji"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -42,7 +43,7 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 }
 
 func GenerateHelmComponent(component *core.Component) (manifest string, err error) {
-	emoji.Printf(":truck: generating component '%s' with helm with repo %s\n", component.Name, component.Repo)
+	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Repo))
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
@@ -85,6 +86,6 @@ func InstallHelmComponent(component *core.Component) (err error) {
 		return err
 	}
 
-	emoji.Printf(":helicopter: install helm repo %s for %s into %s\n", component.Repo, component.Name, helmRepoPath)
+	log.Println(emoji.Sprintf(":helicopter: install helm repo %s for %s into %s", component.Repo, component.Name, helmRepoPath))
 	return exec.Command("git", "clone", component.Repo, helmRepoPath, "--depth", "1").Run()
 }

@@ -6,12 +6,13 @@ import (
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/Microsoft/fabrikate/generators"
 	"github.com/kyokomi/emoji"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 func Install(path string) (err error) {
 	_, err = core.IterateComponentTree(path, "", func(path string, component *core.Component) (err error) {
-		emoji.Printf(":point_right: starting install for component: %s\n", component.Name)
+		log.Info(emoji.Sprintf(":point_right: starting install for component: %s", component.Name))
 		if err := component.Install(path); err != nil {
 			return err
 		}
@@ -22,13 +23,13 @@ func Install(path string) (err error) {
 		}
 
 		if err == nil {
-			emoji.Printf(":clap: finished install for component: %s\n", component.Name)
+			log.Info(emoji.Sprintf(":point_left: finished install for component: %s", component.Name))
 		}
 
 		return err
 	})
 
-	emoji.Printf(":raised_hands: finished install\n")
+	log.Info(emoji.Sprintf(":raised_hands: finished install"))
 	return err
 }
 

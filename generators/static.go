@@ -7,10 +7,11 @@ import (
 
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/kyokomi/emoji"
+	log "github.com/sirupsen/logrus"
 )
 
 func GenerateStaticComponent(component *core.Component) (manifest string, err error) {
-	emoji.Printf(":truck: generating component '%s' statically from path %s\n", component.Name, component.Path)
+	log.Println(emoji.Sprintf(":truck: generating component '%s' statically from path %s", component.Name, component.Path))
 
 	staticPath := path.Join(component.PhysicalPath, component.Path)
 	staticFiles, err := ioutil.ReadDir(staticPath)
