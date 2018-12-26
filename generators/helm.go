@@ -51,6 +51,7 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
+		log.Errorf("marshalling config yaml for helm generated component '%s' failed with: %s\n", component.Name, err.Error())
 		return "", err
 	}
 
@@ -71,6 +72,7 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 	manifests, err := exec.Command("docker", "run", "--rm", "-v", volumeMount, "alpine/helm:latest", "template", "/app/chart", "--values", "/app/chart/overriddenValues.yaml", "--name", name).Output()
 
 	if err != nil {
+		log.Errorf("helm template failed with: %s\n", err.Error())
 		return "", err
 	}
 
