@@ -11,6 +11,7 @@ import (
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type Component struct {
@@ -29,42 +30,65 @@ type Component struct {
 	Manifest string
 }
 
-func (c *Component) LoadComponent() (mergedComponent Component, err error) {
-	componentJSONPath := path.Join(c.PhysicalPath, "component.json")
-	if _, err := os.Stat(componentJSONPath); os.IsNotExist(err) {
-		return mergedComponent, errors.Errorf("Component expected at path %s not found", componentJSONPath)
-	}
+type UnmarshalFunction func(in []byte, v interface{}) error
 
-	componentJSON, err := ioutil.ReadFile(componentJSONPath)
+func UnmarshalFile(path string, unmarshalFunc UnmarshalFunction, obj interface{}) (err error) {
+	_, err = os.Stat(path)
 	if err != nil {
-		return mergedComponent, err
+		return err
 	}
 
-	if err := json.Unmarshal(componentJSON, &mergedComponent); err != nil {
-		return mergedComponent, err
+	marshaled, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	log.Info(emoji.Sprintf(":floppy_disk: Loading %s", path))
+
+	return unmarshalFunc(marshaled, obj)
+}
+
+func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc UnmarshalFunction, component *Component) error {
+	componentFilename := fmt.Sprintf("component.%s", marshaledType)
+	componentPath := path.Join(c.PhysicalPath, componentFilename)
+
+	return UnmarshalFile(componentPath, unmarshalFunc, component)
+}
+
+func (c *Component) LoadComponent() (mergedComponent Component, err error) {
+	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &mergedComponent)
+	if err != nil {
+		err = c.UnmarshalComponent("json", json.Unmarshal, &mergedComponent)
+		if err != nil {
+			errorMessage := fmt.Sprintf("Error loading %s: %s", c.PhysicalPath, err)
+			log.Errorln(errorMessage)
+			return mergedComponent, errors.Errorf(errorMessage)
+		}
 	}
 
 	mergedComponent.PhysicalPath = c.PhysicalPath
 	mergedComponent.LogicalPath = c.LogicalPath
 	mergedComponent.Config.Merge(c.Config)
 
-	return mergedComponent, err
+	return mergedComponent, nil
 }
 
-func (c *Component) MergeConfigFile(path string) (err error) {
-	// If config file doesn't exist, just move on.  Config files are never required.
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil
-	}
+func (c *Component) UnmarshalConfig(environment string, marshaledType string, unmarshalFunc UnmarshalFunction, config *ComponentConfig) error {
+	configFilename := fmt.Sprintf("config/%s.%s", environment, marshaledType)
+	configPath := path.Join(c.PhysicalPath, configFilename)
 
-	configString, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
+	return UnmarshalFile(configPath, unmarshalFunc, config)
+}
 
+func (c *Component) MergeConfigFile(environment string) (err error) {
 	var componentConfig ComponentConfig
-	if err := json.Unmarshal(configString, &componentConfig); err != nil {
-		return err
+
+	err = c.UnmarshalConfig(environment, "yaml", yaml.Unmarshal, &componentConfig)
+	if err != nil {
+		err = c.UnmarshalConfig(environment, "json", json.Unmarshal, &componentConfig)
+		if err != nil {
+			return nil
+		}
 	}
 
 	c.Config.Merge(componentConfig)
@@ -73,18 +97,11 @@ func (c *Component) MergeConfigFile(path string) (err error) {
 }
 
 func (c *Component) LoadConfig(environment string) (err error) {
-	environmentFileName := fmt.Sprintf("%s.json", environment)
-	environmentConfigPath := path.Join(c.PhysicalPath, "config", environmentFileName)
-	if err := c.MergeConfigFile(environmentConfigPath); err != nil {
+	if err := c.MergeConfigFile(environment); err != nil {
 		return err
 	}
 
-	commonPath := path.Join(c.PhysicalPath, "config", "common.json")
-	if err := c.MergeConfigFile(commonPath); err != nil {
-		return err
-	}
-
-	return nil
+	return c.MergeConfigFile("common")
 }
 
 func (c *Component) RelativePathTo() string {
@@ -123,14 +140,6 @@ func (c *Component) Install(componentPath string) (err error) {
 type ComponentIteration func(path string, component *Component) (err error)
 
 // IterateComponentTree is a general function used for iterating a deployment tree for installing, generating, etc.
-
-// It takes a starting path that is expected to have a component.json in it. It is assumed to be an error in this step of
-// any path that is pushed onto the queue when component.json does not exist in the path.
-
-// For each component path in the queue, it parses the component at that path into a Component, calls componentFunc on that,
-// and then for each subcomponent specified it determines if it is a simple subdirectory of if it (<subcomponent path>) is
-// an installed component in components and requires a two level path addition (components/<subcomponent name>).
-
 func IterateComponentTree(startingPath string, environment string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
 	queue := make([]Component, 0)
 
@@ -146,19 +155,23 @@ func IterateComponentTree(startingPath string, environment string, componentIter
 	queue = append(queue, component)
 	completedComponents = make([]Component, 0)
 
+	// Iterate the deployment tree using a queued breadth first algorithm:
 	for len(queue) != 0 {
 		component := queue[0]
 		queue = queue[1:]
 
+		// 1. Parse the component at that path into a Component
 		component, err := component.LoadComponent()
 		if err != nil {
 			return nil, err
 		}
 
+		// 2. Load the config for this Component
 		if err := component.LoadConfig(environment); err != nil {
 			return nil, err
 		}
 
+		// 3. Call the passed componentIteration function on this component (install, generate, etc.)
 		if err = componentIteration(component.PhysicalPath, &component); err != nil {
 			return nil, err
 		}
@@ -168,13 +181,15 @@ func IterateComponentTree(startingPath string, environment string, componentIter
 		for _, subcomponent := range component.Subcomponents {
 			subcomponent.Config = component.Config.Subcomponents[subcomponent.Name]
 			if len(subcomponent.Source) > 0 {
+				// This subcomponent is not inlined, so add it to the queue for iteration.
+
 				subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
 				subcomponent.LogicalPath = path.Join(component.LogicalPath, subcomponent.Name)
 
 				log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
 				queue = append(queue, subcomponent)
 			} else {
-				// inlined component, so run component iteration on it as well.
+				// This subcomponent is inlined, so call the componentIteration function on this component.
 
 				subcomponent.PhysicalPath = component.PhysicalPath
 				subcomponent.LogicalPath = component.LogicalPath

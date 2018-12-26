@@ -11,3 +11,9 @@ func TestInstall(t *testing.T) {
 
 	assert.Nil(t, err)
 }
+
+func TestInstallYaml(t *testing.T) {
+	err := Install("../test/fixtures/install-yaml")
+
+	assert.Nil(t, err)
+}
