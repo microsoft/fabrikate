@@ -1,0 +1,12 @@
+name: "prometheus-grafana"
+generator: "static"
+path: "./manifests"
+subcomponents:
+- name: "grafana"
+  generator: "helm"
+  repo: "https://github.com/helm/charts"
+  path: "stable/grafana"
+- name: "prometheus"
+  generator: "helm"
+  repo: "https://github.com/helm/charts"
+  path: "stable/prometheus"

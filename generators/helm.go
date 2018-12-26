@@ -42,6 +42,10 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 	return namespacedManifests, nil
 }
 
+func MakeHelmRepoPath(component *core.Component) string {
+	return path.Join(component.PhysicalPath, "helm_repos", component.Name)
+}
+
 func GenerateHelmComponent(component *core.Component) (manifest string, err error) {
 	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Repo))
 
@@ -50,7 +54,7 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 		return "", err
 	}
 
-	helmRepoPath := path.Join(component.PhysicalPath, "repo")
+	helmRepoPath := MakeHelmRepoPath(component)
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 	absCustomValuesPath := path.Join(chartPath, "overriddenValues.yaml")
@@ -81,8 +85,12 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 }
 
 func InstallHelmComponent(component *core.Component) (err error) {
-	helmRepoPath := path.Join(component.PhysicalPath, "repo")
+	helmRepoPath := MakeHelmRepoPath(component)
 	if err := exec.Command("rm", "-rf", helmRepoPath).Run(); err != nil {
+		return err
+	}
+
+	if err := exec.Command("mkdir", "-p", helmRepoPath).Run(); err != nil {
 		return err
 	}
 
