@@ -43,7 +43,11 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 }
 
 func MakeHelmRepoPath(component *core.Component) string {
-	return path.Join(component.PhysicalPath, "helm_repos", component.Name)
+	if len(component.Repo) == 0 {
+		return path.Join(component.PhysicalPath, component.Path)
+	} else {
+		return path.Join(component.PhysicalPath, "helm_repos", component.Name)
+	}
 }
 
 func GenerateHelmComponent(component *core.Component) (manifest string, err error) {
@@ -87,6 +91,10 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 }
 
 func InstallHelmComponent(component *core.Component) (err error) {
+	if len(component.Repo) == 0 {
+		return nil
+	}
+
 	helmRepoPath := MakeHelmRepoPath(component)
 	if err := exec.Command("rm", "-rf", helmRepoPath).Run(); err != nil {
 		return err
