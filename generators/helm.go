@@ -44,7 +44,7 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 
 func MakeHelmRepoPath(component *core.Component) string {
 	if len(component.Repo) == 0 {
-		return path.Join(component.PhysicalPath, component.Path)
+		return component.PhysicalPath
 	} else {
 		return path.Join(component.PhysicalPath, "helm_repos", component.Name)
 	}
