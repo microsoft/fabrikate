@@ -15,7 +15,7 @@ import (
 )
 
 func AddNamespaceToManifests(manifests string, namespace string) (namespacedManifests string, err error) {
-	splitManifest := strings.Split(manifests, "---")
+	splitManifest := strings.Split(manifests, "\n---")
 
 	for _, manifest := range splitManifest {
 		parsedManifest := make(map[interface{}]interface{})
