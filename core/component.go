@@ -178,8 +178,20 @@ func IterateComponentTree(startingPath string, environment string, componentIter
 
 		completedComponents = append(completedComponents, component)
 
+		configYAML, err := yaml.Marshal(component.Config)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Debugf("Iterating component %s with config:\n%s", component.Name, string(configYAML))
 		for _, subcomponent := range component.Subcomponents {
 			subcomponent.Config = component.Config.Subcomponents[subcomponent.Name]
+			subcomponentConfigYAML, err := yaml.Marshal(subcomponent.Config)
+			if err != nil {
+				return nil, err
+			}
+
+			log.Debugf("Iterating subcomponent '%s' with config:\n%s", subcomponent.Name, string(subcomponentConfigYAML))
 			if len(subcomponent.Source) > 0 {
 				// This subcomponent is not inlined, so add it to the queue for iteration.
 
