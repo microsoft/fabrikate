@@ -15,7 +15,7 @@ import (
 )
 
 func AddNamespaceToManifests(manifests string, namespace string) (namespacedManifests string, err error) {
-	splitManifest := strings.Split(manifests, "---")
+	splitManifest := strings.Split(manifests, "\n---")
 
 	for _, manifest := range splitManifest {
 		parsedManifest := make(map[interface{}]interface{})
@@ -43,7 +43,11 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 }
 
 func MakeHelmRepoPath(component *core.Component) string {
-	return path.Join(component.PhysicalPath, "helm_repos", component.Name)
+	if len(component.Repo) == 0 {
+		return component.PhysicalPath
+	} else {
+		return path.Join(component.PhysicalPath, "helm_repos", component.Name)
+	}
 }
 
 func GenerateHelmComponent(component *core.Component) (manifest string, err error) {
@@ -51,6 +55,7 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
+		log.Errorf("marshalling config yaml for helm generated component '%s' failed with: %s\n", component.Name, err.Error())
 		return "", err
 	}
 
@@ -59,24 +64,34 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 	absCustomValuesPath := path.Join(chartPath, "overriddenValues.yaml")
 
+	log.Debugf("writing config %s to %s\n", configYaml, absCustomValuesPath)
 	ioutil.WriteFile(absCustomValuesPath, configYaml, 0644)
 
 	volumeMount := fmt.Sprintf("%s:/app/chart", chartPath)
+	log.Debugf("templating with volumeMount: %s\n", volumeMount)
 
 	name := component.Name
 	if component.Config.Config["name"] != nil {
 		name = component.Config.Config["name"].(string)
 	}
 
-	manifests, err := exec.Command("docker", "run", "--rm", "-v", volumeMount, "alpine/helm:latest", "template", "/app/chart", "--values", "/app/chart/overriddenValues.yaml", "--name", name).Output()
+	namespace := "default"
+	if component.Config.Config["namespace"] != nil {
+		namespace = component.Config.Config["namespace"].(string)
+	}
+
+	log.Debugf("templating with namespace: %s\n", namespace)
+
+	output, err := exec.Command("docker", "run", "--rm", "-v", volumeMount, "alpine/helm:latest", "template", "/app/chart", "--values", "/app/chart/overriddenValues.yaml", "--name", name, "--namespace", namespace).Output()
 
 	if err != nil {
+		log.Errorf("helm template failed with: %s\n", output)
 		return "", err
 	}
 
-	stringManifests := string(manifests)
+	stringManifests := string(output)
 
-	// helm template doesn't support injecting namespaces, so if a namespace was configured, manually inject it.
+	// some helm templates expect install to inject namespace, so if namespace doesn't exist on resource manifests, manually inject it.
 	if component.Config.Config["namespace"] != nil {
 		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Config["namespace"].(string))
 	}
@@ -85,6 +100,10 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 }
 
 func InstallHelmComponent(component *core.Component) (err error) {
+	if len(component.Repo) == 0 {
+		return nil
+	}
+
 	helmRepoPath := MakeHelmRepoPath(component)
 	if err := exec.Command("rm", "-rf", helmRepoPath).Run(); err != nil {
 		return err
