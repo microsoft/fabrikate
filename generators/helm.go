@@ -85,8 +85,10 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 	output, err := exec.Command("docker", "run", "--rm", "-v", volumeMount, "alpine/helm:latest", "template", "/app/chart", "--values", "/app/chart/overriddenValues.yaml", "--name", name, "--namespace", namespace).Output()
 
 	if err != nil {
-		log.Errorf("helm template failed with: %s\n", output)
-		return "", err
+		if ee, ok := err.(*exec.ExitError); ok {
+			log.Errorf("helm template failed with: %s\n", ee.Stderr)
+			return "", err
+		}
 	}
 
 	stringManifests := string(output)
