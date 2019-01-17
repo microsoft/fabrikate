@@ -64,6 +64,10 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 
 	helmRepoPath := MakeHelmRepoPath(component)
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
+	if err != nil {
+		return "", err
+	}
+
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 	absCustomValuesPath := path.Join(chartPath, "overriddenValues.yaml")
 
@@ -122,6 +126,10 @@ func InstallHelmComponent(component *core.Component) (err error) {
 	}
 
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
+	if err != nil {
+		return err
+	}
+
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 
 	log.Println(emoji.Sprintf(":helicopter: updating helm chart's dependencies for %s", component.Name))
