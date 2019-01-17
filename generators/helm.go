@@ -19,7 +19,10 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 
 	for _, manifest := range splitManifest {
 		parsedManifest := make(map[interface{}]interface{})
-		yaml.Unmarshal([]byte(manifest), &parsedManifest)
+		err := yaml.Unmarshal([]byte(manifest), &parsedManifest)
+		if err != nil {
+			return "", err
+		}
 
 		// strip any empty entries
 		if len(parsedManifest) == 0 {
@@ -61,10 +64,18 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 
 	helmRepoPath := MakeHelmRepoPath(component)
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
+	if err != nil {
+		return "", err
+	}
+
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 	absCustomValuesPath := path.Join(chartPath, "overriddenValues.yaml")
 
-	ioutil.WriteFile(absCustomValuesPath, configYaml, 0644)
+	log.Debugf("writing config %s to %s\n", configYaml, absCustomValuesPath)
+	err = ioutil.WriteFile(absCustomValuesPath, configYaml, 0644)
+	if err != nil {
+		return "", err
+	}
 
 	name := component.Name
 	if component.Config.Config["name"] != nil {
@@ -115,6 +126,10 @@ func InstallHelmComponent(component *core.Component) (err error) {
 	}
 
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
+	if err != nil {
+		return err
+	}
+
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 
 	log.Println(emoji.Sprintf(":helicopter: updating helm chart's dependencies for %s", component.Name))
