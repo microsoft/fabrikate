@@ -73,9 +73,6 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 		return "", err
 	}
 
-	volumeMount := fmt.Sprintf("%s:/app/chart", chartPath)
-	log.Debugf("templating with volumeMount: %s\n", volumeMount)
-
 	name := component.Name
 	if component.Config.Config["name"] != nil {
 		name = component.Config.Config["name"].(string)
@@ -86,7 +83,7 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 		namespace = component.Config.Config["namespace"].(string)
 	}
 
-	output, err := exec.Command("docker", "run", "--rm", "-v", volumeMount, "alpine/helm:latest", "template", "/app/chart", "--values", "/app/chart/overriddenValues.yaml", "--name", name, "--namespace", namespace).Output()
+	output, err := exec.Command("helm", "template", chartPath, "--values", absCustomValuesPath, "--name", name, "--namespace", namespace).Output()
 
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -126,10 +123,8 @@ func InstallHelmComponent(component *core.Component) (err error) {
 
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
 	chartPath := path.Join(absHelmRepoPath, component.Path)
-	volumeMount := fmt.Sprintf("%s:/app/chart", chartPath)
 
 	log.Println(emoji.Sprintf(":helicopter: updating helm chart's dependencies for %s", component.Name))
-	fmt.Println(volumeMount)
 
 	err = exec.Command("helm", "dependency", "update", chartPath).Run()
 
