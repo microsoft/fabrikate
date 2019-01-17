@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -17,22 +16,25 @@ var rootCmd = &cobra.Command{
 	Use:   "fab",
 	Short: "Scalable GitOps for Kubernetes clusters",
 	Long:  "Scalable GitOps for Kubernetes clusters",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+		verbose := cmd.Flag("verbose").Value.String()
+
+		if verbose == "true" {
+			log.SetLevel(log.DebugLevel)
+		} else {
+			log.SetLevel(log.InfoLevel)
+		}
+
+		return nil
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	verbose, _ := rootCmd.PersistentFlags().GetBool("verbose")
-
-	if verbose {
-		log.SetLevel(log.DebugLevel)
-	}
-
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		os.Exit(1)
 	}
 }
@@ -40,7 +42,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().Bool("verbose", true, "Verbose output logs")
+	rootCmd.PersistentFlags().Bool("verbose", false, "Use verbose output logs")
 }
 
 // initConfig reads in config file and ENV variables if set.

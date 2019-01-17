@@ -1,0 +1,5 @@
+config:
+  elasticsearch:
+    hosts:
+    - elasticsearch-client.elasticsearch.svc.cluster.local
+namespace: elasticsearch
