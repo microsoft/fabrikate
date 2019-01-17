@@ -34,12 +34,18 @@ func Generate(startPath string, environment string) (components []core.Component
 	// TODO: need to push component yaml out to {path}/generated directory
 	for _, component := range components {
 		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
-		os.MkdirAll(componentGenerationPath, 0755)
+		err := os.MkdirAll(componentGenerationPath, 0755)
+		if err != nil {
+			return nil, err
+		}
 
 		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
 		componentYAMLFilePath := path.Join(componentGenerationPath, componentYAMLFilename)
 
-		ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
+		err = ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	log.Info(emoji.Sprintf(":raised_hands: finished generate"))
