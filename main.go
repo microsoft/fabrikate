@@ -11,7 +11,6 @@ func main() {
 	formatter.FullTimestamp = true
 
 	log.SetFormatter(formatter)
-	log.SetLevel(log.InfoLevel)
 
 	cmd.Execute()
 }

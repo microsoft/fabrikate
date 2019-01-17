@@ -1,0 +1,40 @@
+{
+    "config": {},
+    "subcomponents": {
+        "elasticsearch": {
+            "config": {
+                "namespace": "elasticsearch"
+            }
+        },
+        "elasticsearch-curator": {
+            "config": {
+                "namespace": "elasticsearch",
+                "config": {
+                    "elasticsearch": {
+                        "hosts": [
+                            "elasticsearch-client.elasticsearch.svc.cluster.local"
+                        ]
+                    }
+                }
+            }
+        },
+        "fluentd-elasticsearch": {
+            "config": {
+                "elasticsearch": {
+                    "host": "elasticsearch-client.elasticsearch.svc.cluster.local"
+                },
+                "namespace": "fluentd"
+            }
+        },
+        "kibana": {
+            "config": {
+                "files": {
+                    "kibana.yml": {
+                        "elasticsearch.url": "http://elasticsearch-client.elasticsearch.svc.cluster.local:9200"
+                    }
+                },
+                "namespace": "kibana"
+            }
+        }
+    }
+}

@@ -1,0 +1,5 @@
+master:
+  persistence:
+    size: 32Gi
+    storageClass: managed-premium
+namespace: elasticsearch

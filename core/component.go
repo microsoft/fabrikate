@@ -68,9 +68,9 @@ func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 
 	mergedComponent.PhysicalPath = c.PhysicalPath
 	mergedComponent.LogicalPath = c.LogicalPath
-	mergedComponent.Config.Merge(c.Config)
+	err = mergedComponent.Config.Merge(c.Config)
 
-	return mergedComponent, nil
+	return mergedComponent, err
 }
 
 func (c *Component) UnmarshalConfig(environment string, marshaledType string, unmarshalFunc UnmarshalFunction, config *ComponentConfig) error {
@@ -91,9 +91,7 @@ func (c *Component) MergeConfigFile(environment string) (err error) {
 		}
 	}
 
-	c.Config.Merge(componentConfig)
-
-	return nil
+	return c.Config.Merge(componentConfig)
 }
 
 func (c *Component) LoadConfig(environment string) (err error) {
