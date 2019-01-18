@@ -57,7 +57,7 @@ Let's look at the `infra` directory.  This directory defines the common applicat
 
 In this case, it will build resource manifests for both Elasticsearch / FluentD / Kibana (EFK) log management and Prometheus / Grafana metrics monitoring stacks using components in an external git repo.  Fabrikate enables linking out to components in an external repo like this as a way of sharing common subcomponents between deployment projects.
 
-Looking at the [backing repo](https://github.com/timfpark/fabrikate/elasticsearch-fluentd-kibana) for the EFK component, we can see that it also defines a `component.json`:
+Looking at the [backing repo](https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana) for the EFK component, we can see that it also defines a `component.json`:
 
 ```
 {
