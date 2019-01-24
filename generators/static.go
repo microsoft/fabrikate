@@ -10,7 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GenerateStaticComponent(component *core.Component) (manifest string, err error) {
+type StaticGenerator struct{}
+
+func (sg *StaticGenerator) Generate(component *core.Component) (manifest string, err error) {
 	log.Println(emoji.Sprintf(":truck: generating component '%s' statically from path %s", component.Name, component.Path))
 
 	staticPath := path.Join(component.PhysicalPath, component.Path)
@@ -29,4 +31,8 @@ func GenerateStaticComponent(component *core.Component) (manifest string, err er
 	}
 
 	return manifests, err
+}
+
+func (hg *StaticGenerator) Install(component *core.Component) (err error) {
+	return nil
 }

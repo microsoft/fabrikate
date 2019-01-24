@@ -14,6 +14,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type HelmGenerator struct{}
+
 func AddNamespaceToManifests(manifests string, namespace string) (namespacedManifests string, err error) {
 	splitManifest := strings.Split(manifests, "\n---")
 
@@ -45,7 +47,7 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 	return namespacedManifests, nil
 }
 
-func MakeHelmRepoPath(component *core.Component) string {
+func (hg *HelmGenerator) MakeHelmRepoPath(component *core.Component) string {
 	if len(component.Repo) == 0 {
 		return component.PhysicalPath
 	} else {
@@ -53,7 +55,7 @@ func MakeHelmRepoPath(component *core.Component) string {
 	}
 }
 
-func GenerateHelmComponent(component *core.Component) (manifest string, err error) {
+func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, err error) {
 	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Repo))
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
@@ -62,7 +64,7 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 		return "", err
 	}
 
-	helmRepoPath := MakeHelmRepoPath(component)
+	helmRepoPath := hg.MakeHelmRepoPath(component)
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
 	if err != nil {
 		return "", err
@@ -106,12 +108,12 @@ func GenerateHelmComponent(component *core.Component) (manifest string, err erro
 	return stringManifests, err
 }
 
-func InstallHelmComponent(component *core.Component) (err error) {
+func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	if len(component.Repo) == 0 {
 		return nil
 	}
 
-	helmRepoPath := MakeHelmRepoPath(component)
+	helmRepoPath := hg.MakeHelmRepoPath(component)
 	if err := exec.Command("rm", "-rf", helmRepoPath).Run(); err != nil {
 		return err
 	}
