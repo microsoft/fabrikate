@@ -17,11 +17,20 @@ import (
 func Generate(startPath string, environment string) (components []core.Component, err error) {
 	// Iterate through component tree and generate
 	components, err = core.IterateComponentTree(startPath, environment, func(path string, component *core.Component) (err error) {
+
+		var generator core.Generator
 		switch component.Generator {
 		case "helm":
-			component.Manifest, err = generators.GenerateHelmComponent(component)
+			generator = &generators.HelmGenerator{}
 		case "static":
-			component.Manifest, err = generators.GenerateStaticComponent(component)
+			generator = &generators.StaticGenerator{}
+		}
+
+		if generator != nil {
+			component.Manifest, err = generator.Generate(component)
+		} else {
+			component.Manifest = ""
+			err = nil
 		}
 
 		return err
@@ -31,7 +40,6 @@ func Generate(startPath string, environment string) (components []core.Component
 	generationPath := path.Join(startPath, "generated", environment)
 	os.RemoveAll(generationPath)
 
-	// TODO: need to push component yaml out to {path}/generated directory
 	for _, component := range components {
 		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
 		err := os.MkdirAll(componentGenerationPath, 0755)
@@ -78,14 +86,4 @@ var generateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(generateCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// generateCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// generateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

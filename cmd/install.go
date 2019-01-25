@@ -10,21 +10,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Install installs the component at the given path and all of its subcomponents.
 func Install(path string) (err error) {
 	_, err = core.IterateComponentTree(path, "", func(path string, component *core.Component) (err error) {
 		log.Info(emoji.Sprintf(":point_right: starting install for component: %s", component.Name))
-		if err := component.Install(path); err != nil {
-			return err
-		}
+
+		var generator core.Generator
 
 		switch component.Generator {
 		case "helm":
-			err = generators.InstallHelmComponent(component)
+			generator = &generators.HelmGenerator{}
 		}
 
-		if err == nil {
-			log.Info(emoji.Sprintf(":point_left: finished install for component: %s", component.Name))
+		if err := component.Install(path, generator); err != nil {
+			return err
 		}
+
+		log.Info(emoji.Sprintf(":point_left: finished install for component: %s", component.Name))
 
 		return err
 	})

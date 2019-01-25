@@ -1,0 +1,19 @@
+{
+    "name": "istio",
+    "generator": "static",
+    "path": "./manifests",
+    "hooks": {
+        "before-install": [
+            "wget https://github.com/istio/istio/releases/download/1.0.5/istio-1.0.5-linux.tar.gz",
+            "tar xvf istio-1.0.5-linux.tar.gz"
+        ],
+        "after-install": ["rm istio-1.0.5-linux.tar.gz", "rm -rf istio-1.0.5"]
+    },
+    "subcomponents": [
+        {
+            "name": "istio",
+            "generator": "helm",
+            "path": "./istio-1.0.5/install/kubernetes/helm/istio"
+        }
+    ]
+}
