@@ -17,3 +17,9 @@ func TestInstallYAML(t *testing.T) {
 
 	assert.Nil(t, err)
 }
+
+func TestInstallWithHooks(t *testing.T) {
+	err := Install("../test/fixtures/install-hooks")
+
+	assert.Nil(t, err)
+}

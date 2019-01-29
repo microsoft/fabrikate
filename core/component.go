@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
@@ -15,17 +16,19 @@ import (
 )
 
 type Component struct {
-	Name   string
-	Source string
-	Method string
+	Name      string
+	Config    ComponentConfig
+	Generator string
+	Hooks     map[string][]string
+	Source    string
+	Method    string
+	Path      string
+	Repo      string
 
-	Generator     string
 	Subcomponents []Component
-	Repo          string
-	Path          string
-	PhysicalPath  string
-	LogicalPath   string
-	Config        ComponentConfig
+
+	PhysicalPath string
+	LogicalPath  string
 
 	Manifest string
 }
@@ -112,27 +115,108 @@ func (c *Component) RelativePathTo() string {
 	}
 }
 
-func (c *Component) Install(componentPath string) (err error) {
-	for _, subcomponent := range c.Subcomponents {
-		if subcomponent.Method == "git" {
-			componentsPath := fmt.Sprintf("%s/components", componentPath)
-			if err := exec.Command("mkdir", "-p", componentsPath).Run(); err != nil {
-				return err
-			}
+func (c *Component) ExecuteHook(hook string) (err error) {
+	if c.Hooks[hook] == nil {
+		return nil
+	}
 
-			subcomponentPath := path.Join(componentPath, subcomponent.RelativePathTo())
-			if err = exec.Command("rm", "-rf", subcomponentPath).Run(); err != nil {
-				return err
-			}
+	log.Infof("executing hooks for: %s", hook)
 
-			log.Println(emoji.Sprintf(":helicopter: installing component %s with git from %s", subcomponent.Name, subcomponent.Source))
-			if err = exec.Command("git", "clone", subcomponent.Source, subcomponentPath).Run(); err != nil {
+	for _, command := range c.Hooks[hook] {
+		log.Infof("executing command: %s", command)
+		commandComponents := strings.Fields(command)
+		if len(commandComponents) != 0 {
+			commandExecutable := commandComponents[0]
+			commandArgs := commandComponents[1:len(commandComponents)]
+			cmd := exec.Command(commandExecutable, commandArgs...)
+			cmd.Dir = c.PhysicalPath
+			if err := cmd.Run(); err != nil {
+				if ee, ok := err.(*exec.ExitError); ok {
+					log.Errorf("hook command failed with: %s\n", ee.Stderr)
+				}
+
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+func (c *Component) BeforeGenerate() (err error) {
+	return c.ExecuteHook("before-generate")
+}
+
+func (c *Component) AfterGenerate() (err error) {
+	return c.ExecuteHook("after-generate")
+}
+
+func (c *Component) BeforeInstall() (err error) {
+	return c.ExecuteHook("before-install")
+}
+
+func (c *Component) AfterInstall() (err error) {
+	return c.ExecuteHook("after-install")
+}
+
+func (c *Component) InstallComponent(componentPath string) (err error) {
+	if c.Method == "git" {
+		componentsPath := fmt.Sprintf("%s/components", componentPath)
+		if err := exec.Command("mkdir", "-p", componentsPath).Run(); err != nil {
+			return err
+		}
+
+		subcomponentPath := path.Join(componentPath, c.RelativePathTo())
+		if err = exec.Command("rm", "-rf", subcomponentPath).Run(); err != nil {
+			return err
+		}
+
+		log.Println(emoji.Sprintf(":helicopter: installing component %s with git from %s", c.Name, c.Source))
+		if err = exec.Command("git", "clone", c.Source, subcomponentPath).Run(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Component) Install(componentPath string, generator Generator) (err error) {
+	if err := c.BeforeInstall(); err != nil {
+		return err
+	}
+
+	for _, subcomponent := range c.Subcomponents {
+		if err := subcomponent.InstallComponent(componentPath); err != nil {
+			return err
+		}
+	}
+
+	if generator != nil {
+		if err := generator.Install(c); err != nil {
+			return err
+		}
+	}
+
+	return c.AfterInstall()
+}
+
+func (c *Component) Generate(generator Generator) (err error) {
+	if err := c.BeforeGenerate(); err != nil {
+		return err
+	}
+
+	if generator != nil {
+		c.Manifest, err = generator.Generate(c)
+	} else {
+		c.Manifest = ""
+		err = nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return c.AfterGenerate()
 }
 
 type ComponentIteration func(path string, component *Component) (err error)

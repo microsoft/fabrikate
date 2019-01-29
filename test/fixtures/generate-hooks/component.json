@@ -1,0 +1,8 @@
+{
+    "name": "generate-hooks",
+    "hooks": {
+        "before-generate": ["touch before-generate"],
+        "after-generate": ["rm before-generate"]
+    },
+    "subcomponents": []
+}
