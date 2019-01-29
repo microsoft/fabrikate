@@ -143,6 +143,14 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 	return nil
 }
 
+func (c *Component) BeforeGenerate() (err error) {
+	return c.ExecuteHook("before-generate")
+}
+
+func (c *Component) AfterGenerate() (err error) {
+	return c.ExecuteHook("after-generate")
+}
+
 func (c *Component) BeforeInstall() (err error) {
 	return c.ExecuteHook("before-install")
 }
@@ -190,6 +198,25 @@ func (c *Component) Install(componentPath string, generator Generator) (err erro
 	}
 
 	return c.AfterInstall()
+}
+
+func (c *Component) Generate(generator Generator) (err error) {
+	if err := c.BeforeGenerate(); err != nil {
+		return err
+	}
+
+	if generator != nil {
+		c.Manifest, err = generator.Generate(c)
+	} else {
+		c.Manifest = ""
+		err = nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return c.AfterGenerate()
 }
 
 type ComponentIteration func(path string, component *Component) (err error)
