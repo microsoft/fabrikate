@@ -50,3 +50,9 @@ func TestGenerateYAML(t *testing.T) {
 
 	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
 }
+
+func TestGenerateWithHooks(t *testing.T) {
+	_, err := Generate("../test/fixtures/generate-hooks", "prod")
+
+	assert.Nil(t, err)
+}

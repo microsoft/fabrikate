@@ -26,14 +26,7 @@ func Generate(startPath string, environment string) (components []core.Component
 			generator = &generators.StaticGenerator{}
 		}
 
-		if generator != nil {
-			component.Manifest, err = generator.Generate(component)
-		} else {
-			component.Manifest = ""
-			err = nil
-		}
-
-		return err
+		return component.Generate(generator)
 	})
 
 	// Delete the old version, so we don't end up with a mishmash of two builds.
