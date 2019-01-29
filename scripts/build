@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ $# -ne 1 ]; then
+  echo "$0: takes exactly one argument: the version number of the the release."
+  exit 1
+fi
+
 rm -rf releases/$1
 mkdir -p releases/$1
 
