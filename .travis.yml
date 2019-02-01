@@ -16,7 +16,7 @@ env:
     - HELM_TGZ=helm-v2.12.3-linux-amd64.tar.gz
 
 before_script:
-  # Install Helm
+  # Install Helm (test)
   - wget -q ${HELM_URL}/${HELM_TGZ}
   - tar xzfv ${HELM_TGZ}
   - PATH=`pwd`/linux-amd64/:$PATH
