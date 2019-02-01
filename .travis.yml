@@ -13,7 +13,7 @@ git:
 env:
   global:
     - HELM_URL=https://storage.googleapis.com/kubernetes-helm
-    - HELM_TGZ=helm-v2.4.1-linux-amd64.tar.gz
+    - HELM_TGZ=helm-v2.12.3-linux-amd64.tar.gz
 
 before_script:
   # Install Helm
