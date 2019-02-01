@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 
 	"github.com/Microsoft/fabrikate/core"
@@ -13,6 +14,43 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+func WriteGeneratedManifests(generationPath string, components []core.Component) (err error) {
+	// Delete the old version, so we don't end up with a mishmash of two builds.
+	os.RemoveAll(generationPath)
+
+	for _, component := range components {
+		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
+		err := os.MkdirAll(componentGenerationPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
+		componentYAMLFilePath := path.Join(componentGenerationPath, componentYAMLFilename)
+
+		err = ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ValidateGeneratedManifests(generationPath string) (err error) {
+	log.Println(emoji.Sprintf(":microscope: validating generated manifests in path %s", generationPath))
+	output, err := exec.Command("kubectl", "apply", "--validate=true", "--dry-run", "--recursive", "-f", generationPath).Output()
+
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			log.Errorf("helm template failed with: %s: output: %s\n", ee.Stderr, output)
+			return err
+		}
+	}
+
+	return nil
+}
 
 func Generate(startPath string, environment string) (components []core.Component, err error) {
 	// Iterate through component tree and generate
@@ -29,24 +67,14 @@ func Generate(startPath string, environment string) (components []core.Component
 		return component.Generate(generator)
 	})
 
-	// Delete the old version, so we don't end up with a mishmash of two builds.
 	generationPath := path.Join(startPath, "generated", environment)
-	os.RemoveAll(generationPath)
 
-	for _, component := range components {
-		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
-		err := os.MkdirAll(componentGenerationPath, 0755)
-		if err != nil {
-			return nil, err
-		}
+	if err = WriteGeneratedManifests(generationPath, components); err != nil {
+		return nil, err
+	}
 
-		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
-		componentYAMLFilePath := path.Join(componentGenerationPath, componentYAMLFilename)
-
-		err = ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
-		if err != nil {
-			return nil, err
-		}
+	if err = ValidateGeneratedManifests(generationPath); err != nil {
+		return nil, err
 	}
 
 	log.Info(emoji.Sprintf(":raised_hands: finished generate"))

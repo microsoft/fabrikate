@@ -120,10 +120,10 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 		return nil
 	}
 
-	log.Infof("executing hooks for: %s", hook)
+	log.Info(emoji.Sprintf(":fishing_pole_and_fish: executing hooks for: %s", hook))
 
 	for _, command := range c.Hooks[hook] {
-		log.Infof("executing command: %s", command)
+		log.Info(emoji.Sprintf(":fishing_pole_and_fish: executing command: %s", command))
 		commandComponents := strings.Fields(command)
 		if len(commandComponents) != 0 {
 			commandExecutable := commandComponents[0]
@@ -132,7 +132,7 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 			cmd.Dir = c.PhysicalPath
 			if err := cmd.Run(); err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
-					log.Errorf("hook command failed with: %s\n", ee.Stderr)
+					log.Info(emoji.Sprintf(":fishing_pole_and_fish: hook command failed with: %s\n", ee.Stderr))
 				}
 
 				return err
