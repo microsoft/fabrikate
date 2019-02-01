@@ -1,5 +1,7 @@
 {
     "name": "generate-hooks",
+    "generator": "static",
+    "path": "./manifests",
     "hooks": {
         "before-generate": ["touch before-generate"],
         "after-generate": ["rm before-generate"]
