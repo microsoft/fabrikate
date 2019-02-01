@@ -10,8 +10,18 @@ go:
 git:
   depth: 1
 
-# Make sure golangci-lint is vendored.
+env:
+  global:
+    - HELM_URL=https://storage.googleapis.com/kubernetes-helm
+    - HELM_TGZ=helm-v2.4.1-linux-amd64.tar.gz
+
 before_script:
+  # Install Helm
+  - wget -q ${HELM_URL}/${HELM_TGZ}
+  - tar xzfv ${HELM_TGZ}
+  - PATH=`pwd`/linux-amd64/:$PATH
+  - helm init --client-only
+  # Make sure golangci-lint is vendored.
   - go get github.com/golangci/golangci-lint/cmd/golangci-lint
 
 script:
