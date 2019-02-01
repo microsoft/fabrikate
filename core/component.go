@@ -127,7 +127,7 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 		commandComponents := strings.Fields(command)
 		if len(commandComponents) != 0 {
 			commandExecutable := commandComponents[0]
-			commandArgs := commandComponents[1:len(commandComponents)]
+			commandArgs := commandComponents[1:]
 			cmd := exec.Command(commandExecutable, commandArgs...)
 			cmd.Dir = c.PhysicalPath
 			if err := cmd.Run(); err != nil {

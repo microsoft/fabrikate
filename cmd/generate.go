@@ -67,6 +67,10 @@ func Generate(startPath string, environment string) (components []core.Component
 		return component.Generate(generator)
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
 	generationPath := path.Join(startPath, "generated", environment)
 
 	if err = WriteGeneratedManifests(generationPath, components); err != nil {
