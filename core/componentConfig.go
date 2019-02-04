@@ -9,6 +9,6 @@ type ComponentConfig struct {
 	Subcomponents map[string]ComponentConfig
 }
 
-func (cc *ComponentConfig) Merge(from ComponentConfig) (err error) {
-	return mergo.Merge(cc, from)
+func (cc *ComponentConfig) Merge(newConfig ComponentConfig) (err error) {
+	return mergo.Merge(&newConfig, cc)
 }
