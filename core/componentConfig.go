@@ -1,8 +1,6 @@
 package core
 
-import (
-	"github.com/imdario/mergo"
-)
+import "github.com/InVisionApp/conjungo"
 
 type ComponentConfig struct {
 	Config        map[string]interface{}
@@ -10,5 +8,8 @@ type ComponentConfig struct {
 }
 
 func (cc *ComponentConfig) Merge(newConfig ComponentConfig) (err error) {
-	return mergo.Merge(&newConfig, cc)
+	options := conjungo.NewOptions()
+	options.Overwrite = false
+
+	return conjungo.Merge(cc, newConfig, options)
 }
