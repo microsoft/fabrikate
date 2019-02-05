@@ -97,9 +97,11 @@ func (c *Component) MergeConfigFile(environment string) (err error) {
 	return c.Config.Merge(componentConfig)
 }
 
-func (c *Component) LoadConfig(environment string) (err error) {
-	if err := c.MergeConfigFile(environment); err != nil {
-		return err
+func (c *Component) LoadConfig(environments []string) (err error) {
+	for _, environment := range environments {
+		if err := c.MergeConfigFile(environment); err != nil {
+			return err
+		}
 	}
 
 	return c.MergeConfigFile("common")
@@ -222,7 +224,7 @@ func (c *Component) Generate(generator Generator) (err error) {
 type ComponentIteration func(path string, component *Component) (err error)
 
 // IterateComponentTree is a general function used for iterating a deployment tree for installing, generating, etc.
-func IterateComponentTree(startingPath string, environment string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
+func IterateComponentTree(startingPath string, environments []string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
 	queue := make([]Component, 0)
 
 	component := Component{
@@ -249,7 +251,7 @@ func IterateComponentTree(startingPath string, environment string, componentIter
 		}
 
 		// 2. Load the config for this Component
-		if err := component.LoadConfig(environment); err != nil {
+		if err := component.LoadConfig(environments); err != nil {
 			return nil, err
 		}
 

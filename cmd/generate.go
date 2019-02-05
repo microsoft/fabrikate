@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/Microsoft/fabrikate/generators"
@@ -52,9 +53,9 @@ func ValidateGeneratedManifests(generationPath string) (err error) {
 	return nil
 }
 
-func Generate(startPath string, environment string) (components []core.Component, err error) {
+func Generate(startPath string, environments []string) (components []core.Component, err error) {
 	// Iterate through component tree and generate
-	components, err = core.IterateComponentTree(startPath, environment, func(path string, component *core.Component) (err error) {
+	components, err = core.IterateComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
 
 		var generator core.Generator
 		switch component.Generator {
@@ -71,7 +72,8 @@ func Generate(startPath string, environment string) (components []core.Component
 		return nil, err
 	}
 
-	generationPath := path.Join(startPath, "generated", environment)
+	environmentName := strings.Join(environments, "-")
+	generationPath := path.Join(startPath, "generated", environmentName)
 
 	if err = WriteGeneratedManifests(generationPath, components); err != nil {
 		return nil, err
@@ -88,22 +90,15 @@ func Generate(startPath string, environment string) (components []core.Component
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
-	Use:   "generate <environment> [path]",
+	Use:   "generate <env1> <env2> ... <envN>",
 	Short: "Generates Kubernetes resource definitions from deployment definition.",
 	Long:  `Generate produces Kubernetes resource definitions from deployment definition and an environment config.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 || len(args) > 2 {
-			return errors.New("generate takes at least one or two arguments: 1) the name of the environment to be generated and 2) the path of the root of the defintion directory (defaults to the current directory).")
+			return errors.New("generate takes at one or more environment arguments specified in priority order to generate.")
 		}
 
-		environment := args[0]
-
-		path := "./"
-		if len(args) > 1 {
-			path = args[1]
-		}
-
-		_, err := Generate(path, environment)
+		_, err := Generate("./", args)
 
 		return err
 	},
