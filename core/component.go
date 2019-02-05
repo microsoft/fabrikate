@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
 	"strings"
 
 	"github.com/kyokomi/emoji"
@@ -59,6 +60,7 @@ func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc Unmar
 }
 
 func (c *Component) LoadComponent() (mergedComponent Component, err error) {
+	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &mergedComponent)
 	if err != nil {
 		err = c.UnmarshalComponent("json", json.Unmarshal, &mergedComponent)
