@@ -12,7 +12,7 @@ import (
 
 // Install installs the component at the given path and all of its subcomponents.
 func Install(path string) (err error) {
-	_, err = core.IterateComponentTree(path, []string{""}, func(path string, component *core.Component) (err error) {
+	_, err = core.IterateComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
 		log.Info(emoji.Sprintf(":point_right: starting install for component: %s", component.Name))
 
 		var generator core.Generator
