@@ -98,7 +98,7 @@ var generateCmd = &cobra.Command{
 			return errors.New("generate takes at one or more environment arguments specified in priority order to generate.")
 		}
 
-		_, err := Generate(path, args)
+		_, err := Generate("./", args)
 
 		return err
 	},

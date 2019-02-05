@@ -18,7 +18,7 @@ func checkComponentLengthsAgainstExpected(t *testing.T, components []core.Compon
 }
 
 func TestGenerateJSON(t *testing.T) {
-	components, err := Generate("../test/fixtures/generate", "prod")
+	components, err := Generate("../test/fixtures/generate", []string{"prod-east", "prod"})
 
 	assert.Nil(t, err)
 
@@ -36,7 +36,7 @@ func TestGenerateJSON(t *testing.T) {
 }
 
 func TestGenerateYAML(t *testing.T) {
-	components, err := Generate("../test/fixtures/generate-yaml", "prod")
+	components, err := Generate("../test/fixtures/generate-yaml", []string{"prod"})
 
 	expectedLengths := map[string]int{
 		"prometheus-grafana": 125,
@@ -52,7 +52,7 @@ func TestGenerateYAML(t *testing.T) {
 }
 
 func TestGenerateWithHooks(t *testing.T) {
-	_, err := Generate("../test/fixtures/generate-hooks", "prod")
+	_, err := Generate("../test/fixtures/generate-hooks", []string{"prod"})
 
 	assert.Nil(t, err)
 }
