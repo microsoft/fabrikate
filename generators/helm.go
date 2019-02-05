@@ -94,7 +94,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			log.Errorf("helm template failed with: %s\n", ee.Stderr)
-			exec.Command("rm", absOverriddenPath).Run()
+			_ = exec.Command("rm", absOverriddenPath).Run()
 			return "", err
 		}
 	}
@@ -106,7 +106,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Config["namespace"].(string))
 	}
 
-	exec.Command("rm", absOverriddenPath).Run()
+	_ = exec.Command("rm", absOverriddenPath).Run()
 
 	return stringManifests, err
 }
