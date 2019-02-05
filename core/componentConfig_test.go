@@ -13,7 +13,6 @@ func TestMergeConfig(t *testing.T) {
 			"jaeger": ComponentConfig{
 				Config: map[string]interface{}{
 					"provisionDataStore": map[string]interface{}{
-						"cassandra":     false,
 						"elasticsearch": false,
 					},
 				},
@@ -41,6 +40,10 @@ func TestMergeConfig(t *testing.T) {
 
 	jaegerSubcomponent := currentConfig.Subcomponents["jaeger"]
 	provisionConfig := jaegerSubcomponent.Config["provisionDataStore"].(map[string]interface{})
-	elasticSearchValue := provisionConfig["elasticsearch"].(bool)
-	assert.Equal(t, false, elasticSearchValue)
+
+	cassandraValue := provisionConfig["cassandra"].(bool)
+	assert.Equal(t, false, cassandraValue)
+
+	elasticsearchValue := provisionConfig["elasticsearch"].(bool)
+	assert.Equal(t, false, elasticsearchValue)
 }
