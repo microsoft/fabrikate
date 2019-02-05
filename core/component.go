@@ -12,7 +12,7 @@ import (
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
+	yaml "github.com/superwhiskers/yaml"
 )
 
 type Component struct {
