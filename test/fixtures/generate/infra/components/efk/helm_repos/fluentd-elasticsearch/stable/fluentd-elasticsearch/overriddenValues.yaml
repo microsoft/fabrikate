@@ -1,3 +1,0 @@
-elasticsearch:
-  host: elasticsearch-client.elasticsearch.svc.cluster.local
-namespace: fluentd
