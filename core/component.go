@@ -78,7 +78,7 @@ func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 	return mergedComponent, err
 }
 
-func (c *Component) UnmarshalConfig(environment string, marshaledType string, unmarshalFunc UnmarshalFunction, config *ComponentConfig) error {
+func (c *Component) UnmarshalConfig(environment string, marshaledType string, unmarshalFunc UnmarshalFunction, config *ComponentConfig) (err error) {
 	configFilename := fmt.Sprintf("config/%s.%s", environment, marshaledType)
 	configPath := path.Join(c.PhysicalPath, configFilename)
 
@@ -94,6 +94,10 @@ func (c *Component) MergeConfigFile(environment string) (err error) {
 		if err != nil {
 			return nil
 		}
+	}
+
+	if err = componentConfig.CoerceConfigToStrings(); err != nil {
+		return err
 	}
 
 	return c.Config.Merge(componentConfig)
