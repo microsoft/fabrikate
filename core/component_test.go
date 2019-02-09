@@ -51,14 +51,14 @@ func TestLoadConfig(t *testing.T) {
 	component, err := component.LoadComponent()
 	assert.Nil(t, err)
 
-	err = component.LoadConfig("prod")
+	err = component.LoadConfig([]string{"prod-east", "prod"})
 
 	assert.Nil(t, err)
 }
 
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
-	results, err := IterateComponentTree("../test/fixtures/iterator", "", func(path string, component *Component) (err error) {
+	results, err := IterateComponentTree("../test/fixtures/iterator", []string{""}, func(path string, component *Component) (err error) {
 		callbackCount++
 		return nil
 	})

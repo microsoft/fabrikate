@@ -11,14 +11,13 @@ func checkComponentLengthsAgainstExpected(t *testing.T, components []core.Compon
 	for _, component := range components {
 		if expectedLength, ok := expectedLengths[component.Name]; ok {
 			assert.True(t, ok)
-
 			assert.Equal(t, expectedLength, len(component.Manifest))
 		}
 	}
 }
 
 func TestGenerateJSON(t *testing.T) {
-	components, err := Generate("../test/fixtures/generate", "prod")
+	components, err := Generate("../test/fixtures/generate", []string{"prod-east", "prod"}, false)
 
 	assert.Nil(t, err)
 
@@ -36,11 +35,11 @@ func TestGenerateJSON(t *testing.T) {
 }
 
 func TestGenerateYAML(t *testing.T) {
-	components, err := Generate("../test/fixtures/generate-yaml", "prod")
+	components, err := Generate("../test/fixtures/generate-yaml", []string{"prod"}, false)
 
 	expectedLengths := map[string]int{
 		"prometheus-grafana": 125,
-		"grafana":            8575,
+		"grafana":            8581,
 		"prometheus":         21401,
 	}
 
@@ -52,7 +51,7 @@ func TestGenerateYAML(t *testing.T) {
 }
 
 func TestGenerateWithHooks(t *testing.T) {
-	_, err := Generate("../test/fixtures/generate-hooks", "prod")
+	_, err := Generate("../test/fixtures/generate-hooks", []string{"prod"}, false)
 
 	assert.Nil(t, err)
 }

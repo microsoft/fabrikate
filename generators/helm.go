@@ -71,10 +71,10 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 
 	chartPath := path.Join(absHelmRepoPath, component.Path)
-	absCustomValuesPath := path.Join(chartPath, "overriddenValues.yaml")
+	absOverriddenPath := path.Join(chartPath, "overriddenValues.yaml")
 
-	log.Debugf("writing config %s to %s\n", configYaml, absCustomValuesPath)
-	err = ioutil.WriteFile(absCustomValuesPath, configYaml, 0644)
+	log.Debugf("writing config %s to %s\n", configYaml, absOverriddenPath)
+	err = ioutil.WriteFile(absOverriddenPath, configYaml, 0644)
 	if err != nil {
 		return "", err
 	}
@@ -89,11 +89,12 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		namespace = component.Config.Config["namespace"].(string)
 	}
 
-	output, err := exec.Command("helm", "template", chartPath, "--values", absCustomValuesPath, "--name", name, "--namespace", namespace).Output()
+	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", name, "--namespace", namespace).Output()
 
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			log.Errorf("helm template failed with: %s\n", ee.Stderr)
+			_ = exec.Command("rm", absOverriddenPath).Run()
 			return "", err
 		}
 	}
@@ -104,6 +105,8 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	if component.Config.Config["namespace"] != nil {
 		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Config["namespace"].(string))
 	}
+
+	_ = exec.Command("rm", absOverriddenPath).Run()
 
 	return stringManifests, err
 }
@@ -139,9 +142,8 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	err = exec.Command("helm", "dependency", "update", chartPath).Run()
 
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			log.Errorf("updating chart dependencies failed with: %s\n", ee.Stderr)
-		}
+		log.Errorf("updating chart dependencies failed\n")
+		log.Errorf("run 'helm dependency update %s' for more error details.\n", chartPath)
 	}
 
 	return err
