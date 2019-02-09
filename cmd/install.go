@@ -31,7 +31,10 @@ func Install(path string) (err error) {
 		return err
 	})
 
-	log.Info(emoji.Sprintf(":raised_hands: finished install"))
+	if err == nil {
+		log.Info(emoji.Sprintf(":raised_hands: finished install"))
+	}
+
 	return err
 }
 

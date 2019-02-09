@@ -142,9 +142,8 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	err = exec.Command("helm", "dependency", "update", chartPath).Run()
 
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			log.Errorf("updating chart dependencies failed with: %s\n", ee.Stderr)
-		}
+		log.Errorf("updating chart dependencies failed\n")
+		log.Errorf("run 'helm dependency update %s' for more error details.\n", chartPath)
 	}
 
 	return err
