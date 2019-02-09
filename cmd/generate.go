@@ -53,7 +53,7 @@ func ValidateGeneratedManifests(generationPath string) (err error) {
 	return nil
 }
 
-func Generate(startPath string, environments []string) (components []core.Component, err error) {
+func Generate(startPath string, environments []string, validate bool) (components []core.Component, err error) {
 	// Iterate through component tree and generate
 	components, err = core.IterateComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
 
@@ -79,8 +79,10 @@ func Generate(startPath string, environments []string) (components []core.Compon
 		return nil, err
 	}
 
-	if err = ValidateGeneratedManifests(generationPath); err != nil {
-		return nil, err
+	if validate {
+		if err = ValidateGeneratedManifests(generationPath); err != nil {
+			return nil, err
+		}
 	}
 
 	log.Info(emoji.Sprintf(":raised_hands: finished generate"))
@@ -92,18 +94,20 @@ func Generate(startPath string, environments []string) (components []core.Compon
 var generateCmd = &cobra.Command{
 	Use:   "generate <env1> <env2> ... <envN>",
 	Short: "Generates Kubernetes resource definitions from deployment definition.",
-	Long:  `Generate produces Kubernetes resource definitions from deployment definition and an environment config.`,
+	Long:  `Generate produces Kubernetes resource manifests from a deployment definition.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 || len(args) > 2 {
-			return errors.New("generate takes at one or more environment arguments specified in priority order to generate.")
+			return errors.New("generate takes at one or more environment arguments, specified in priority order.")
 		}
 
-		_, err := Generate("./", args)
+		noValidation := cmd.Flag("no-validation").Value.String()
+		_, err := Generate("./", args, noValidation == "false")
 
 		return err
 	},
 }
 
 func init() {
+	generateCmd.PersistentFlags().Bool("no-validation", false, "Do not validate generated resource manifest YAML")
 	rootCmd.AddCommand(generateCmd)
 }
