@@ -45,7 +45,7 @@ func ValidateGeneratedManifests(generationPath string) (err error) {
 
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			log.Errorf("helm template failed with: %s: output: %s\n", ee.Stderr, output)
+			log.Errorf("validating generated manifests failed with: %s: output: %s\n", ee.Stderr, output)
 			return err
 		}
 	}
@@ -85,7 +85,9 @@ func Generate(startPath string, environments []string, validate bool) (component
 		}
 	}
 
-	log.Info(emoji.Sprintf(":raised_hands: finished generate"))
+	if err == nil {
+		log.Info(emoji.Sprintf(":raised_hands: finished generate"))
+	}
 
 	return components, err
 }
