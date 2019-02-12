@@ -39,7 +39,7 @@ func TestGenerateYAML(t *testing.T) {
 
 	expectedLengths := map[string]int{
 		"prometheus-grafana": 125,
-		"grafana":            8581,
+		"grafana":            8575,
 		"prometheus":         21401,
 	}
 

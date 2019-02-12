@@ -96,10 +96,6 @@ func (c *Component) MergeConfigFile(environment string) (err error) {
 		}
 	}
 
-	if err = componentConfig.CoerceConfigToStrings(); err != nil {
-		return err
-	}
-
 	return c.Config.Merge(componentConfig)
 }
 

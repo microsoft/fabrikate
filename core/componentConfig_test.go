@@ -48,13 +48,7 @@ func TestMergeConfig(t *testing.T) {
 		},
 	}
 
-	err := currentConfig.CoerceConfigToStrings()
-	assert.Nil(t, err)
-
-	err = newConfig.CoerceConfigToStrings()
-	assert.Nil(t, err)
-
-	err = currentConfig.Merge(newConfig)
+	err := currentConfig.Merge(newConfig)
 	assert.Nil(t, err)
 
 	jaegerSubcomponent := currentConfig.Subcomponents["jaeger"]
@@ -66,9 +60,9 @@ func TestMergeConfig(t *testing.T) {
 	elasticsearchValue := provisionConfig["elasticsearch"].(bool)
 	assert.Equal(t, false, elasticsearchValue)
 
-	mixed := provisionConfig["mixed"].(string)
-	assert.Equal(t, "1", mixed)
+	mixed := provisionConfig["mixed"].(int)
+	assert.Equal(t, 1, mixed)
 
 	sliceValues := provisionConfig["slice"].([]interface{})
-	assert.Equal(t, "1", sliceValues[1].(string))
+	assert.Equal(t, 1, sliceValues[1].(int))
 }
