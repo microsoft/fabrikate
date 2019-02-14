@@ -128,18 +128,22 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 
 	for _, command := range c.Hooks[hook] {
 		log.Info(emoji.Sprintf(":fishing_pole_and_fish: executing command: %s", command))
-		commandComponents := strings.Fields(command)
-		if len(commandComponents) != 0 {
-			commandExecutable := commandComponents[0]
-			commandArgs := commandComponents[1:]
-			cmd := exec.Command(commandExecutable, commandArgs...)
+		if len(command) != 0 {
+			cmd := exec.Command("bash", "-c", command)
 			cmd.Dir = c.PhysicalPath
-			if err := cmd.Run(); err != nil {
-				if ee, ok := err.(*exec.ExitError); ok {
-					log.Info(emoji.Sprintf(":fishing_pole_and_fish: hook command failed with: %s\n", ee.Stderr))
-				}
+			out, err := cmd.Output()
 
+			if err != nil {
+				log.Info(emoji.Sprintf(":no_entry_sign: %s\n", err.Error()))
+				if ee, ok := err.(*exec.ExitError); ok {
+					log.Info(emoji.Sprintf(":no_entry_sign: hook command failed with: %s\n", ee.Stderr))
+				}
 				return err
+			}
+
+			if len(out) > 0 {
+				outstring := emoji.Sprintf(":mag_right: %s\n", out)
+				log.Info(strings.TrimSpace(outstring))
 			}
 		}
 	}
