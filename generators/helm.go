@@ -125,8 +125,12 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 		return err
 	}
 
-	log.Println(emoji.Sprintf(":helicopter: install helm repo %s for %s into %s", component.Repo, component.Name, helmRepoPath))
-	if err := exec.Command("git", "clone", component.Repo, helmRepoPath, "--depth", "1").Run(); err != nil {
+	gitArguments, versionString := component.BuildGitCloneArguments(helmRepoPath)
+
+	gitArguments = append(gitArguments, "--depth", "1")
+
+	log.Println(emoji.Sprintf(":helicopter: install helm repo %s for %s into %s%s", component.Repo, component.Name, helmRepoPath, versionString))
+	if err := exec.Command("git", gitArguments...).Run(); err != nil {
 		return err
 	}
 

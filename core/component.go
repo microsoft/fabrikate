@@ -17,15 +17,16 @@ import (
 )
 
 type Component struct {
-	Name      string
-	Config    ComponentConfig
 	Generator string
 	Hooks     map[string][]string
-	Source    string
 	Method    string
+	Name      string
 	Path      string
+	Source    string
 	Repo      string
+	Version   string
 
+	Config        ComponentConfig
 	Subcomponents []Component
 
 	PhysicalPath string
@@ -163,6 +164,23 @@ func (c *Component) AfterInstall() (err error) {
 	return c.ExecuteHook("after-install")
 }
 
+func (c *Component) BuildGitCloneArguments(subcomponentPath string) (gitArguments []string, versionString string) {
+	gitArguments = []string{
+		"clone",
+		c.Source,
+	}
+	versionString = ""
+
+	if len(c.Version) > 0 {
+		gitArguments = append(gitArguments, c.Version)
+		versionString = fmt.Sprintf(" with version: %s", c.Version)
+	}
+
+	gitArguments = append(gitArguments, subcomponentPath)
+
+	return gitArguments, versionString
+}
+
 func (c *Component) InstallComponent(componentPath string) (err error) {
 	if c.Method == "git" {
 		componentsPath := fmt.Sprintf("%s/components", componentPath)
@@ -175,8 +193,10 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 			return err
 		}
 
-		log.Println(emoji.Sprintf(":helicopter: installing component %s with git from %s", c.Name, c.Source))
-		if err = exec.Command("git", "clone", c.Source, subcomponentPath).Run(); err != nil {
+		gitArguments, versionString := c.BuildGitCloneArguments(subcomponentPath)
+
+		log.Println(emoji.Sprintf(":helicopter: installing component %s with git from %s%s", c.Name, c.Source, versionString))
+		if err = exec.Command("git", gitArguments...).Run(); err != nil {
 			return err
 		}
 	}
