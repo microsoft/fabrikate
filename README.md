@@ -1,39 +1,33 @@
 # fabrikate
 
-Fabrikate makes GitOps devops for Kubernetes clusters easier. It allows you to write [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) resource definitions and configuration for multiple environments, capturing common resource definitions into abstracted and shareable components, and enabling a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment workflow that both simplifies and makes deployments more auditable.
+Fabrikate is a tool to make operating Kubernetes clusters with a GitOps workflow more productive. It allows you to write [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) resource definitions and configuration for multiple environments, capturing common resource definitions into abstracted and shareable components, and enabling a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment workflow that both simplifies and makes deployments more auditable.
 
-In particular, Fabrikate simplifies the frontend of the GitOps workflow: it takes a high level description of your deployment, a target environment (eg. `dev` or `prod`), and renders the Kubernetes resource manifests for that deployment. It is intended to run as part of your CI/CD pipeline such that with every commit to your deployment project triggers the generation of Kubernetes resource manifests that a tool like [Flux](https://github.com/weaveworks/flux) then automatically reconciles with the current state of your Kubernetes cluster.
+In particular, Fabrikate simplifies the frontend of the GitOps workflow: it takes a high level description of your deployment, a target environment (eg. `qa` or `prod`), and renders the Kubernetes resource manifests for that deployment. It is intended to run as part of your CI/CD pipeline such that with every commit to your high level deployment definition triggers the generation of Kubernetes resource manifests that a in-cluster GitOps daemon like [Flux](https://github.com/weaveworks/flux) watches and reconciles with the current state of your Kubernetes cluster.
 
 ## Getting Started
 
-First, install the latest `fab` cli on your local machine from [our releases](https://github.com/Microsoft/fabrikate/releases), unzipping the appropriate binary for your operating system and placing `fab` in your path.  The `fab` cli tool, `docker`, and `git` are the only tools you need to have installed.  Any other tooling dependencies will be fetched via `docker` images and/or `git`.
+First, install the latest `fab` cli on your local machine from [our releases](https://github.com/Microsoft/fabrikate/releases), unzipping the appropriate binary and placing `fab` in your path.  The `fab` cli tool, `helm`, and `git` are the only tools you need to have installed.
 
 Let's walk through an example project to see how Fabrikate works in practice.
 
 ```
-$ git clone https://github.com/Microsoft/fabrikate
-$ cd fabrikate/examples/getting-started
+$ git clone https://github.com/timfpark/fabrikate-example
+$ cd fabrikate-example
 ```
 
-This directory is the root of a Fabrikate deployment project and contains a `component.json` file for the current component. A component in Fabrikate is the definition for building the Kubernetes resource definitions for its directory tree scope.
+This directory is the root of a Fabrikate deployment definition and contains a `component.yaml` file for the current component. A component in Fabrikate provides the definition for building the Kubernetes resource definitions for its directory tree scope.
 
 ```
-{
-    "name": "microservices",
-    "subcomponents": [
-        {
-            "name": "infra",
-            "source": "./infra"
-        },
-        {
-            "name": "services",
-            "source": "./services"
-        }
-    ]
-}
+name: "microservices-definition"
+subcomponents:
+  - name: "cloud-native"
+    source: "https://github.com/timfpark/azure-cloud-native"
+    method: "git"
+  - name: "services"
+    source: "./services"
 ```
 
-In this case, it defines a component called "microservices" that consists of two subcomponents, "infra" and "services".
+In this case, it defines a component called "microservices-definitions" that consists of two subcomponents, `cloud-native` and `services`.
 
 Let's look at the `infra` directory.  This directory defines the common application infrastructure that all of the microservices in our deployment will use. 
 
