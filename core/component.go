@@ -226,6 +226,7 @@ func (c *Component) Generate(generator Generator) (err error) {
 
 type ComponentIteration func(path string, component *Component) (err error)
 
+// TODO: DEPRECATION: Remove at v0.4.0
 func migrateRepoToSourceMethod(component *Component) {
 	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'repo' has been deprecated and will be removed in version 0.4.x."))
 	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'source' and 'method' instead."))
@@ -261,7 +262,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 			return nil, err
 		}
 
-		// TODO: Migrate Repo field to Source / Method
+		// TODO: DEPRECATION: Remove at v0.4.0
 		if len(component.Repo) > 0 {
 			migrateRepoToSourceMethod(&component)
 		}
@@ -291,6 +292,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 				return nil, err
 			}
 
+			// TODO: DEPRECATION: Remove at v0.4.0
 			if len(subcomponent.Repo) > 0 {
 				migrateRepoToSourceMethod(&subcomponent)
 			}
