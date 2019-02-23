@@ -48,9 +48,6 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 }
 
 func (hg *HelmGenerator) MakeHelmRepoPath(component *core.Component) string {
-	log.Printf("component.Source: %s", component.Source)
-	log.Printf("component.Method: %s", component.Method)
-
 	if component.Method != "git" {
 		return component.PhysicalPath
 	} else {
@@ -59,7 +56,6 @@ func (hg *HelmGenerator) MakeHelmRepoPath(component *core.Component) string {
 }
 
 func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, err error) {
-	log.Printf("component: %+v", component)
 	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Repo))
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)

@@ -226,6 +226,14 @@ func (c *Component) Generate(generator Generator) (err error) {
 
 type ComponentIteration func(path string, component *Component) (err error)
 
+func migrateRepoToSourceMethod(component *Component) {
+	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'repo' has been deprecated and will be removed in version 0.4.x."))
+	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'source' and 'method' instead."))
+	component.Source = component.Repo
+	component.Method = "git"
+	component.Repo = ""
+}
+
 // IterateComponentTree is a general function used for iterating a deployment tree for installing, generating, etc.
 func IterateComponentTree(startingPath string, environments []string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
 	queue := make([]Component, 0)
@@ -253,14 +261,9 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 			return nil, err
 		}
 
-		// TODO: At version 0.4.0 remove
-		log.Printf("component: %+v", component)
+		// TODO: Migrate Repo field to Source / Method
 		if len(component.Repo) > 0 {
-			log.Println(emoji.Sprintf(":boom: WARNING: Field 'repo' has been depreciated and will be removed in version 0.4.X"))
-			log.Println(emoji.Sprintf(":boom: WARNING: Update your component definition to use 'source' and 'method' instead."))
-			component.Source = component.Repo
-			component.Method = "git"
-			component.Repo = ""
+			migrateRepoToSourceMethod(&component)
 		}
 
 		// 2. Load the config for this Component
@@ -289,11 +292,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 			}
 
 			if len(subcomponent.Repo) > 0 {
-				log.Println(emoji.Sprintf(":rotating_light: Field 'repo' has been deprecated and will be removed in version 0.4.X"))
-				log.Println(emoji.Sprintf(":rotating_light: Update your component definition to use 'source' and 'method' instead."))
-				component.Source = component.Repo
-				component.Method = "git"
-				component.Repo = ""
+				migrateRepoToSourceMethod(&subcomponent)
 			}
 
 			log.Debugf("Iterating subcomponent '%s' with config:\n%s", subcomponent.Name, string(subcomponentConfigYAML))
