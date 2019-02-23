@@ -26,6 +26,7 @@ type Component struct {
 	Path      string
 	Repo      string
 
+	Repositories  map[string]string
 	Subcomponents []Component
 
 	PhysicalPath string
@@ -252,6 +253,16 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 			return nil, err
 		}
 
+		// TODO: At version 0.4.0 remove
+		log.Printf("component: %+v", component)
+		if len(component.Repo) > 0 {
+			log.Println(emoji.Sprintf(":boom: WARNING: Field 'repo' has been depreciated and will be removed in version 0.4.X"))
+			log.Println(emoji.Sprintf(":boom: WARNING: Update your component definition to use 'source' and 'method' instead."))
+			component.Source = component.Repo
+			component.Method = "git"
+			component.Repo = ""
+		}
+
 		// 2. Load the config for this Component
 		if err := component.LoadConfig(environments); err != nil {
 			return nil, err
@@ -277,8 +288,16 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 				return nil, err
 			}
 
+			if len(subcomponent.Repo) > 0 {
+				log.Println(emoji.Sprintf(":rotating_light: Field 'repo' has been deprecated and will be removed in version 0.4.X"))
+				log.Println(emoji.Sprintf(":rotating_light: Update your component definition to use 'source' and 'method' instead."))
+				component.Source = component.Repo
+				component.Method = "git"
+				component.Repo = ""
+			}
+
 			log.Debugf("Iterating subcomponent '%s' with config:\n%s", subcomponent.Name, string(subcomponentConfigYAML))
-			if len(subcomponent.Source) > 0 {
+			if len(subcomponent.Generator) == 0 && len(subcomponent.Source) > 0 {
 				// This subcomponent is not inlined, so add it to the queue for iteration.
 
 				subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())

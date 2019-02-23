@@ -48,7 +48,10 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 }
 
 func (hg *HelmGenerator) MakeHelmRepoPath(component *core.Component) string {
-	if len(component.Repo) == 0 {
+	log.Printf("component.Source: %s", component.Source)
+	log.Printf("component.Method: %s", component.Method)
+
+	if component.Method != "git" {
 		return component.PhysicalPath
 	} else {
 		return path.Join(component.PhysicalPath, "helm_repos", component.Name)
@@ -56,6 +59,7 @@ func (hg *HelmGenerator) MakeHelmRepoPath(component *core.Component) string {
 }
 
 func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, err error) {
+	log.Printf("component: %+v", component)
 	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Repo))
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
@@ -112,7 +116,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 }
 
 func (hg *HelmGenerator) Install(component *core.Component) (err error) {
-	if len(component.Repo) == 0 {
+	if len(component.Source) == 0 || component.Method != "git" {
 		return nil
 	}
 
@@ -125,8 +129,8 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 		return err
 	}
 
-	log.Println(emoji.Sprintf(":helicopter: install helm repo %s for %s into %s", component.Repo, component.Name, helmRepoPath))
-	if err := exec.Command("git", "clone", component.Repo, helmRepoPath, "--depth", "1").Run(); err != nil {
+	log.Println(emoji.Sprintf(":helicopter: install helm repo %s for %s into %s", component.Source, component.Name, helmRepoPath))
+	if err := exec.Command("git", "clone", component.Source, helmRepoPath, "--depth", "1").Run(); err != nil {
 		return err
 	}
 
@@ -137,8 +141,12 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 
-	log.Println(emoji.Sprintf(":helicopter: updating helm chart's dependencies for %s", component.Name))
+	for name, url := range component.Repositories {
+		log.Println(emoji.Sprintf(":helicopter: adding helm repo '%s' at %s for component '%s'", name, url, component.Name))
+		err = exec.Command("helm", "repo", "add", name, url).Run()
+	}
 
+	log.Println(emoji.Sprintf(":helicopter: updating helm chart's dependencies for component '%s'", component.Name))
 	err = exec.Command("helm", "dependency", "update", chartPath).Run()
 
 	if err != nil {
