@@ -4,7 +4,15 @@
         {
             "name": "efk",
             "method": "git",
-            "source": "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana"
+            "source": "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana",
+            "version": "4b1e02aa4be7702013a60e61e536df0e1b59abb7"
+        },
+        {
+            "name": "elasticsearch",
+            "generator": "helm",
+            "repo": "https://github.com/helm/charts",
+            "path": "stable/elasticsearch",
+            "version": "b23ce6af309bfe25d4d485e85b66ce63475070d7"
         }
     ]
 }
