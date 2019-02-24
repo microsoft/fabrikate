@@ -26,6 +26,7 @@ type Component struct {
 	Path      string
 	Repo      string
 
+	Repositories  map[string]string
 	Subcomponents []Component
 
 	PhysicalPath string
@@ -229,6 +230,15 @@ func (c *Component) Generate(generator Generator) (err error) {
 
 type ComponentIteration func(path string, component *Component) (err error)
 
+// TODO: DEPRECATION: Remove at v0.4.0
+func migrateRepoToSourceMethod(component *Component) {
+	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'repo' has been deprecated and will be removed in version 0.4.x."))
+	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'source' and 'method' instead."))
+	component.Source = component.Repo
+	component.Method = "git"
+	component.Repo = ""
+}
+
 // IterateComponentTree is a general function used for iterating a deployment tree for installing, generating, etc.
 func IterateComponentTree(startingPath string, environments []string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
 	queue := make([]Component, 0)
@@ -256,6 +266,11 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 			return nil, err
 		}
 
+		// TODO: DEPRECATION: Remove at v0.4.0
+		if len(component.Repo) > 0 {
+			migrateRepoToSourceMethod(&component)
+		}
+
 		// 2. Load the config for this Component
 		if err := component.LoadConfig(environments); err != nil {
 			return nil, err
@@ -281,8 +296,13 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 				return nil, err
 			}
 
+			// TODO: DEPRECATION: Remove at v0.4.0
+			if len(subcomponent.Repo) > 0 {
+				migrateRepoToSourceMethod(&subcomponent)
+			}
+
 			log.Debugf("Iterating subcomponent '%s' with config:\n%s", subcomponent.Name, string(subcomponentConfigYAML))
-			if len(subcomponent.Source) > 0 {
+			if len(subcomponent.Generator) == 0 && len(subcomponent.Source) > 0 {
 				// This subcomponent is not inlined, so add it to the queue for iteration.
 
 				subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
