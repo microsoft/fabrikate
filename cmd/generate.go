@@ -94,9 +94,13 @@ func Generate(startPath string, environments []string, validate bool) (component
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
-	Use:   "generate <env1> <env2> ... <envN>",
+	Use:   "generate <config1> <config2> ... <configN>",
 	Short: "Generates Kubernetes resource definitions from deployment definition.",
-	Long:  `Generate produces Kubernetes resource manifests from a deployment definition.`,
+	Long: `Generate produces Kubernetes resource manifests from a deployment definition.
+
+If multiple configurations are specified, each will be applied in left to right priority order at each level of the definition, and the final generated environment directory will have the form <config1>-<config2>-...-<configN>.
+
+For example, 'fab generate prod east' will generate to a directory named prod-east.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 || len(args) > 2 {
 			return errors.New("generate takes at one or more environment arguments, specified in priority order.")
