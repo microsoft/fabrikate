@@ -126,7 +126,7 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	}
 
 	log.Println(emoji.Sprintf(":helicopter: installing helm repo %s for %s into %s", component.Source, component.Name, helmRepoPath))
-	if err = core.CloneRepo(component.Source, component.Version, helmRepoPath); err != nil {
+	if err = core.CloneRepo(component.Source, component.Version, helmRepoPath, component.Branch); err != nil {
 		return err
 	}
 
