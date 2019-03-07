@@ -26,6 +26,7 @@ type Component struct {
 	Path      string
 	Repo      string
 	Version   string
+	Branch    string
 
 	Repositories  map[string]string
 	Subcomponents []Component
@@ -182,7 +183,7 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 		}
 
 		log.Println(emoji.Sprintf(":helicopter: installing component %s with git from %s", c.Name, c.Source))
-		if err = CloneRepo(c.Source, c.Version, subcomponentPath); err != nil {
+		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
 			return err
 		}
 	}

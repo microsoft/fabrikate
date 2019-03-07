@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func CloneRepo(repo string, commit string, intoPath string) (err error) {
+func CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
 	cloneArgs := []string{
 		"clone",
 		repo,
@@ -16,10 +16,13 @@ func CloneRepo(repo string, commit string, intoPath string) (err error) {
 	if len(commit) == 0 {
 		log.Println(emoji.Sprintf(":helicopter: component requested latest commit: fast cloning at --depth 1"))
 
-		cloneArgs = append(cloneArgs, "--depth")
-		cloneArgs = append(cloneArgs, "1")
+		cloneArgs = append(cloneArgs, "--depth", "1")
 	} else {
 		log.Println(emoji.Sprintf(":helicopter: component requested specific commit: need full clone"))
+	}
+
+	if len(branch) != 0 {
+		cloneArgs = append(cloneArgs, "--branch", branch)
 	}
 
 	cloneArgs = append(cloneArgs, intoPath)
