@@ -102,6 +102,8 @@ If multiple configurations are specified, each will be applied in left to right 
 
 For example, 'fab generate prod east' will generate to a directory named prod-east.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		PrintVersion()
+
 		if len(args) < 1 || len(args) > 2 {
 			return errors.New("generate takes at one or more environment arguments, specified in priority order.")
 		}

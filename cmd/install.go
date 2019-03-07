@@ -44,6 +44,8 @@ var installCmd = &cobra.Command{
 	Short: "Installs all of the remote components specified in the current deployment tree locally",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		PrintVersion()
+
 		path := "./"
 
 		if len(args) == 1 {
