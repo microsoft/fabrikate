@@ -4,16 +4,16 @@
     "path": "./manifests",
     "hooks": {
         "before-install": [
-            "wget https://github.com/istio/istio/releases/download/1.0.5/istio-1.0.5-linux.tar.gz",
-            "tar xvf istio-1.0.5-linux.tar.gz"
+            "wget https://github.com/istio/istio/releases/download/1.0.6/istio-1.0.6-linux.tar.gz",
+            "tar xvf istio-1.0.6-linux.tar.gz"
         ],
-        "after-install": ["rm istio-1.0.5-linux.tar.gz", "rm -rf istio-1.0.5"]
+        "after-install": ["rm istio-1.0.6-linux.tar.gz", "rm -rf istio-1.0.6"]
     },
     "subcomponents": [
         {
             "name": "istio",
             "generator": "helm",
-            "path": "./istio-1.0.5/install/kubernetes/helm/istio"
+            "path": "./istio-1.0.6/install/kubernetes/helm/istio"
         }
     ]
 }
