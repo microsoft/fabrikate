@@ -18,10 +18,11 @@ func CloneRepo(repo string, commit string, intoPath string, branch string) (err 
 
 		cloneArgs = append(cloneArgs, "--depth", "1")
 	} else {
-		log.Println(emoji.Sprintf(":helicopter: component requested specific commit: need full clone"))
+		log.Println(emoji.Sprintf(":helicopter: component requested commit '%s': need full clone", commit))
 	}
 
 	if len(branch) != 0 {
+		log.Println(emoji.Sprintf(":helicopter: component requested branch '%s'", branch))
 		cloneArgs = append(cloneArgs, "--branch", branch)
 	}
 
