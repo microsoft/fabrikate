@@ -139,7 +139,9 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 
 	for name, url := range component.Repositories {
 		log.Println(emoji.Sprintf(":helicopter: adding helm repo '%s' at %s for component '%s'", name, url, component.Name))
-		err = exec.Command("helm", "repo", "add", name, url).Run()
+		if err = exec.Command("helm", "repo", "add", name, url).Run(); err != nil {
+			return err
+		}
 	}
 
 	log.Println(emoji.Sprintf(":helicopter: updating helm chart's dependencies for component '%s'", component.Name))

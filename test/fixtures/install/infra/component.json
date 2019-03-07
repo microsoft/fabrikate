@@ -5,8 +5,7 @@
             "name": "efk",
             "method": "git",
             "source": "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana",
-            "version": "4b1e02aa4be7702013a60e61e536df0e1b59abb7",
-            "branch": "master"
+            "branch": "curator_config_yaml"
         },
         {
             "name": "elasticsearch",

@@ -234,7 +234,7 @@ type ComponentIteration func(path string, component *Component) (err error)
 
 // TODO: DEPRECATION: Remove at v0.4.0
 func migrateRepoToSourceMethod(component *Component) {
-	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'repo' has been deprecated and will be removed in version 0.4.x."))
+	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Component '%s': field 'repo' has been deprecated and will be removed at version 0.3.0.", component.Name))
 	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'source' and 'method' instead."))
 	component.Source = component.Repo
 	component.Method = "git"
@@ -310,7 +310,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 				subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
 				subcomponent.LogicalPath = path.Join(component.LogicalPath, subcomponent.Name)
 
-				log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
+				log.Debugf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
 				queue = append(queue, subcomponent)
 			} else {
 				// This subcomponent is inlined, so call the componentIteration function on this component.
