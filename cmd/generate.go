@@ -30,6 +30,8 @@ func WriteGeneratedManifests(generationPath string, components []core.Component)
 		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
 		componentYAMLFilePath := path.Join(componentGenerationPath, componentYAMLFilename)
 
+		log.Info(emoji.Sprintf(":floppy_disk: Writing %s", componentYAMLFilePath))
+
 		err = ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
 		if err != nil {
 			return err
