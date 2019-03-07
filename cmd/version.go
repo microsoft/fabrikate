@@ -35,7 +35,7 @@ to quickly create a Cobra application.`,
 }
 
 func PrintVersion() {
-	log.Println("fab version 0.2.4")
+	log.Println("fab version 0.2.5")
 }
 
 func init() {
