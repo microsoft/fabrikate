@@ -1,0 +1,7 @@
+subcomponents:
+  jaeger:
+    config:
+      provisionDataStore:
+        cassandra: false
+        elasticsearch: true
+        mixed: "2"

@@ -1,0 +1,14 @@
+subcomponents:
+  jaeger:
+    config:
+      provisionDataStore:
+        elasticsearch: false
+        mixed: 1
+        slice:
+          - "astring"
+          - 1
+          - 1.0
+          - foo: 1
+            bar:
+              - "bstring"
+              - 1
