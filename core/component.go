@@ -83,12 +83,12 @@ func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 
 func (c *Component) LoadConfig(environments []string) (err error) {
 	for _, environment := range environments {
-		if err := c.Config.MergeConfigFile(environment); err != nil {
+		if err := c.Config.MergeConfigFile(c.PhysicalPath, environment); err != nil {
 			return err
 		}
 	}
 
-	return c.Config.MergeConfigFile("common")
+	return c.Config.MergeConfigFile(c.PhysicalPath, "common")
 }
 
 func (c *Component) RelativePathTo() string {
@@ -227,7 +227,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 	component := Component{
 		PhysicalPath: startingPath,
 		LogicalPath:  "./",
-		Config:       NewComponentConfig(),
+		Config:       NewComponentConfig(startingPath),
 	}
 
 	queue = append(queue, component)

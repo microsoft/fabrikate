@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/timfpark/conjungo"
@@ -17,8 +18,9 @@ type ComponentConfig struct {
 	Subcomponents map[string]ComponentConfig `yaml:"subcomponents,omitempty" json:"subcomponents,omitempty"`
 }
 
-func NewComponentConfig() ComponentConfig {
+func NewComponentConfig(path string) ComponentConfig {
 	return ComponentConfig{
+		Path:          path,
 		Config:        map[string]interface{}{},
 		Subcomponents: map[string]ComponentConfig{},
 	}
@@ -39,9 +41,8 @@ func (cc *ComponentConfig) UnmarshalYAMLConfig(environment string) (err error) {
 	return UnmarshalFile(cc.GetPath(environment), yaml.Unmarshal, &cc)
 }
 
-func (cc *ComponentConfig) MergeConfigFile(environment string) (err error) {
-	componentConfig := NewComponentConfig()
-
+func (cc *ComponentConfig) MergeConfigFile(path string, environment string) (err error) {
+	componentConfig := NewComponentConfig(path)
 	if err := componentConfig.Load(environment); err != nil {
 		return err
 	}
@@ -90,7 +91,7 @@ func (cc *ComponentConfig) SetConfig(subcomponentPath []string, path []string, v
 		}
 
 		if _, ok := subcomponentConfig.Subcomponents[subcomponentName]; !ok {
-			subcomponentConfig.Subcomponents[subcomponentName] = NewComponentConfig()
+			subcomponentConfig.Subcomponents[subcomponentName] = NewComponentConfig(".")
 		}
 
 		subcomponentConfig = subcomponentConfig.Subcomponents[subcomponentName]
@@ -110,6 +111,9 @@ func (cc *ComponentConfig) Merge(newConfig ComponentConfig) (err error) {
 
 func (cc *ComponentConfig) Write(environment string) (err error) {
 	var marshaledConfig []byte
+
+	_ = os.Mkdir(cc.Path, os.ModePerm)
+	_ = os.Mkdir(path.Join(cc.Path, "config"), os.ModePerm)
 
 	if cc.Serialization == "json" {
 		marshaledConfig, err = json.MarshalIndent(cc, "", "  ")

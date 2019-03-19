@@ -8,10 +8,11 @@ import (
 )
 
 func TestSetValue(t *testing.T) {
-	os.Chdir("../test/fixtures/set")
+	err := os.Chdir("../test/fixtures/set")
+	assert.Nil(t, err)
 
 	// malformed value assignment, should return error
-	err := Set("test", "", []string{"zoo"})
+	err = Set("test", "", []string{"zoo"})
 	assert.NotNil(t, err)
 
 	// malformed value assignment, should return error
@@ -40,5 +41,6 @@ func TestSetValue(t *testing.T) {
 	err = Set("new", "myapp.mysubapp", []string{"foo.bar=zoo"})
 	assert.Nil(t, err)
 
-	os.Chdir("../../../cmd")
+	err = os.Chdir("../../../cmd")
+	assert.Nil(t, err)
 }

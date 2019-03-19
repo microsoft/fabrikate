@@ -34,7 +34,7 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string)
 		subcomponentPath = strings.Split(subcomponent, ".")
 	}
 
-	componentConfig := core.NewComponentConfig()
+	componentConfig := core.NewComponentConfig(".")
 
 	pathValuePairs, err := SplitPathValuePairs(pathValuePairStrings)
 

@@ -20,13 +20,11 @@ func TestLoad(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
-	currentConfig := NewComponentConfig()
-	currentConfig.Path = "../test/fixtures/merge"
+	currentConfig := NewComponentConfig("../test/fixtures/merge")
 	err := currentConfig.Load("current")
 	assert.Nil(t, err)
 
-	newConfig := NewComponentConfig()
-	newConfig.Path = "../test/fixtures/merge"
+	newConfig := NewComponentConfig("../test/fixtures/merge")
 	err = newConfig.Load("new")
 	assert.Nil(t, err)
 
@@ -51,8 +49,7 @@ func TestMerge(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	config := NewComponentConfig()
-	config.Path = "../test/fixtures/load"
+	config := NewComponentConfig("../test/fixtures/load")
 
 	err := config.Load("test")
 	assert.Nil(t, err)
@@ -77,6 +74,7 @@ func TestSet(t *testing.T) {
 
 func TestWriteYAML(t *testing.T) {
 	err := os.Remove("../test/fixtures/write/config/test.yaml")
+	assert.Nil(t, err)
 
 	config := ComponentConfig{
 		Path:          "../test/fixtures/write",
@@ -103,6 +101,7 @@ func TestWriteYAML(t *testing.T) {
 
 func TestWriteJSON(t *testing.T) {
 	err := os.Remove("../test/fixtures/write/config/test.json")
+	assert.Nil(t, err)
 
 	config := ComponentConfig{
 		Path:          "../test/fixtures/write",
