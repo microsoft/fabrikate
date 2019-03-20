@@ -6,7 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
+	"github.com/kyokomi/emoji"
+	log "github.com/sirupsen/logrus"
 	"github.com/timfpark/conjungo"
 	yaml "github.com/timfpark/yaml"
 )
@@ -68,35 +71,46 @@ func (cc *ComponentConfig) Load(environment string) (err error) {
 
 func (cc *ComponentConfig) SetComponentConfig(path []string, value string) {
 	configLevel := cc.Config
+	createdNewConfig := false
 
 	for levelIndex, pathPart := range path {
 		// if this key is not the final one, we need to decend in the config.
 		if levelIndex < len(path)-1 {
 			if _, ok := configLevel[pathPart]; !ok {
+				createdNewConfig = true
 				configLevel[pathPart] = map[string]interface{}{}
 			}
 
 			configLevel = configLevel[pathPart].(map[string]interface{})
 		} else {
+			if createdNewConfig {
+				log.Info(emoji.Sprintf(":seedling: Created new value for %s", strings.Join(path, ".")))
+			}
 			configLevel[pathPart] = value
 		}
 	}
 }
 
-func (cc *ComponentConfig) SetConfig(subcomponentPath []string, path []string, value string) {
-	subcomponentConfig := *cc
+func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (subcomponentConfig ComponentConfig) {
+	subcomponentConfig = *cc
 	for _, subcomponentName := range subcomponentPath {
 		if subcomponentConfig.Subcomponents == nil {
 			subcomponentConfig.Subcomponents = map[string]ComponentConfig{}
 		}
 
 		if _, ok := subcomponentConfig.Subcomponents[subcomponentName]; !ok {
+			log.Info(emoji.Sprintf(":seedling: Creating new subcomponent configuration for %s", subcomponentName))
 			subcomponentConfig.Subcomponents[subcomponentName] = NewComponentConfig(".")
 		}
 
 		subcomponentConfig = subcomponentConfig.Subcomponents[subcomponentName]
 	}
 
+	return subcomponentConfig
+}
+
+func (cc *ComponentConfig) SetConfig(subcomponentPath []string, path []string, value string) {
+	subcomponentConfig := cc.GetSubcomponentConfig(subcomponentPath)
 	subcomponentConfig.SetComponentConfig(path, value)
 }
 
