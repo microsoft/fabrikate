@@ -13,7 +13,7 @@ import (
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	yaml "github.com/superwhiskers/yaml"
+	yaml "github.com/timfpark/yaml"
 )
 
 type Component struct {
@@ -81,35 +81,14 @@ func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 	return mergedComponent, err
 }
 
-func (c *Component) UnmarshalConfig(environment string, marshaledType string, unmarshalFunc UnmarshalFunction, config *ComponentConfig) (err error) {
-	configFilename := fmt.Sprintf("config/%s.%s", environment, marshaledType)
-	configPath := path.Join(c.PhysicalPath, configFilename)
-
-	return UnmarshalFile(configPath, unmarshalFunc, config)
-}
-
-func (c *Component) MergeConfigFile(environment string) (err error) {
-	var componentConfig ComponentConfig
-
-	err = c.UnmarshalConfig(environment, "yaml", yaml.Unmarshal, &componentConfig)
-	if err != nil {
-		err = c.UnmarshalConfig(environment, "json", json.Unmarshal, &componentConfig)
-		if err != nil {
-			return nil
-		}
-	}
-
-	return c.Config.Merge(componentConfig)
-}
-
 func (c *Component) LoadConfig(environments []string) (err error) {
 	for _, environment := range environments {
-		if err := c.MergeConfigFile(environment); err != nil {
+		if err := c.Config.MergeConfigFile(c.PhysicalPath, environment); err != nil {
 			return err
 		}
 	}
 
-	return c.MergeConfigFile("common")
+	return c.Config.MergeConfigFile(c.PhysicalPath, "common")
 }
 
 func (c *Component) RelativePathTo() string {
@@ -248,10 +227,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 	component := Component{
 		PhysicalPath: startingPath,
 		LogicalPath:  "./",
-		Config: ComponentConfig{
-			Config:        make(map[string]interface{}),
-			Subcomponents: make(map[string]ComponentConfig),
-		},
+		Config:       NewComponentConfig(startingPath),
 	}
 
 	queue = append(queue, component)
