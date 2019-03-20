@@ -14,7 +14,7 @@ func SplitPathValuePairs(pathValuePairStrings []string) (pathValuePairs []core.P
 		pathValuePairParts := strings.Split(pathValuePairString, "=")
 
 		if len(pathValuePairParts) != 2 {
-			return pathValuePairs, errors.New(fmt.Sprintf("%s is not a properly formated configuration key/value pair.", pathValuePairString))
+			return pathValuePairs, fmt.Errorf("%s is not a properly formated configuration key/value pair.", pathValuePairString)
 		}
 
 		pathValuePair := core.PathValuePair{

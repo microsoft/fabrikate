@@ -135,5 +135,9 @@ func (cc *ComponentConfig) Write(environment string) (err error) {
 		marshaledConfig, err = yaml.Marshal(cc)
 	}
 
+	if err != nil {
+		return err
+	}
+
 	return ioutil.WriteFile(cc.GetPath(environment), marshaledConfig, 0644)
 }
