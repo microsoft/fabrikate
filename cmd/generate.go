@@ -110,14 +110,14 @@ For example, 'fab generate prod east' will generate to a directory named prod-ea
 			return errors.New("generate takes at one or more environment arguments, specified in priority order.")
 		}
 
-		noValidation := cmd.Flag("no-validation").Value.String()
-		_, err := Generate("./", args, noValidation == "false")
+		validation := cmd.Flag("validate").Value.String()
+		_, err := Generate("./", args, validation == "true")
 
 		return err
 	},
 }
 
 func init() {
-	generateCmd.PersistentFlags().Bool("no-validation", false, "Do not validate generated resource manifest YAML")
+	generateCmd.PersistentFlags().Bool("validate", false, "Validate generated resource manifest YAML")
 	rootCmd.AddCommand(generateCmd)
 }
