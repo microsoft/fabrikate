@@ -73,8 +73,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestWriteYAML(t *testing.T) {
-	err := os.Remove("../test/fixtures/write/config/test.yaml")
-	assert.Nil(t, err)
+	_ = os.Remove("../test/fixtures/write/config/test.yaml")
 
 	config := ComponentConfig{
 		Path:          "../test/fixtures/write",
@@ -91,7 +90,7 @@ func TestWriteYAML(t *testing.T) {
 		},
 	}
 
-	err = config.Write("test")
+	err := config.Write("test")
 	assert.Nil(t, err)
 
 	configContents, err := ioutil.ReadFile("../test/fixtures/write/config/test.yaml")
@@ -100,8 +99,7 @@ func TestWriteYAML(t *testing.T) {
 }
 
 func TestWriteJSON(t *testing.T) {
-	err := os.Remove("../test/fixtures/write/config/test.json")
-	assert.Nil(t, err)
+	_ = os.Remove("../test/fixtures/write/config/test.json")
 
 	config := ComponentConfig{
 		Path:          "../test/fixtures/write",
@@ -118,7 +116,7 @@ func TestWriteJSON(t *testing.T) {
 		},
 	}
 
-	err = config.Write("test")
+	err := config.Write("test")
 	assert.Nil(t, err)
 
 	configContents, err := ioutil.ReadFile("../test/fixtures/write/config/test.json")
