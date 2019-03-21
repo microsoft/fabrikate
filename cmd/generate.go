@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -102,13 +101,9 @@ var generateCmd = &cobra.Command{
 
 If multiple configurations are specified, each will be applied in left to right priority order at each level of the definition, and the final generated environment directory will have the form <config1>-<config2>-...-<configN>.
 
-For example, 'fab generate prod east' will generate to a directory named prod-east.`,
+For example, 'fab generate prod east' will generate to a directory named prod-east and 'prod' will take priority over 'east'.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		PrintVersion()
-
-		if len(args) < 1 || len(args) > 2 {
-			return errors.New("generate takes at one or more environment arguments, specified in priority order.")
-		}
 
 		validation := cmd.Flag("validate").Value.String()
 		_, err := Generate("./", args, validation == "true")
