@@ -74,6 +74,10 @@ func Generate(startPath string, environments []string, validate bool) (component
 	}
 
 	environmentName := strings.Join(environments, "-")
+	if len(environmentName) == 0 {
+		environmentName = "common"
+	}
+
 	generationPath := path.Join(startPath, "generated", environmentName)
 
 	if err = WriteGeneratedManifests(generationPath, components); err != nil {
