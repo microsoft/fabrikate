@@ -5,12 +5,13 @@
             "name": "efk",
             "method": "git",
             "source": "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana",
-            "branch": "curator_config_yaml"
+            "branch": "master"
         },
         {
             "name": "elasticsearch",
             "generator": "helm",
-            "repo": "https://github.com/helm/charts",
+            "source": "https://github.com/helm/charts",
+            "method": "git",
             "path": "stable/elasticsearch",
             "version": "b23ce6af309bfe25d4d485e85b66ce63475070d7"
         }

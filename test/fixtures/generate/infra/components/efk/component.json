@@ -6,25 +6,29 @@
         {
             "name": "elasticsearch",
             "generator": "helm",
-            "repo": "https://github.com/helm/charts",
+            "source": "https://github.com/helm/charts",
+            "method": "git",
             "path": "stable/elasticsearch"
         },
         {
             "name": "elasticsearch-curator",
             "generator": "helm",
-            "repo": "https://github.com/helm/charts",
+            "source": "https://github.com/helm/charts",
+            "method": "git",
             "path": "stable/elasticsearch-curator"
         },
         {
             "name": "fluentd-elasticsearch",
             "generator": "helm",
-            "repo": "https://github.com/helm/charts",
+            "source": "https://github.com/helm/charts",
+            "method": "git",
             "path": "stable/fluentd-elasticsearch"
         },
         {
             "name": "kibana",
             "generator": "helm",
-            "repo": "https://github.com/helm/charts",
+            "source": "https://github.com/helm/charts",
+            "method": "git",
             "path": "stable/kibana"
         }
     ]
