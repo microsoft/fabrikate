@@ -1,12 +1,13 @@
 {
-  "config": {
-    "foo": "bar"
-  },
-  "subcomponents": {
-    "myapp": {
-      "config": {
-        "zoo": "zar"
-      }
+    "config": {
+        "foo": "bar"
+    },
+    "subcomponents": {
+        "myapp": {
+            "namespace": "myapp",
+            "config": {
+                "zoo": "zar"
+            }
+        }
     }
-  }
 }

@@ -8,7 +8,6 @@
             "subcomponents": {
                 "elasticsearch": {
                     "config": {
-                        "namespace": "elasticsearch",
                         "master": {
                             "persistence": {
                                 "storageClass": "default",
@@ -17,15 +16,13 @@
                         }
                     }
                 },
-                "fluentd": {
+                "fluentd-elasticsearch": {
                     "config": {
-                        "namespace": "fluentd",
                         "elasticsearch_client_endpoint": "elasticsearch-client.elasticsearch.svc.cluster.local"
                     }
                 },
                 "kibana": {
                     "config": {
-                        "namespace": "kibana",
                         "elasticsearch_client_endpoint": "elasticsearch-client.elasticsearch.svc.cluster.local"
                     }
                 }

@@ -17,6 +17,7 @@ func TestLoad(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "bar", config.Config["foo"])
+	assert.Equal(t, "myapp", config.Namespace)
 }
 
 func TestMerge(t *testing.T) {

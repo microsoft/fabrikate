@@ -2,13 +2,14 @@
     "config": {},
     "subcomponents": {
         "elasticsearch": {
-            "config": {
-                "namespace": "elasticsearch"
-            }
+            "namespace": "elasticsearch",
+            "injectNamespace": true,
+            "config": {}
         },
         "elasticsearch-curator": {
+            "namespace": "elasticsearch",
+            "injectNamespace": true,
             "config": {
-                "namespace": "elasticsearch",
                 "config": {
                     "elasticsearch": {
                         "hosts": [
@@ -19,21 +20,23 @@
             }
         },
         "fluentd-elasticsearch": {
+            "namespace": "fluentd",
+            "injectNamespace": true,
             "config": {
                 "elasticsearch": {
                     "host": "elasticsearch-client.elasticsearch.svc.cluster.local"
-                },
-                "namespace": "fluentd"
+                }
             }
         },
         "kibana": {
+            "namespace": "kibana",
+            "injectNamespace": true,
             "config": {
                 "files": {
                     "kibana.yml": {
                         "elasticsearch.url": "http://elasticsearch-client.elasticsearch.svc.cluster.local:9200"
                     }
-                },
-                "namespace": "kibana"
+                }
             }
         }
     }

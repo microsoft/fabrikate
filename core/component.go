@@ -213,7 +213,7 @@ type ComponentIteration func(path string, component *Component) (err error)
 
 // TODO: DEPRECATION: Remove at v0.4.0
 func migrateRepoToSourceMethod(component *Component) {
-	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Component '%s': field 'repo' has been deprecated and will be removed at version 0.3.0.", component.Name))
+	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Component '%s': field 'repo' has been deprecated and will be removed at version 0.4.0.", component.Name))
 	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'source' and 'method' instead."))
 	component.Source = component.Repo
 	component.Method = "git"
@@ -269,6 +269,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 		log.Debugf("Iterating component %s with config:\n%s", component.Name, string(configYAML))
 		for _, subcomponent := range component.Subcomponents {
 			subcomponent.Config = component.Config.Subcomponents[subcomponent.Name]
+
 			subcomponentConfigYAML, err := yaml.Marshal(subcomponent.Config)
 			if err != nil {
 				return nil, err
