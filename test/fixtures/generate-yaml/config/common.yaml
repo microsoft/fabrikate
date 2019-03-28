@@ -1,8 +1,9 @@
 config:
 subcomponents:
   prometheus: 
+    namespace: "prometheus"
+    injectNamespace: true
     config:
-      namespace: "prometheus"
       adminUser: "ops"
       alertmanager:
         persistentVolume:
@@ -11,8 +12,9 @@ subcomponents:
         persistentVolume:
           storageClass": "default"
   grafana: 
+    namespace: "grafana"
+    injectNamespace: true
     config: 
-      namespace: "grafana"
       datasources: 
         datasources.yaml:
           apiVersion: 1

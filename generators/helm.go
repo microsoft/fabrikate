@@ -80,13 +80,10 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 
 	name := component.Name
-	if component.Config.Config["name"] != nil {
-		name = component.Config.Config["name"].(string)
-	}
 
 	namespace := "default"
-	if component.Config.Config["namespace"] != nil {
-		namespace = component.Config.Config["namespace"].(string)
+	if component.Config.Namespace != "" {
+		namespace = component.Config.Namespace
 	}
 
 	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", name, "--namespace", namespace).Output()
@@ -101,9 +98,12 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 
 	stringManifests := string(output)
 
-	// some helm templates expect install to inject namespace, so if namespace doesn't exist on resource manifests, manually inject it.
-	if component.Config.Config["namespace"] != nil {
-		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Config["namespace"].(string))
+	// helm template does not inject namespace unless chart directly provides support for it: https://github.com/helm/helm/issues/3553
+	// some helm templates expect Tiller to inject namespace, so enable Fabrikate component designer to
+	// opt into injecting these namespaces manually.  We should reassess if this is necessary after Helm 3 is released and client side
+	// templating really becomes a first class function in Helm.
+	if component.Config.InjectNamespace && component.Config.InjectNamespace {
+		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Namespace)
 	}
 
 	_ = exec.Command("rm", absOverriddenPath).Run()

@@ -15,10 +15,12 @@ import (
 )
 
 type ComponentConfig struct {
-	Path          string                     `yaml:"-" json:"-"`
-	Serialization string                     `yaml:"-" json:"-"`
-	Config        map[string]interface{}     `yaml:"config,omitempty" json:"config,omitempty"`
-	Subcomponents map[string]ComponentConfig `yaml:"subcomponents,omitempty" json:"subcomponents,omitempty"`
+	Path            string                     `yaml:"-" json:"-"`
+	Serialization   string                     `yaml:"-" json:"-"`
+	Namespace       string                     `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+	InjectNamespace bool                       `yaml:"injectNamespace,omitempty" json:"injectNamespace,omitempty"`
+	Config          map[string]interface{}     `yaml:"config,omitempty" json:"config,omitempty"`
+	Subcomponents   map[string]ComponentConfig `yaml:"subcomponents,omitempty" json:"subcomponents,omitempty"`
 }
 
 func NewComponentConfig(path string) ComponentConfig {
@@ -114,11 +116,26 @@ func (cc *ComponentConfig) SetConfig(subcomponentPath []string, path []string, v
 	subcomponentConfig.SetComponentConfig(path, value)
 }
 
+func (cc *ComponentConfig) MergeNamespaces(newConfig ComponentConfig) ComponentConfig {
+	if cc.Namespace == "" {
+		cc.Namespace = newConfig.Namespace
+		cc.InjectNamespace = newConfig.InjectNamespace
+	}
+
+	for key, config := range cc.Subcomponents {
+		cc.Subcomponents[key] = config.MergeNamespaces(newConfig.Subcomponents[key])
+	}
+
+	return *cc
+}
+
 func (cc *ComponentConfig) Merge(newConfig ComponentConfig) (err error) {
 	options := conjungo.NewOptions()
 	options.Overwrite = false
 
 	err = conjungo.Merge(cc, newConfig, options)
+
+	cc.MergeNamespaces(newConfig)
 
 	return err
 }

@@ -1,3 +1,4 @@
+namespace: myapp
 config:
   foo: bar
 subcomponents:

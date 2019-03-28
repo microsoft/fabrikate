@@ -99,8 +99,9 @@ With generalized helm charts like the ones used here, its often necessary to pro
 config:
 subcomponents:
   elasticsearch:
+    namespace: elasticsearch
+    injectNamespace: true
     config:
-      namespace: elasticsearch
   elasticsearch-curator:
     config:
       namespace: elasticsearch
@@ -113,13 +114,15 @@ subcomponents:
             port: 9200
             use_ssl: True
   fluentd-elasticsearch:
+    namespace: fluentd
+    injectNamespace: true
     config:
-      namespace: fluentd
       elasticsearch:
         host: "elasticsearch-client.elasticsearch.svc.cluster.local"
   kibana:
+    namespace: kibana
+    injectNamespace: true
     config:
-      namespace: kibana
       files:
         kibana.yml:
           elasticsearch.url: "http://elasticsearch-client.elasticsearch.svc.cluster.local:9200"
