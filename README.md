@@ -1,5 +1,7 @@
 # fabrikate
 
+[![Build Status](https://tpark.visualstudio.com/fabrikate/_apis/build/status/fabrikate-cicd?branchName=master)](https://tpark.visualstudio.com/fabrikate/_build/latest?definitionId=35&branchName=master)
+
 Fabrikate is a tool to make operating Kubernetes clusters with a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) workflow more productive. It allows you to write [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) resource definitions and configuration for multiple environments, capture common resource definitions into abstracted and shareable components, and enable a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment workflow that both simplifies and makes deployments more auditable.
 
 In particular, Fabrikate simplifies the frontend of the GitOps workflow: it takes a high level description of your deployment, a target environment configuration (eg. `qa` or `prod`), and renders the Kubernetes resource manifests for that deployment. It is intended to run as part of a CI/CD pipeline such that with every commit to your high level deployment definition triggers the generation of Kubernetes resource manifests that an in-cluster GitOps pod like [Weaveworks' Flux](https://github.com/weaveworks/flux) watches and reconciles with the current set of applied resource manifests in your Kubernetes cluster.
