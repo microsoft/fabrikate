@@ -53,7 +53,11 @@ steps:
 
 - script: |
     golangci-lint run
+  workingDirectory: '$(modulePath)'
+  displayName: 'go lint'
+
+- script: |
     go test -v -race ./core
     go test -v -race ./cmd
   workingDirectory: '$(modulePath)'
-  displayName: 'go lint and test'
+  displayName: 'go test'
