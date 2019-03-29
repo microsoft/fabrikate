@@ -1,19 +1,5 @@
 trigger:
   batch: true
-  branches:
-    include:
-    - '*'
-  paths:
-    include:
-    - '*'
-pr:
-  autoCancel: false
-  branches:
-    include:
-    - '*'
-  paths:
-    include:
-    - '*'
 
 pool:
   vmImage: 'Ubuntu-16.04'
