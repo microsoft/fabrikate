@@ -20,7 +20,7 @@ steps:
     mv !(gopath) '$(modulePath)'
     echo '##vso[task.prependpath]$(GOBIN)'
     echo '##vso[task.prependpath]$(GOROOT)/bin'
-  displayName: 'set up go workspace'
+  displayName: 'Set up Go workspace'
 
 - script: |
     HELM_URL=https://storage.googleapis.com/kubernetes-helm
@@ -29,21 +29,21 @@ steps:
     tar xzfv ${HELM_TGZ}
     PATH=`pwd`/linux-amd64/:$PATH
     helm init --client-only
-  displayName: 'install helm'
+  displayName: 'Install helm'
 
 - script: |
     go get github.com/golangci/golangci-lint/cmd/golangci-lint
     go get -v -t -d ./...
   workingDirectory: '$(modulePath)'
-  displayName: 'go get dependencies'
+  displayName: 'Get Go dependencies'
 
 - script: |
     golangci-lint run
   workingDirectory: '$(modulePath)'
-  displayName: 'go lint'
+  displayName: 'Lint'
 
 - script: |
     go test -v -race ./core
     go test -v -race ./cmd
   workingDirectory: '$(modulePath)'
-  displayName: 'go test'
+  displayName: 'Test'
