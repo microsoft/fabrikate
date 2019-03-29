@@ -102,7 +102,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	// some helm templates expect Tiller to inject namespace, so enable Fabrikate component designer to
 	// opt into injecting these namespaces manually.  We should reassess if this is necessary after Helm 3 is released and client side
 	// templating really becomes a first class function in Helm.
-	if component.Config.InjectNamespace && component.Config.InjectNamespace {
+	if component.Config.InjectNamespace && component.Config.Namespace != "" {
 		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Namespace)
 	}
 
