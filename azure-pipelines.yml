@@ -1,0 +1,49 @@
+trigger:
+  batch: true
+
+pool:
+  vmImage: 'Ubuntu-16.04'
+
+variables:
+  GOBIN:  '$(GOPATH)/bin' # Go binaries path
+  GOROOT: '/usr/local/go1.11' # Go installation path
+  GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
+  modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+
+steps:
+- script: |
+    mkdir -p '$(GOBIN)'
+    mkdir -p '$(GOPATH)/pkg'
+    mkdir -p '$(modulePath)'
+    shopt -s extglob
+    shopt -s dotglob
+    mv !(gopath) '$(modulePath)'
+    echo '##vso[task.prependpath]$(GOBIN)'
+    echo '##vso[task.prependpath]$(GOROOT)/bin'
+  displayName: 'Set up Go workspace'
+
+- script: |
+    HELM_URL=https://storage.googleapis.com/kubernetes-helm
+    HELM_TGZ=helm-v2.13.1-linux-amd64.tar.gz
+    wget -q ${HELM_URL}/${HELM_TGZ}
+    tar xzfv ${HELM_TGZ}
+    PATH=`pwd`/linux-amd64/:$PATH
+    helm init --client-only
+  displayName: 'Install helm'
+
+- script: |
+    go get github.com/golangci/golangci-lint/cmd/golangci-lint
+    go get -v -t -d ./...
+  workingDirectory: '$(modulePath)'
+  displayName: 'Get Go dependencies'
+
+- script: |
+    golangci-lint run
+  workingDirectory: '$(modulePath)'
+  displayName: 'Lint'
+
+- script: |
+    go test -v -race ./core
+    go test -v -race ./cmd
+  workingDirectory: '$(modulePath)'
+  displayName: 'Test'

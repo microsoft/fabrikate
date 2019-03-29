@@ -28,8 +28,7 @@ func TestSetValue(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create new environment
-	err = os.Remove("./config/new.yaml")
-	assert.Nil(t, err)
+	_ = os.Remove("./config/new.yaml")
 	err = Set("new", "myapp", []string{"zoo.zii=zaa"})
 	assert.Nil(t, err)
 
