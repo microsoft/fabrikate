@@ -1,0 +1,54 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - '*'
+  paths:
+    include:
+    - '*'
+pr:
+  autoCancel: false
+  branches:
+    include:
+    - '*'
+  paths:
+    include:
+    - '*'
+
+pool:
+  vmImage: 'Ubuntu-16.04'
+
+variables:
+  GOBIN:  '$(GOPATH)/bin' # Go binaries path
+  GOROOT: '/usr/local/go1.11' # Go installation path
+  GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
+  modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+
+steps:
+- script: |
+    mkdir -p '$(GOBIN)'
+    mkdir -p '$(GOPATH)/pkg'
+    mkdir -p '$(modulePath)'
+    shopt -s extglob
+    shopt -s dotglob
+    mv !(gopath) '$(modulePath)'
+    echo '##vso[task.prependpath]$(GOBIN)'
+    echo '##vso[task.prependpath]$(GOROOT)/bin'
+  displayName: 'Set up Go workspace'
+
+- script: go get -v -t -d ./...
+  workingDirectory: '$(modulePath)'
+  displayName: 'go get dependencies'
+
+- script: |
+    go get github.com/golangci/golangci-lint/cmd/golangci-lint
+    go get -v -t -d ./...
+  workingDirectory: '$(modulePath)'
+  displayName: 'go get dependencies'
+
+- script: |
+    golangci-lint run
+    go test -v -race ./core
+    go test -v -race ./cmd
+  workingDirectory: '$(modulePath)'
+  displayName: 'go lint and test'
