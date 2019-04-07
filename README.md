@@ -185,6 +185,10 @@ $ cd generated/azure
 $ kubectl apply --recursive -f .
 ```
 
+## Community
+
+[Please join us on Slack](https://bedrockco.slack.com) for discussion and/or questions.
+
 ## Bedrock
 
 As one final note, we have also open sourced a project that helps you operationalize Kubernetes clusters with a GitOps deployment pipeline called [Bedrock](https://github.com/Microsoft/bedrock).  Bedrock provides automation for creating Kubernetes clusters, installs a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging Flux, and provides automation for building a CI/CD pipeline that automatically builds resource manifests from high level definitions like the example one we have been considering here.
