@@ -235,13 +235,11 @@ $ cd generated/prod-azure
 $ kubectl apply --recursive -f .
 ```
 
-<<<<<<< HEAD
+This will cause a very large number of containers to spin up (which will take time to start completely as Kubernetes provisions persistent storage and downloads the containers themselves), but after three or four minutes, you should see the full observability stack and Microservices running in your cluster.
+
 ## Community
 
 [Please join us on Slack](https://publicslack.com/slacks/https-bedrockco-slack-com/invites/new) for discussion and/or questions.
-=======
-This will cause a very large number of containers to spin up (which will take time to start completely as Kubernetes provisions persistent storage and downloads the containers themselves), but after three or four minutes, you should see the full observability stack and Microservices running in your cluster.
->>>>>>> Revise documentation to include add function
 
 ## Bedrock
 
