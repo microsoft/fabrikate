@@ -243,7 +243,7 @@ This will cause a very large number of containers to spin up (which will take ti
 
 ## Bedrock
 
-We maintain a sister project to this one that makes operationalizing Kuberentes clusters with a GitOps deployment workflow easier called [Bedrock](https://github.com/Microsoft/bedrock).  Bedrock provides automation for creating Kubernetes clusters, automates deployment of a  a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from high level definitions like the example one we have been considering here.
+We maintain a sister project to this one that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier called [Bedrock](https://github.com/Microsoft/bedrock).  Bedrock provides automation for creating Kubernetes clusters, automates deployment of a  a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from high level definitions like the example one we have been considering here.
 
 ##  Contributing
 

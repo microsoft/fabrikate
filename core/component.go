@@ -17,24 +17,24 @@ import (
 )
 
 type Component struct {
-	Name      string
-	Config    ComponentConfig
-	Generator string
-	Hooks     map[string][]string
-	Source    string
-	Method    string
-	Path      string
-	Repo      string
-	Version   string
-	Branch    string
+	Name          string              `yaml:"name" json:"name"`
+	Config        ComponentConfig     `yaml:"-" json:"-"`
+	Generator     string              `yaml:"generator,omitempty" json:"generator,omitempty"`
+	Hooks         map[string][]string `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	Serialization string              `yaml:"-" json:"-"`
+	Source        string              `yaml:"source,omitempty" json:"source,omitempty"`
+	Method        string              `yaml:"method,omitempty" json:"method,omitempty"`
+	Path          string              `yaml:"path,omitempty" json:"path,omitempty"`
+	Version       string              `yaml:"verson,omitempty" json:"verson,omitempty"`
+	Branch        string              `yaml:"branch,omitempty" json:"branch,omitempty"`
 
-	Repositories  map[string]string
-	Subcomponents []Component
+	Repositories  map[string]string `yaml:"repositories,omitempty" json:"repositories,omitempty"`
+	Subcomponents []Component       `yaml:"subcomponents,omitempty" json:"subcomponents,omitempty"`
 
-	PhysicalPath string
-	LogicalPath  string
+	PhysicalPath string `yaml:"-" json:"-"`
+	LogicalPath  string `yaml:"-" json:"-"`
 
-	Manifest string
+	Manifest string `yaml:"-" json:"-"`
 }
 
 type UnmarshalFunction func(in []byte, v interface{}) error
@@ -65,13 +65,17 @@ func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc Unmar
 func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &mergedComponent)
+
 	if err != nil {
 		err = c.UnmarshalComponent("json", json.Unmarshal, &mergedComponent)
 		if err != nil {
-			errorMessage := fmt.Sprintf("Error loading %s: %s", c.PhysicalPath, err)
-			log.Errorln(errorMessage)
+			errorMessage := fmt.Sprintf("Error loading component in path %s", c.PhysicalPath)
 			return mergedComponent, errors.Errorf(errorMessage)
+		} else {
+			mergedComponent.Serialization = "json"
 		}
+	} else {
+		mergedComponent.Serialization = "yaml"
 	}
 
 	mergedComponent.PhysicalPath = c.PhysicalPath
@@ -211,15 +215,6 @@ func (c *Component) Generate(generator Generator) (err error) {
 
 type ComponentIteration func(path string, component *Component) (err error)
 
-// TODO: DEPRECATION: Remove at v0.4.0
-func migrateRepoToSourceMethod(component *Component) {
-	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Component '%s': field 'repo' has been deprecated and will be removed at version 0.4.0.", component.Name))
-	log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'source' and 'method' instead."))
-	component.Source = component.Repo
-	component.Method = "git"
-	component.Repo = ""
-}
-
 // IterateComponentTree is a general function used for iterating a deployment tree for installing, generating, etc.
 func IterateComponentTree(startingPath string, environments []string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
 	queue := make([]Component, 0)
@@ -242,11 +237,6 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 		component, err := component.LoadComponent()
 		if err != nil {
 			return nil, err
-		}
-
-		// TODO: DEPRECATION: Remove at v0.4.0
-		if len(component.Repo) > 0 {
-			migrateRepoToSourceMethod(&component)
 		}
 
 		// 2. Load the config for this Component
@@ -275,11 +265,6 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 				return nil, err
 			}
 
-			// TODO: DEPRECATION: Remove at v0.4.0
-			if len(subcomponent.Repo) > 0 {
-				migrateRepoToSourceMethod(&subcomponent)
-			}
-
 			log.Debugf("Iterating subcomponent '%s' with config:\n%s", subcomponent.Name, string(subcomponentConfigYAML))
 			if len(subcomponent.Generator) == 0 && len(subcomponent.Source) > 0 {
 				// This subcomponent is not inlined, so add it to the queue for iteration.
@@ -305,4 +290,27 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 	}
 
 	return completedComponents, nil
+}
+
+func (c *Component) Write() (err error) {
+	var marshaledComponent []byte
+
+	_ = os.Mkdir(c.PhysicalPath, os.ModePerm)
+
+	if c.Serialization == "json" {
+		marshaledComponent, err = json.MarshalIndent(c, "", "  ")
+	} else {
+		marshaledComponent, err = yaml.Marshal(c)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	filename := fmt.Sprintf("component.%s", c.Serialization)
+	path := path.Join(c.PhysicalPath, filename)
+
+	log.Info(emoji.Sprintf(":floppy_disk: Writing %s", path))
+
+	return ioutil.WriteFile(path, marshaledComponent, 0644)
 }
