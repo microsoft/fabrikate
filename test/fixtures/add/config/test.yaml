@@ -1,0 +1,9 @@
+config:
+  fod: rad
+  foo: faa
+subcomponents:
+  myapp:
+    config:
+      fod: rad
+      foo: rad
+      zoo: zaa

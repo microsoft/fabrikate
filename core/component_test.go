@@ -73,3 +73,16 @@ func TestIteratingDefinition(t *testing.T) {
 	assert.Equal(t, results[2].PhysicalPath, "../test/fixtures/iterator/infra/components/efk")
 	assert.Equal(t, results[2].LogicalPath, "infra/efk")
 }
+
+func TestWriteComponent(t *testing.T) {
+	component := Component{
+		PhysicalPath: "../test/fixtures/install",
+		LogicalPath:  "",
+	}
+
+	component, err := component.LoadComponent()
+	assert.Nil(t, err)
+
+	err = component.Write()
+	assert.Nil(t, err)
+}

@@ -56,7 +56,7 @@ func (hg *HelmGenerator) MakeHelmRepoPath(component *core.Component) string {
 }
 
 func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, err error) {
-	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Repo))
+	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Source))
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
