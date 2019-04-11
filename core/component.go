@@ -25,7 +25,7 @@ type Component struct {
 	Source        string              `yaml:"source,omitempty" json:"source,omitempty"`
 	Method        string              `yaml:"method,omitempty" json:"method,omitempty"`
 	Path          string              `yaml:"path,omitempty" json:"path,omitempty"`
-	Version       string              `yaml:"verson,omitempty" json:"verson,omitempty"`
+	Version       string              `yaml:"version,omitempty" json:"version,omitempty"`
 	Branch        string              `yaml:"branch,omitempty" json:"branch,omitempty"`
 
 	Repositories  map[string]string `yaml:"repositories,omitempty" json:"repositories,omitempty"`
