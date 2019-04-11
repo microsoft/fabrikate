@@ -8,24 +8,24 @@ In particular, Fabrikate simplifies the frontend of the GitOps workflow: it take
 
 ## Getting Started
 
-First, install the latest `fab` cli on your local machine from [our releases](https://github.com/Microsoft/fabrikate/releases), unzipping the appropriate binary and placing `fab` in your path.  The `fab` cli tool, `helm`, and `git` are the only tools you need to have installed.
+First, install the latest `fab` cli on your local machine from [our releases](https://github.com/Microsoft/fabrikate/releases), unzipping the appropriate binary and placing `fab` in your path. The `fab` cli tool, `helm`, and `git` are the only tools you need to have installed.
 
 Let's walk through building an example Fabrikate definition to see how it works in practice. First off, let's create a directory for our cluster definition:
 
-```
+```sh
 $ mkdir mycluster
 $ cd mycluster
 ```
 
 The first thing I want to do is pull in a common set of observability and service mesh platforms so I can operate this cluster. My organization has settled on a [cloud native](https://github.com/timfpark/fabrikate-cloud-native) stack, and so I'd like to add that in immediately:
 
-```
+```sh
 $ fab add cloud-native --source https://github.com/timfpark/fabrikate-cloud-native --type component
 ```
 
 Since our directory was empty, this creates a component.yaml file in this directory that looks like this:
 
-```
+```yaml
 name: "mycluster"
 subcomponents:
   - name: "cloud-native"
@@ -39,7 +39,7 @@ The `cloud-native` component we added is a remote component backed by a git repo
 
 Looking inside the this component at its own root `component.yaml` definition, you can see that it itself uses a set of remote components:
 
-```
+```yaml
 name: "cloud-native"
 subcomponents:
   - name: "elasticsearch-fluentd-kibana"
@@ -63,47 +63,47 @@ Fabrikate recursively iterates component definitions, so as it processes this lo
 
 Let's look at the component definition for the [elasticsearch-fluentd-kibana component](https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana/blob/master/component.json):
 
-```
+```json
 {
-    "name": "elasticsearch-fluentd-kibana",
-    "generator": "static",
-    "path": "./manifests",
-    "subcomponents": [
-        {
-            "name": "elasticsearch",
-            "generator": "helm",
-            "repo": "https://github.com/helm/charts",
-            "path": "stable/elasticsearch"
-        },
-        {
-            "name": "elasticsearch-curator",
-            "generator": "helm",
-            "repo": "https://github.com/helm/charts",
-            "path": "stable/elasticsearch-curator"
-        },
-        {
-            "name": "fluentd-elasticsearch",
-            "generator": "helm",
-            "repo": "https://github.com/helm/charts",
-            "path": "stable/fluentd-elasticsearch"
-        },
-        {
-            "name": "kibana",
-            "generator": "helm",
-            "repo": "https://github.com/helm/charts",
-            "path": "stable/kibana"
-        }
-    ]
+  "name": "elasticsearch-fluentd-kibana",
+  "generator": "static",
+  "path": "./manifests",
+  "subcomponents": [
+    {
+      "name": "elasticsearch",
+      "generator": "helm",
+      "repo": "https://github.com/helm/charts",
+      "path": "stable/elasticsearch"
+    },
+    {
+      "name": "elasticsearch-curator",
+      "generator": "helm",
+      "repo": "https://github.com/helm/charts",
+      "path": "stable/elasticsearch-curator"
+    },
+    {
+      "name": "fluentd-elasticsearch",
+      "generator": "helm",
+      "repo": "https://github.com/helm/charts",
+      "path": "stable/fluentd-elasticsearch"
+    },
+    {
+      "name": "kibana",
+      "generator": "helm",
+      "repo": "https://github.com/helm/charts",
+      "path": "stable/kibana"
+    }
+  ]
 }
 ```
 
-First, we see that components can be defined in JSON as well as YAML (as you prefer).  
+First, we see that components can be defined in JSON as well as YAML (as you prefer).
 
 Secondly, we see that that this component generates resource definitions. In particular, it will emit a set of static manifests from the path `./manifests`, and generate the set of resource manifests specified by the inlined [Helm templates](https://helm.sh/) definitions as it it iterates your deployment definitions.
 
-With generalized helm charts like the ones used here, its often necessary to provide them with configuration values that vary by environment. This component provides a reasonable set of defaults for its subcomponents in `config/common.yaml`.  Since this component is providing these four logging subsystems together as a "stack", or preconfigured whole, we can provide configuration to higher level parts based on this knowledge:
+With generalized helm charts like the ones used here, its often necessary to provide them with configuration values that vary by environment. This component provides a reasonable set of defaults for its subcomponents in `config/common.yaml`. Since this component is providing these four logging subsystems together as a "stack", or preconfigured whole, we can provide configuration to higher level parts based on this knowledge:
 
-```
+```yaml
 config:
 subcomponents:
   elasticsearch:
@@ -144,7 +144,7 @@ $ fab set azure --subcomponent cloud-native.elasticsearch data.persistence.stora
 
 This creates a file called `config/azure.yaml` that looks like this:
 
-```
+```yaml
 subcomponents:
   cloud-native:
     subcomponents:
@@ -158,7 +158,7 @@ subcomponents:
               storageClass: managed-premium
 ```
 
-Naturally, an observability stack is just the beginning, and let's say our application is a set of microservices that we want to deploy.  Furthermore, let's assume that we want to be able to split the incoming traffic for these services between `canary` and `stable` tiers with [Istio](https://istio.io) so that we can more safely launch new versions of the service.  
+Naturally, an observability stack is just the beginning, and let's say our application is a set of microservices that we want to deploy. Furthermore, let's assume that we want to be able to split the incoming traffic for these services between `canary` and `stable` tiers with [Istio](https://istio.io) so that we can more safely launch new versions of the service.
 
 There is a Fabrikate component for that called [fabrikate-istio-service](https://github.com/timfpark/fabrikate-istio-service) that we can leverage to add this service, so let's do just that:
 
@@ -166,11 +166,10 @@ There is a Fabrikate component for that called [fabrikate-istio-service](https:/
 $ fab add simple-service --source https://github.com/timfpark/fabrikate-istio-service --type component
 ```
 
-This component creates these traffic split services using the config applied to it.  Let's create a `prod` config that does this for a `prod` cluster by creating `config/prod.yaml` and placing the following in it:
+This component creates these traffic split services using the config applied to it. Let's create a `prod` config that does this for a `prod` cluster by creating `config/prod.yaml` and placing the following in it:
 
-```
+```yaml
 subcomponents:
-
   simple-service:
     namespace: services
     config:
@@ -180,7 +179,6 @@ subcomponents:
         name: simple-service
         port: 80
       tiers:
-
         canary:
           image: "docker.io/timfpark/simpleservice:671"
           replicas: 1
@@ -208,21 +206,21 @@ subcomponents:
               memory: "512Mi"
 ```
 
-This defines a service that is exposed on the cluster via a particular gateway and dns name and port.  It also defines a traffic split between two backend tiers: `canary` (10%) and `stable` (90%).  Within these tiers, we also define the number of replicas and the resources they are allowed to use, along with the container that is deployed in them.
+This defines a service that is exposed on the cluster via a particular gateway and dns name and port. It also defines a traffic split between two backend tiers: `canary` (10%) and `stable` (90%). Within these tiers, we also define the number of replicas and the resources they are allowed to use, along with the container that is deployed in them.
 
 From here we could add definitions for all of our microservices, but in the interest of keeping this short, we'll just do one of the services here.
 
-With this, we have a functionally complete Fabrikate definition for our deployment.  Let's now see how we can use Fabriakte to generate resource manifests for it.
+With this, we have a functionally complete Fabrikate definition for our deployment. Let's now see how we can use Fabriakte to generate resource manifests for it.
 
 First, let's install the remote components and helm charts:
 
-```
+```sh
 $ fab install
 ```
 
 This downloads all of the required components and charts locally. With those installed, we can now generate the manifests for our deployment with:
 
-```
+```sh
 $ fab generate prod azure
 ```
 
@@ -230,7 +228,7 @@ This will iterate through our deployment definition, collect configuration value
 
 These manifests are meant to be generated as part of a CI / CD pipeline and applied from a pod within the cluster like [Flux](https://github.com/weaveworks/flux), but if you have a Kubernetes cluster up and running you can also apply them directly with:
 
-```
+```sh
 $ cd generated/prod-azure
 $ kubectl apply --recursive -f .
 ```
@@ -243,11 +241,11 @@ This will cause a very large number of containers to spin up (which will take ti
 
 ## Bedrock
 
-We maintain a sister project to this one that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier called [Bedrock](https://github.com/Microsoft/bedrock).  Bedrock provides automation for creating Kubernetes clusters, automates deployment of a  a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from high level definitions like the example one we have been considering here.
+We maintain a sister project to this one that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier called [Bedrock](https://github.com/Microsoft/bedrock). Bedrock provides automation for creating Kubernetes clusters, automates deployment of a a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from high level definitions like the example one we have been considering here.
 
-##  Contributing
+## Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit https://cla.microsoft.com.
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit https://cla.microsoft.com.
 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
 
