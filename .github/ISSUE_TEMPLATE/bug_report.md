@@ -1,10 +1,9 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 **Describe the bug:**
@@ -18,6 +17,7 @@ assignees: ''
 **Additional context:**
 
 **Desktop (please complete the following information):**
- - OS:
+
+- OS:
 
 **Additional context**
