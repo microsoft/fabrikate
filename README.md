@@ -1,4 +1,4 @@
-# fabrikate
+# Fabrikate
 
 [![Build Status](https://tpark.visualstudio.com/fabrikate/_apis/build/status/fabrikate-cicd?branchName=master)](https://tpark.visualstudio.com/fabrikate/_build/latest?definitionId=35&branchName=master)
 
@@ -241,20 +241,15 @@ $ kubectl apply --recursive -f .
 
 This will cause a very large number of containers to spin up (which will take time to start completely as Kubernetes provisions persistent storage and downloads the containers themselves), but after three or four minutes, you should see the full observability stack and Microservices running in your cluster.
 
+## Documentation
+
+For more information about Fabrikate, we have specific documentation for the following topics:
+* [Contributing to Fabrikate](./docs/contributing.md)
+
 ## Community
 
 [Please join us on Slack](https://publicslack.com/slacks/https-bedrockco-slack-com/invites/new) for discussion and/or questions.
 
 ## Bedrock
 
-We maintain a sister project to this one that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier called [Bedrock](https://github.com/Microsoft/bedrock). Bedrock provides automation for creating Kubernetes clusters, automates deployment of a a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from high level definitions like the example one we have been considering here.
-
-## Contributing
-
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit https://cla.microsoft.com.
-
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+We maintain a sister project called [Bedrock](https://github.com/Microsoft/bedrock). Bedrock provides automa that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier, automating a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from Fabrikate defintions.
