@@ -17,30 +17,34 @@ $ mkdir mycluster
 $ cd mycluster
 ```
 
-The first thing I want to do is pull in a common set of observability and service mesh platforms so I can operate this cluster. My organization has settled on a [cloud native](https://github.com/timfpark/fabrikate-cloud-native) stack, and so I'd like to add that in immediately:
+The first thing I want to do is pull in a common set of observability and service mesh platforms so I can operate this cluster. My organization has settled on a [cloud native](https://github.com/timfpark/fabrikate-cloud-native) stack, and Fabrikate makes it easy to leverage reusable stacks of infrastructure like this:
 
 ```sh
-$ fab add cloud-native --source https://github.com/timfpark/fabrikate-cloud-native --type component
+$ fab add cloud-native --source https://github.com/timfpark/fabrikate-cloud-native
 ```
 
-Since our directory was empty, this creates a component.yaml file in this directory that looks like this:
+Since our directory was empty, this creates a component.yaml file in this directory:
 
 ```yaml
-name: "mycluster"
+name: mycluster
 subcomponents:
-  - name: "cloud-native"
-    source: "https://github.com/timfpark/fabrikate-cloud-native"
-    method: "git"
+- name: cloud-native
+  generator: component
+  source: https://github.com/timfpark/fabrikate-cloud-native
+  method: git
+  branch: master
 ```
 
 A Fabrikate definition, like this one, always contains a `component.yaml` file in its root that defines how to generate the Kubernetes resource manifests for its directory tree scope.
 
 The `cloud-native` component we added is a remote component backed by a git repo [fabrikate-cloud-native](https://github.com/timfpark/fabrikate-cloud-native). Fabrikate definitions use remote definitions like this one to enable multiple deployments to reuse common components (like this cloud-native infrastructure stack) from a centrally updated location.
 
-Looking inside the this component at its own root `component.yaml` definition, you can see that it itself uses a set of remote components:
+Looking inside this component at its own root `component.yaml` definition, you can see that it itself uses a set of remote components:
 
 ```yaml
 name: "cloud-native"
+generator: "static"
+path: "./manifests"
 subcomponents:
   - name: "elasticsearch-fluentd-kibana"
     source: "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana"
@@ -139,7 +143,7 @@ subcomponents:
 This `common` configuration, which applies to all environments, can be mixed with more specific configuration. For example, let's say that we were deploying this in Azure and wanted to utilize its `managed-premium` SSD storage class for Elasticsearch, but only in `azure` deployments. We can build an `azure` configuration that allows us to do exactly that, and Fabrikate has a convenience function called `set` that enables to do exactly that:
 
 ```
-$ fab set azure --subcomponent cloud-native.elasticsearch data.persistence.storageClass="managed-premium" master.persistence.storageClass="managed-premium"
+$ fab set --environment azure --subcomponent cloud-native.elasticsearch data.persistence.storageClass="managed-premium" master.persistence.storageClass="managed-premium"
 ```
 
 This creates a file called `config/azure.yaml` that looks like this:
@@ -158,12 +162,12 @@ subcomponents:
               storageClass: managed-premium
 ```
 
-Naturally, an observability stack is just the beginning, and let's say our application is a set of microservices that we want to deploy. Furthermore, let's assume that we want to be able to split the incoming traffic for these services between `canary` and `stable` tiers with [Istio](https://istio.io) so that we can more safely launch new versions of the service.
+Naturally, an observability stack is just the base infrastructure we need, and our real goal is to deploy a set of microservices. Furthermore, let's assume that we want to be able to split the incoming traffic for these services between `canary` and `stable` tiers with [Istio](https://istio.io) so that we can more safely launch new versions of the service.
 
-There is a Fabrikate component for that called [fabrikate-istio-service](https://github.com/timfpark/fabrikate-istio-service) that we can leverage to add this service, so let's do just that:
+There is a Fabrikate component for that as well called [fabrikate-istio-service](https://github.com/timfpark/fabrikate-istio-service) that we'll leverage to add this service, so let's do just that:
 
 ```
-$ fab add simple-service --source https://github.com/timfpark/fabrikate-istio-service --type component
+$ fab add simple-service --source https://github.com/timfpark/fabrikate-istio-service
 ```
 
 This component creates these traffic split services using the config applied to it. Let's create a `prod` config that does this for a `prod` cluster by creating `config/prod.yaml` and placing the following in it:
@@ -178,9 +182,11 @@ subcomponents:
         dns: simple.mycompany.io
         name: simple-service
         port: 80
+      configMap:
+        PORT: 80
       tiers:
         canary:
-          image: "docker.io/timfpark/simpleservice:671"
+          image: "timfpark/simple-service:441"
           replicas: 1
           weight: 10
           port: 80
@@ -193,7 +199,7 @@ subcomponents:
               memory: "512Mi"
 
         stable:
-          image: "docker.io/timfpark/simpleservice:670"
+          image: "timfpark/simple-service:440"
           replicas: 3
           weight: 90
           port: 80
@@ -206,11 +212,11 @@ subcomponents:
               memory: "512Mi"
 ```
 
-This defines a service that is exposed on the cluster via a particular gateway and dns name and port. It also defines a traffic split between two backend tiers: `canary` (10%) and `stable` (90%). Within these tiers, we also define the number of replicas and the resources they are allowed to use, along with the container that is deployed in them.
+This defines a service that is exposed on the cluster via a particular gateway and dns name and port. It also defines a traffic split between two backend tiers: `canary` (10%) and `stable` (90%). Within these tiers, we also define the number of replicas and the resources they are allowed to use, along with the container that is deployed in them. Finally, it also defines a ConfigMap for the service, which passes along an environmental variable to our app called `PORT`.
 
-From here we could add definitions for all of our microservices, but in the interest of keeping this short, we'll just do one of the services here.
+From here we could add definitions for all of our microservices in a similar manner, but in the interest of keeping this short, we'll just do one of the services here.
 
-With this, we have a functionally complete Fabrikate definition for our deployment. Let's now see how we can use Fabriakte to generate resource manifests for it.
+With this, we have a functionally complete Fabrikate definition for our deployment. Let's now see how we can use Fabrikate to generate resource manifests for it.
 
 First, let's install the remote components and helm charts:
 
@@ -218,15 +224,15 @@ First, let's install the remote components and helm charts:
 $ fab install
 ```
 
-This downloads all of the required components and charts locally. With those installed, we can now generate the manifests for our deployment with:
+This installs all of the required components and charts locally and we can now generate the manifests for our deployment with:
 
 ```sh
 $ fab generate prod azure
 ```
 
-This will iterate through our deployment definition, collect configuration values from `azure`, `prod`, and `common` (in that priority order) and generate manifests as it descends breadth first. You can see the generated manifests in `./generated`, which has the same logical directory structure as your deployment definition.
+This will iterate through our deployment definition, collect configuration values from `azure`, `prod`, and `common` (in that priority order) and generate manifests as it descends breadth first. You can see the generated manifests in `./generated/prod-azure`, which has the same logical directory structure as your deployment definition.
 
-These manifests are meant to be generated as part of a CI / CD pipeline and applied from a pod within the cluster like [Flux](https://github.com/weaveworks/flux), but if you have a Kubernetes cluster up and running you can also apply them directly with:
+Fabrikate is meant to used as part of a CI / CD pipeline that commits the generated manifests checked into a repo so thatthey can be applied from a pod within the cluster like [Flux](https://github.com/weaveworks/flux), but if you have a Kubernetes cluster up and running you can also apply them directly with:
 
 ```sh
 $ cd generated/prod-azure
