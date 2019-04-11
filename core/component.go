@@ -266,7 +266,7 @@ func IterateComponentTree(startingPath string, environments []string, componentI
 			}
 
 			log.Debugf("Iterating subcomponent '%s' with config:\n%s", subcomponent.Name, string(subcomponentConfigYAML))
-			if len(subcomponent.Generator) == 0 && len(subcomponent.Source) > 0 {
+			if (len(subcomponent.Generator) == 0 || subcomponent.Generator == "component") && len(subcomponent.Source) > 0 {
 				// This subcomponent is not inlined, so add it to the queue for iteration.
 
 				subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
