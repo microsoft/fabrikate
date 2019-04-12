@@ -33,7 +33,9 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 
 		if parsedManifest["metadata"] != nil {
 			metadataMap := parsedManifest["metadata"].(map[interface{}]interface{})
-			metadataMap["namespace"] = namespace
+			if metadataMap["namespace"] == nil {
+				metadataMap["namespace"] = namespace
+			}
 		}
 
 		updatedManifest, err := yaml.Marshal(&parsedManifest)
