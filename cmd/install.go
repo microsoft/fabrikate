@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"os/exec"
 
 	"github.com/Microsoft/fabrikate/core"
 	"github.com/Microsoft/fabrikate/generators"
@@ -12,6 +13,12 @@ import (
 
 // Install installs the component at the given path and all of its subcomponents.
 func Install(path string) (err error) {
+
+	log.Info(emoji.Sprintf(":point_right: Initializing Helm"))
+	if err = exec.Command("helm", "init", "--client-only").Run(); err != nil {
+		return err
+	}
+
 	_, err = core.IterateComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
 		log.Info(emoji.Sprintf(":point_right: starting install for component: %s", component.Name))
 
