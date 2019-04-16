@@ -23,6 +23,8 @@ specification of a component with the following schema:
 
 * `hooks`: Hooks enable you to execute one or more shell commands before or after the following component lifecycle events: `before-install`, `before-generate`, `after-install`, `after-generate`.
 
+* `repositories`: A field of key/value pairs consisting of a set of helm repositories that should be added. 
+
 * `subcomponents`: Zero or more subcomponents that help consititute the resource manifests that make up this component. These subcomponents have exactly the same schema as above.
 
 ## Examples
@@ -70,4 +72,28 @@ subcomponents:
   - name: istio-crd # 1.1 split out CRDs to seperate chart
     generator: helm
     path: "./tmp/istio-1.1.2/install/kubernetes/helm/istio-init"
+```
+
+### Jaeger
+
+This [component specification](https://github.com/bnookala/fabrikate-jaeger) is specified in JSON and also utilizes a `repositories` field to add the incubator repo to helm. 
+
+```json
+{
+    "name": "fabrikate-jaeger",
+    "generator": "static",
+    "path": "./manifests",
+    "subcomponents": [
+        {
+            "name": "jaeger",
+            "generator": "helm",
+            "repositories": {
+                "incubator": "https://kubernetes-charts-incubator.storage.googleapis.com/"
+            },
+            "source": "https://github.com/helm/charts",
+            "method": "git",
+            "path": "incubator/jaeger"
+        }
+    ]
+}
 ```
