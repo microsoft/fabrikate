@@ -1,17 +1,19 @@
 # Config Definitions
 
-Configuration files in Fabrikate allow you to define the structure of your deployment once but still have elements of it vary across environments, like between QA, Staging, and Production or between on-prem and a cloud environment - or both.
+Configuration files in Fabrikate allow you to define the structure of your deployment once via [compoonents](./component.md) but still have elements of it vary across different environments like QA, staging, and production or across on-prem and a public cloud -- or both.
 
-By convention, configuration is placed into a directory called `config` with the name of the environment that it applies to.  Also by convention, if a `common.yaml` (or `common.json`) config definition exists, it is always applied as config.
+By convention, configuration is placed into a directory called `config` with the name of the environment that it applies to.  Also by convention, if a `common.yaml` (or `common.json`) config definition exists, it is applied globally as config.
 
 The schema for these config definitions is fairly simple:
 
-* config: A set of configuration values for the current component.
-* namespace: The namespace that should be applied for this component.
-* injectNamespace: Fabrikate should inject the specified namespace into every resource manifest generated for this component. For generators that don't support applying namespaces or where the template for the generator didn't parameterize the namespace.
+* config: A set of configuration values for the component in the parent directory that is intended to be used in conjunction with a generator.  For example, with a Helm generator, these configuration values will be applied through a `values.yaml` file to the helm template specified. 
+* namespace: The namespace that should be applied for this component. 
+* injectNamespace: Directs Fabrikate to inject the specified namespace into every resource manifest generated for this component. This is intended for generators that don't support applying namespaces or where the template for the generator doesn't parameterize the namespace such that it is user accessible.
 * subcomponents: A set of key/value pairs for the subcomponents of this component that specify the configuration for those components. Each of the values of these keys is a config definition in its own right and has the same schema as this config definition.
 
-Configuration in Fabrikate is collected from the top of the hierarchy down, meaning if a config definition lower in the hierarchy specifies a value for an existing key in a component definition, the configuration provided higher in the hierarchy wins out. This is because configuration higher in the hierarchy has a higher level of context over how the portions of the deployment definition should work with each other.
+Configuration in Fabrikate is collected from the top of the hierarchy down, meaning if a config definition lower in the hierarchy specifies a value for a key of configuration that has been already collected, the configuration provided higher in the hierarchy wins out, because configuration higher in the hierarchy has a higher level of context over how the portions of the deployment definition should work with each other.
+
+Configuration can, and is encouraged to be, factored out into its individual concerns. For example, to compose a set of resource manifests for a Production environment in East US in Azure, you might factor your configuration into `prod`, `east`, and `azure` configuration files such that when you need to build a Production environment in West US, you can simply swap out the `east` config for a `west` config.  
 
 ## Examples
 
