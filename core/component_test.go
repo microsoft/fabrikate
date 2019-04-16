@@ -58,20 +58,30 @@ func TestLoadConfig(t *testing.T) {
 
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
-	results, err := IterateComponentTree("../test/fixtures/iterator", []string{""}, func(path string, component *Component) (err error) {
+	results := WalkComponentTree("../test/fixtures/iterator", []string{""}, func(path string, component *Component) (err error) {
 		callbackCount++
 		return nil
 	})
 
+	var err error
+	components := make([]Component, 0)
+	for result := range results {
+		if result.Error != nil {
+			err = result.Error
+		} else if result.Component != nil {
+			components = append(components, *result.Component)
+		}
+	}
+
 	assert.Nil(t, err)
-	assert.Equal(t, 3, len(results))
-	assert.Equal(t, callbackCount, len(results))
+	assert.Equal(t, 3, len(components))
+	assert.Equal(t, callbackCount, len(components))
 
-	assert.Equal(t, results[1].PhysicalPath, "../test/fixtures/iterator/infra")
-	assert.Equal(t, results[1].LogicalPath, "infra")
+	assert.Equal(t, components[1].PhysicalPath, "../test/fixtures/iterator/infra")
+	assert.Equal(t, components[1].LogicalPath, "infra")
 
-	assert.Equal(t, results[2].PhysicalPath, "../test/fixtures/iterator/infra/components/efk")
-	assert.Equal(t, results[2].LogicalPath, "infra/efk")
+	assert.Equal(t, components[2].PhysicalPath, "../test/fixtures/iterator/infra/components/efk")
+	assert.Equal(t, components[2].LogicalPath, "infra/efk")
 }
 
 func TestWriteComponent(t *testing.T) {
