@@ -1,10 +1,6 @@
-# Component Deployment Definitions
-
-This documentation item describes Fabrikate's component object model and how you can use it to specify a deployment.
-
 ## Component Object Model
 
-A deployment definition in Fabrikate is specified utlizing one or more component.yaml/json files.  Each of these file contains a
+A deployment definition in Fabrikate is specified via one or more component.yaml/json files.  Each of these file contains a
 specification of a component with the following schema:
 
 * `name`: A free form text name for this component.  This name is used to refer to the component in [config specifications](./config).
@@ -25,7 +21,7 @@ specification of a component with the following schema:
 
 * `repositories`: A field of key/value pairs consisting of a set of helm repositories that should be added. 
 
-* `subcomponents`: Zero or more subcomponents that help consititute the resource manifests that make up this component. These subcomponents have exactly the same schema as above.
+* `subcomponents`: Zero or more subcomponents that define how to build the resource manifests that make up this component. These subcomponents are components themselves and have exactly the same schema as above.
 
 ## Examples
 

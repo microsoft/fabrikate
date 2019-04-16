@@ -243,9 +243,10 @@ This will cause a very large number of containers to spin up (which will take ti
 
 ## Documentation
 
-For more information about Fabrikate, we have specific documentation for the following topics:
+We have complete details about how to use and contribute to Fabrikate in these documentation items:
+* [Component Definitions](./docs/component.md)
+* [Config Definitions](./docs/component.md)
 * [Contributing](./docs/contributing.md)
-* [Component Model Definition](./docs/component.md)
 
 ## Community
 
