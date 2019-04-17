@@ -32,16 +32,20 @@ If you forked Fabrikate, this will clone your fork into `$GOPATH/<github usernam
 
 ### Configuring git
 Under `$GOPATH/Microsoft/fabrikate` set up git so that you can push changes to the fork:
-```
+
+```sh
 $ git remote add <name> <github_url_of_fork>
 ```
+
 For example:
-```
+
+```sh
 $ git remote add myremote https://github.com/octocat/Spoon-Knife
 ```
 
 To push changes to the fork:
-```
+
+```sh
 $ git push myremote mycurrentbranch
 ```
 
