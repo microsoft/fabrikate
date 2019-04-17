@@ -71,6 +71,23 @@ func (cc *ComponentConfig) Load(environment string) (err error) {
 	return nil
 }
 
+func (cc *ComponentConfig) HasComponentConfig(path []string) (hasComponentConfig bool) {
+	configLevel := cc.Config
+	
+	for levelIndex, pathPart := range path {
+		// if this key is not the final one, we need to decend in the config.
+		if _, ok := configLevel[pathPart]; !ok {
+			return false;
+		}
+
+		if levelIndex < len(path)-1 {
+			configLevel = configLevel[pathPart].(map[string]interface{})
+		}
+	}
+
+	return true
+}
+
 func (cc *ComponentConfig) SetComponentConfig(path []string, value string) {
 	configLevel := cc.Config
 	createdNewConfig := false
@@ -110,6 +127,26 @@ func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (sub
 
 	return subcomponentConfig
 }
+
+func (cc *ComponentConfig) HasSubcomponentConfig(subcomponentPath []string) (hasSubComponentconfig bool) {
+	var subcomponentConfig ComponentConfig
+	subcomponentConfig = *cc 
+
+	for _, subcomponentName := range subcomponentPath {
+		if subcomponentConfig.Subcomponents == nil {
+			return false;
+		}
+
+		if _, ok := subcomponentConfig.Subcomponents[subcomponentName]; !ok {
+			return false;
+		}
+
+		subcomponentConfig = subcomponentConfig.Subcomponents[subcomponentName]
+	}
+
+	return true;
+}
+
 
 func (cc *ComponentConfig) SetConfig(subcomponentPath []string, path []string, value string) {
 	subcomponentConfig := cc.GetSubcomponentConfig(subcomponentPath)
