@@ -56,7 +56,7 @@ func ValidateGeneratedManifests(generationPath string) (err error) {
 
 func Generate(startPath string, environments []string, validate bool) (components []core.Component, err error) {
 	// Iterate through component tree and generate
-	components, err = core.IterateComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
+	results := core.WalkComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
 
 		var generator core.Generator
 		switch component.Generator {
@@ -68,6 +68,8 @@ func Generate(startPath string, environments []string, validate bool) (component
 
 		return component.Generate(generator)
 	})
+
+	components, err = core.SynchronizeWalkResult(results)
 
 	if err != nil {
 		return nil, err

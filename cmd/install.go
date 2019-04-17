@@ -19,7 +19,7 @@ func Install(path string) (err error) {
 		return err
 	}
 
-	_, err = core.IterateComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
+	results := core.WalkComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
 		log.Info(emoji.Sprintf(":point_right: starting install for component: %s", component.Name))
 
 		var generator core.Generator
@@ -38,9 +38,15 @@ func Install(path string) (err error) {
 		return err
 	})
 
-	if err == nil {
-		log.Info(emoji.Sprintf(":raised_hands: finished install"))
+	components, err := core.SynchronizeWalkResult(results)
+	if err != nil {
+		return err
 	}
+
+	for _, component := range components {
+		log.Info(emoji.Sprintf(":white_check_mark: installed successfully: %s", component.Name))
+	}
+	log.Info(emoji.Sprintf(":raised_hands: finished install"))
 
 	return err
 }

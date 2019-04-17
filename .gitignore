@@ -16,3 +16,5 @@ components
 releases
 helm_repos
 .DS_Store
+.idea
+fab
