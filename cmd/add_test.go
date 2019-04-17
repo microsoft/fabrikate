@@ -20,7 +20,8 @@ func TestAdd(t *testing.T) {
 	err = os.Chdir("../test/fixtures/add")
 	assert.Nil(t, err)
 
-	_ = os.Remove("./component.yaml")
+        // should fail lint
+	os.Remove("./component.yaml")
 
 	componentComponent := core.Component{
 		Name:      "cloud-native",
