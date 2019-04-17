@@ -1,6 +1,3 @@
-trigger:
-  batch: true
-
 pool:
   vmImage: "Ubuntu-16.04"
 
@@ -43,7 +40,6 @@ steps:
     displayName: "Lint"
 
   - script: |
-      go test -v -race ./core
-      go test -v -race ./cmd
+      go test -v -race ./...
     workingDirectory: "$(modulePath)"
     displayName: "Test"
