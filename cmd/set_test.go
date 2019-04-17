@@ -43,12 +43,11 @@ func TestSetValue(t *testing.T) {
 
 	// set existing value with new newconfigfail switch on
 	newconfigfail = true
-	//err = Set("test", "", []string{"foo=faa"}, newconfigfail)
-	//assert.Nil(t, err)
+	err = Set("test", "", []string{"foo=faa"}, newconfigfail)
+	assert.Nil(t, err)
 
-	//err = Set("test", "", []string{"newfoo=faa"}, newconfigfail)
-	//assert.NotNil(t, err)
-
+	err = Set("test", "", []string{"newfoo=faa"}, newconfigfail)
+	assert.NotNil(t, err)
 
 	err = os.Chdir("../../../cmd")
 	assert.Nil(t, err)
