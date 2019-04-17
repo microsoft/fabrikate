@@ -14,7 +14,7 @@ func TestAdd(t *testing.T) {
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
 	defer func() {
-		os.Chdir(cwd)
+		_ = os.Chdir(cwd)
 	}()
 
 	err = os.Chdir("../test/fixtures/add")
