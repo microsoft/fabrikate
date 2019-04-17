@@ -30,6 +30,21 @@ $ go get github.com/Microsoft/fabrikate
 
 If you forked Fabrikate, this will clone your fork into `$GOPATH/<github username>/fabrikate`.  You will want to move to $GOPATH/Microsoft/fabrikate such that the imports in the project work correctly.
 
+### Configuring git
+Under `$GOPATH/Microsoft/fabrikate` set up git so that you can push changes to the fork:
+```
+$ git remote add <name> <github_url_of_fork>
+```
+For example:
+```
+$ git remote add myremote https://github.com/octocat/Spoon-Knife
+```
+
+To push changes to the fork:
+```
+$ git push myremote mycurrentbranch
+```
+
 ## Building Fabrikate
 
 From the root of the project (which if you followed the instructions above should be `$GOPATH/Microsoft/fabrikate`), first fetch project dependencies with:
