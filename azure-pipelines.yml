@@ -1,15 +1,3 @@
-trigger:
-  batch: true
-  branches:
-    include:
-    - master
-
-pr:
-  autoCancel: false
-  branches:
-    include:
-    - master
-
 pool:
   vmImage: "Ubuntu-16.04"
 
