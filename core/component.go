@@ -13,7 +13,7 @@ import (
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	yaml "github.com/timfpark/yaml"
+	"github.com/timfpark/yaml"
 )
 
 type Component struct {
@@ -120,9 +120,11 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 			out, err := cmd.Output()
 
 			if err != nil {
-				log.Info(emoji.Sprintf(":no_entry_sign: %s\n", err.Error()))
+				cwd, _ := os.Getwd()
+				log.Error(fmt.Sprintf("ERROR IN: %s", cwd))
+				log.Error(emoji.Sprintf(":no_entry_sign: %s\n", err.Error()))
 				if ee, ok := err.(*exec.ExitError); ok {
-					log.Info(emoji.Sprintf(":no_entry_sign: hook command failed with: %s\n", ee.Stderr))
+					log.Error(emoji.Sprintf(":no_entry_sign: hook command failed with: %s\n", ee.Stderr))
 				}
 				return err
 			}
@@ -215,81 +217,131 @@ func (c *Component) Generate(generator Generator) (err error) {
 
 type ComponentIteration func(path string, component *Component) (err error)
 
-// IterateComponentTree is a general function used for iterating a deployment tree for installing, generating, etc.
-func IterateComponentTree(startingPath string, environments []string, componentIteration ComponentIteration) (completedComponents []Component, err error) {
-	queue := make([]Component, 0)
+// WalkResult is what WalkComponentTree returns.
+// Will contain either a Component OR an Error (Error is nillable; meaning both fields can be nil)
+type WalkResult struct {
+	Component *Component
+	Error     error
+}
 
-	component := Component{
-		PhysicalPath: startingPath,
-		LogicalPath:  "./",
-		Config:       NewComponentConfig(startingPath),
+// WalkComponentTree asynchronously walks a component tree starting at `startingPath` and calls
+// `iterator` on every node in the tree in Breadth First Order.
+//
+// Returns a channel of WalkResult which can either have a Component or an Error (Error is nillable)
+//
+// Same level ordering is not ensured; any nodes on the same tree level can be visited in any order.
+// Parent->Child ordering is ensured; A parent is always visited via `iterator` before the children are visited.
+func WalkComponentTree(startingPath string, environments []string, iterator ComponentIteration) chan WalkResult {
+	queue := make(chan Component)                // components enqueued to be 'visited' (ie; walked over)
+	results := make(chan WalkResult)             // To pass WalkResults to
+	workingCounter := make(chan Component, 1024) // A counter of components currently being worked on; used to determine if operation complete. An arbitrary large size is chosen. Must be able to hold the entire tree.
+
+	// Closes the returned channels if their are no more components to be worked on
+	markComponentAsVisited := func(completedComponent Component) {
+		results <- WalkResult{Component: &completedComponent}
+		<-workingCounter
+		log.Debugf(fmt.Sprintf("working counter decremented to %d by %s", len(workingCounter), completedComponent.Name))
+		if len(workingCounter) == 0 && len(queue) == 0 {
+			log.Debugf("closing completed and error channels")
+			close(results)
+		}
 	}
 
-	queue = append(queue, component)
-	completedComponents = make([]Component, 0)
+	// Increments the working counter; adding `componentToEnqueue` to the queue
+	enqueueComponent := func(componentToEnqueue Component) {
+		queue <- componentToEnqueue
+		workingCounter <- componentToEnqueue
+		log.Debugf(fmt.Sprintf("working counter incremented to %d by %s", len(workingCounter), componentToEnqueue.Name))
+	}
 
-	// Iterate the deployment tree using a queued breadth first algorithm:
-	for len(queue) != 0 {
-		component := queue[0]
-		queue = queue[1:]
-
+	// Prepares `component` by loading/de-serializing the component.yaml/json and configs
+	// Note: this is only needed for non-inlined components
+	prepareComponent := func(component Component) Component {
 		// 1. Parse the component at that path into a Component
 		component, err := component.LoadComponent()
-		if err != nil {
-			return nil, err
-		}
+		results <- WalkResult{Error: err}
 
 		// 2. Load the config for this Component
-		if err := component.LoadConfig(environments); err != nil {
-			return nil, err
-		}
-
-		// 3. Call the passed componentIteration function on this component (install, generate, etc.)
-		if err = componentIteration(component.PhysicalPath, &component); err != nil {
-			return nil, err
-		}
-
-		completedComponents = append(completedComponents, component)
-
-		configYAML, err := yaml.Marshal(component.Config)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Debugf("Iterating component %s with config:\n%s", component.Name, string(configYAML))
-		for _, subcomponent := range component.Subcomponents {
-			subcomponent.Config = component.Config.Subcomponents[subcomponent.Name]
-
-			subcomponentConfigYAML, err := yaml.Marshal(subcomponent.Config)
-			if err != nil {
-				return nil, err
-			}
-
-			log.Debugf("Iterating subcomponent '%s' with config:\n%s", subcomponent.Name, string(subcomponentConfigYAML))
-			if (len(subcomponent.Generator) == 0 || subcomponent.Generator == "component") && len(subcomponent.Source) > 0 {
-				// This subcomponent is not inlined, so add it to the queue for iteration.
-
-				subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
-				subcomponent.LogicalPath = path.Join(component.LogicalPath, subcomponent.Name)
-
-				log.Debugf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
-				queue = append(queue, subcomponent)
-			} else {
-				// This subcomponent is inlined, so call the componentIteration function on this component.
-
-				subcomponent.PhysicalPath = component.PhysicalPath
-				subcomponent.LogicalPath = component.LogicalPath
-
-				if err = componentIteration(subcomponent.PhysicalPath, &subcomponent); err != nil {
-					return nil, err
-				}
-
-				completedComponents = append(completedComponents, subcomponent)
-			}
-		}
+		results <- WalkResult{Error: component.LoadConfig(environments)}
+		return component
 	}
 
-	return completedComponents, nil
+	// Manually enqueue the first root component
+	go func() {
+		component := prepareComponent(Component{
+			PhysicalPath: startingPath,
+			LogicalPath:  "./",
+			Config:       NewComponentConfig(startingPath),
+		})
+		enqueueComponent(component)
+	}()
+
+	// Worker thread to pull from queue and call the iterator
+	go func() {
+		for component := range queue {
+			go func(component Component) {
+				completedSubcomponents := make(chan Component, len(component.Subcomponents)) // To keep track of which subcomponents have been enqueued; when len() == number of subcomponents, the parent is considered "complete"
+
+				// Call the iterator
+				results <- WalkResult{Error: iterator(component.PhysicalPath, &component)}
+
+				// A parent node is only completed after it's children have been enqueued.
+				go func() {
+					completedComponents := make([]Component, 0)
+					decrementIfNecessary := func() {
+						if len(completedComponents) == len(component.Subcomponents) {
+							markComponentAsVisited(component)
+						}
+					}
+					decrementIfNecessary() // Need to call once before loop in case component has no subcomponents
+					for subcomponent := range completedSubcomponents {
+						completedComponents = append(completedComponents, subcomponent)
+						decrementIfNecessary()
+					}
+				}()
+
+				// Range over subcomponents; preparing and enqueuing
+				for _, subcomponent := range component.Subcomponents {
+					// Prep component config
+					subcomponent.Config = component.Config.Subcomponents[subcomponent.Name]
+
+					// Depending if the subcomponent is inlined or not; prepare the component to either load
+					// config/path info from filesystem (non-inlined) or inherit from parent (inlined)
+					isNotInlined := (len(subcomponent.Generator) == 0 || subcomponent.Generator == "component") && len(subcomponent.Source) > 0
+					if isNotInlined {
+						// This subcomponent is not inlined, so set the paths to their relative positions and prepare the configs
+						subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
+						subcomponent.LogicalPath = path.Join(component.LogicalPath, subcomponent.Name)
+						subcomponent = prepareComponent(subcomponent)
+					} else {
+						// This subcomponent is inlined, so it inherits paths from parent and no need to prepareComponent().
+						subcomponent.PhysicalPath = component.PhysicalPath
+						subcomponent.LogicalPath = component.LogicalPath
+					}
+
+					log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
+					enqueueComponent(subcomponent)
+					completedSubcomponents <- subcomponent
+				}
+			}(component)
+		}
+	}()
+
+	return results
+}
+
+// SynchronizeWalkResult will synchronize a channel of WalkResult to a list of visited Components.
+// It will return on the first Error encountered; returning the visited Components up until then and the error
+func SynchronizeWalkResult(results chan WalkResult) (components []Component, err error) {
+	components = make([]Component, 0)
+	for result := range results {
+		if result.Error != nil {
+			return components, err
+		} else if result.Component != nil {
+			components = append(components, *result.Component)
+		}
+	}
+	return components, err
 }
 
 func (c *Component) Write() (err error) {

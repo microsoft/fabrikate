@@ -9,7 +9,15 @@ import (
 )
 
 func TestAdd(t *testing.T) {
-	err := os.Chdir("../test/fixtures/add")
+
+	// This test changes the cwd. Must change back so any tests following don't break
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	defer func() {
+		os.Chdir(cwd)
+	}()
+
+	err = os.Chdir("../test/fixtures/add")
 	assert.Nil(t, err)
 
 	_ = os.Remove("./component.yaml")
