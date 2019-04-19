@@ -9,6 +9,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
@@ -232,9 +233,9 @@ type WalkResult struct {
 // Same level ordering is not ensured; any nodes on the same tree level can be visited in any order.
 // Parent->Child ordering is ensured; A parent is always visited via `iterator` before the children are visited.
 func WalkComponentTree(startingPath string, environments []string, iterator ComponentIteration) <-chan WalkResult {
-	queue := make(chan Component)                // components enqueued to be 'visited' (ie; walked over)
-	results := make(chan WalkResult)             // To pass WalkResults to
-	workingCounter := make(chan Component, 1024) // A counter of components currently being worked on; used to determine if operation complete. An arbitrary large size is chosen. Must be able to hold the entire tree.
+	queue := make(chan Component)    // components enqueued to be 'visited' (ie; walked over)
+	results := make(chan WalkResult) // To pass WalkResults to
+	walking := sync.WaitGroup{}      // Keep track of all nodes being worked on
 
 	// Prepares `component` by loading/de-serializing the component.yaml/json and configs
 	// Note: this is only needed for non-inlined components
@@ -248,45 +249,41 @@ func WalkComponentTree(startingPath string, environments []string, iterator Comp
 		return component
 	}
 
-	// Increments the working counter
-	incrementWorkingCounter := func(component Component) {
-		workingCounter <- component
-		log.Debugf(fmt.Sprintf("working counter incremented to %d by %s", len(workingCounter), component.Name))
-	}
-
-	// Decrements the working counter and sends `component` to results channel.
-	// Closes the result channel if workingCounter reaches 0; meaning all nodes in tree have been walked.
-	decrementWorkingCounter := func(component Component) {
-		results <- WalkResult{Component: &component}
-		<-workingCounter
-		log.Debugf(fmt.Sprintf("working counter decremented to %d by %s", len(workingCounter), component.Name))
-		if len(workingCounter) == 0 {
-			log.Debugf("closing results channel")
-			close(results)
-		}
-	}
-
 	// Enqueue the given component
 	enqueue := func(component Component) {
 		// Increment working counter; MUST happen BEFORE sending to queue or race condition can occur
-		incrementWorkingCounter(component)
+		walking.Add(1)
 		log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", component.Name, component.PhysicalPath, component.LogicalPath)
 		queue <- component
 	}
 
-	// Manually enqueue the first root component
+	// Mark a component as visited and report it back as a result; decrements the walking counter
+	markAsVisited := func(component *Component) {
+		results <- WalkResult{Component: component}
+		walking.Done()
+	}
+
+	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
 	go func() {
-		enqueue((prepareComponent(Component{
+		// Manually enqueue the first root component
+		enqueue(prepareComponent(Component{
 			PhysicalPath: startingPath,
 			LogicalPath:  "./",
 			Config:       NewComponentConfig(startingPath),
-		})))
+		}))
+
+		// Close results channel once all nodes visited
+		walking.Wait()
+		close(results)
 	}()
 
 	// Worker thread to pull from queue and call the iterator
 	go func() {
 		for component := range queue {
 			go func(component Component) {
+				// Decrement working counter; Must happen AFTER the subcomponents are enqueued
+				defer markAsVisited(&component)
+
 				// Call the iterator
 				results <- WalkResult{Error: iterator(component.PhysicalPath, &component)}
 
@@ -312,9 +309,6 @@ func WalkComponentTree(startingPath string, environments []string, iterator Comp
 					log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
 					enqueue(subcomponent)
 				}
-
-				// Decrement working counter; Must happen AFTER the subcomponents are enqueued
-				decrementWorkingCounter(component)
 			}(component)
 		}
 	}()
