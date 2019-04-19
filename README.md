@@ -1,8 +1,9 @@
 # Fabrikate
 
-[![Build Status](https://tpark.visualstudio.com/fabrikate/_apis/build/status/fabrikate-cicd?branchName=master)](https://tpark.visualstudio.com/fabrikate/_build/latest?definitionId=35&branchName=master)
+[![Build Status][azure-devops-build-status]][azure-devops-build-link]
+[![Go Report Card][go-report-card-badge]][go-report-card]
 
-Fabrikate helps make operating Kubernetes clusters with a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) workflow more productive. It allows you to write [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) resource definitions and configuration for multiple environments while leveraging the broad [Helm chart ecosystem](https://github.com/helm/charts)), capture higher level definitions into abstracted and shareable components, and enable a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment workflow that both simplifies and makes deployments more auditable.
+Fabrikate helps make operating Kubernetes clusters with a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) workflow more productive. It allows you to write [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) resource definitions and configuration for multiple environments while leveraging the broad [Helm chart ecosystem](https://github.com/helm/charts), capture higher level definitions into abstracted and shareable components, and enable a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment workflow that both simplifies and makes deployments more auditable.
 
 In particular, Fabrikate simplifies the frontend of the GitOps workflow: it takes a high level description of your deployment, a target environment configuration (eg. `qa` or `prod`), and renders the Kubernetes resource manifests for that deployment utilizing templating tools like [Helm](https://helm.sh). It is intended to run as part of a CI/CD pipeline such that with every commit to your Fabrikate deployment definition triggers the generation of Kubernetes resource manifests that an in-cluster GitOps pod like [Weaveworks' Flux](https://github.com/weaveworks/flux) watches and reconciles with the current set of applied resource manifests in your Kubernetes cluster.
 
@@ -245,7 +246,7 @@ This will cause a very large number of containers to spin up (which will take ti
 
 We have complete details about how to use and contribute to Fabrikate in these documentation items:
 * [Component Definitions](./docs/component.md)
-* [Config Definitions](./docs/component.md)
+* [Config Definitions](./docs/config.md)
 * [Contributing](./docs/contributing.md)
 
 ## Community
@@ -255,3 +256,9 @@ We have complete details about how to use and contribute to Fabrikate in these d
 ## Bedrock
 
 We maintain a sister project called [Bedrock](https://github.com/Microsoft/bedrock). Bedrock provides automa that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier, automating a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from Fabrikate defintions.
+
+<!-- refs -->
+[azure-devops-build-status]: https://tpark.visualstudio.com/fabrikate/_apis/build/status/fabrikate-cicd?branchName=master
+[azure-devops-build-link]: https://tpark.visualstudio.com/fabrikate/_build/latest?definitionId=35&branchName=master
+[go-report-card]: https://goreportcard.com/report/github.com/Microsoft/fabrikate
+[go-report-card-badge]: https://goreportcard.com/badge/github.com/Microsoft/fabrikate

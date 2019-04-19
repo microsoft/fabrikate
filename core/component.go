@@ -9,6 +9,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/kyokomi/emoji"
 	"github.com/pkg/errors"
@@ -115,7 +116,7 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 	for _, command := range c.Hooks[hook] {
 		log.Info(emoji.Sprintf(":fishing_pole_and_fish: executing command: %s", command))
 		if len(command) != 0 {
-			cmd := exec.Command("bash", "-c", command)
+			cmd := exec.Command("sh", "-c", command)
 			cmd.Dir = c.PhysicalPath
 			out, err := cmd.Output()
 
@@ -231,28 +232,10 @@ type WalkResult struct {
 //
 // Same level ordering is not ensured; any nodes on the same tree level can be visited in any order.
 // Parent->Child ordering is ensured; A parent is always visited via `iterator` before the children are visited.
-func WalkComponentTree(startingPath string, environments []string, iterator ComponentIteration) chan WalkResult {
-	queue := make(chan Component)                // components enqueued to be 'visited' (ie; walked over)
-	results := make(chan WalkResult)             // To pass WalkResults to
-	workingCounter := make(chan Component, 1024) // A counter of components currently being worked on; used to determine if operation complete. An arbitrary large size is chosen. Must be able to hold the entire tree.
-
-	// Closes the returned channels if their are no more components to be worked on
-	markComponentAsVisited := func(completedComponent Component) {
-		results <- WalkResult{Component: &completedComponent}
-		<-workingCounter
-		log.Debugf(fmt.Sprintf("working counter decremented to %d by %s", len(workingCounter), completedComponent.Name))
-		if len(workingCounter) == 0 && len(queue) == 0 {
-			log.Debugf("closing completed and error channels")
-			close(results)
-		}
-	}
-
-	// Increments the working counter; adding `componentToEnqueue` to the queue
-	enqueueComponent := func(componentToEnqueue Component) {
-		queue <- componentToEnqueue
-		workingCounter <- componentToEnqueue
-		log.Debugf(fmt.Sprintf("working counter incremented to %d by %s", len(workingCounter), componentToEnqueue.Name))
-	}
+func WalkComponentTree(startingPath string, environments []string, iterator ComponentIteration) <-chan WalkResult {
+	queue := make(chan Component)    // components enqueued to be 'visited' (ie; walked over)
+	results := make(chan WalkResult) // To pass WalkResults to
+	walking := sync.WaitGroup{}      // Keep track of all nodes being worked on
 
 	// Prepares `component` by loading/de-serializing the component.yaml/json and configs
 	// Note: this is only needed for non-inlined components
@@ -266,39 +249,43 @@ func WalkComponentTree(startingPath string, environments []string, iterator Comp
 		return component
 	}
 
-	// Manually enqueue the first root component
+	// Enqueue the given component
+	enqueue := func(component Component) {
+		// Increment working counter; MUST happen BEFORE sending to queue or race condition can occur
+		walking.Add(1)
+		log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", component.Name, component.PhysicalPath, component.LogicalPath)
+		queue <- component
+	}
+
+	// Mark a component as visited and report it back as a result; decrements the walking counter
+	markAsVisited := func(component *Component) {
+		results <- WalkResult{Component: component}
+		walking.Done()
+	}
+
+	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
 	go func() {
-		component := prepareComponent(Component{
+		// Manually enqueue the first root component
+		enqueue(prepareComponent(Component{
 			PhysicalPath: startingPath,
 			LogicalPath:  "./",
 			Config:       NewComponentConfig(startingPath),
-		})
-		enqueueComponent(component)
+		}))
+
+		// Close results channel once all nodes visited
+		walking.Wait()
+		close(results)
 	}()
 
 	// Worker thread to pull from queue and call the iterator
 	go func() {
 		for component := range queue {
 			go func(component Component) {
-				completedSubcomponents := make(chan Component, len(component.Subcomponents)) // To keep track of which subcomponents have been enqueued; when len() == number of subcomponents, the parent is considered "complete"
+				// Decrement working counter; Must happen AFTER the subcomponents are enqueued
+				defer markAsVisited(&component)
 
 				// Call the iterator
 				results <- WalkResult{Error: iterator(component.PhysicalPath, &component)}
-
-				// A parent node is only completed after it's children have been enqueued.
-				go func() {
-					completedComponents := make([]Component, 0)
-					decrementIfNecessary := func() {
-						if len(completedComponents) == len(component.Subcomponents) {
-							markComponentAsVisited(component)
-						}
-					}
-					decrementIfNecessary() // Need to call once before loop in case component has no subcomponents
-					for subcomponent := range completedSubcomponents {
-						completedComponents = append(completedComponents, subcomponent)
-						decrementIfNecessary()
-					}
-				}()
 
 				// Range over subcomponents; preparing and enqueuing
 				for _, subcomponent := range component.Subcomponents {
@@ -320,8 +307,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator Comp
 					}
 
 					log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
-					enqueueComponent(subcomponent)
-					completedSubcomponents <- subcomponent
+					enqueue(subcomponent)
 				}
 			}(component)
 		}
@@ -332,8 +318,8 @@ func WalkComponentTree(startingPath string, environments []string, iterator Comp
 
 // SynchronizeWalkResult will synchronize a channel of WalkResult to a list of visited Components.
 // It will return on the first Error encountered; returning the visited Components up until then and the error
-func SynchronizeWalkResult(results chan WalkResult) (components []Component, err error) {
-	components = make([]Component, 0)
+func SynchronizeWalkResult(results <-chan WalkResult) (components []Component, err error) {
+	components = []Component{}
 	for result := range results {
 		if result.Error != nil {
 			return components, err
