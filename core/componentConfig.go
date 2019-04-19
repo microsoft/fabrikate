@@ -141,7 +141,7 @@ func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (sub
 // HasSubcomponentConfig checks if a component contains the given subcomponents of the `subcomponentPath`
 //
 // Returns true if it contains the subcomponent, otherwise it returns false
-func (cc *ComponentConfig) HasSubcomponentConfig(subcomponentPath []string) (hasSubComponentConfig bool) {
+func (cc *ComponentConfig) HasSubcomponentConfig(subcomponentPath []string) (bool) {
 	subcomponentConfig := *cc 
 
 	for _, subcomponentName := range subcomponentPath {

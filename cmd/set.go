@@ -90,7 +90,7 @@ Sets the subkey "replicas" in the key 'data' equal to 5 in the 'common' config (
 
 $ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 --no-new-config-keys
 
-Uses the --no-new-config-keys switch to prevent the creation of new config .
+Use the --no-new-config-keys switch to prevent the creation of new config.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
