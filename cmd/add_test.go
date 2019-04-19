@@ -24,7 +24,7 @@ func TestAdd(t *testing.T) {
 
 	componentComponent := core.Component{
 		Name:      "cloud-native",
-		Source:    "https://github.com/timfpark/fabriakte-cloud-native",
+		Source:    "https://github.com/timfpark/fabrikate-cloud-native",
 		Method:    "git",
 		Generator: "component",
 	}

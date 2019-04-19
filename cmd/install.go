@@ -13,6 +13,15 @@ import (
 
 // Install installs the component at the given path and all of its subcomponents.
 func Install(path string) (err error) {
+	// Make sure host system contains all utils needed by Fabrikate
+	requiredSystemTools := []string{"git", "helm", "sh", "curl"}
+	for _, tool := range requiredSystemTools {
+		path, err := exec.LookPath(tool)
+		if err != nil {
+			return err
+		}
+		log.Info(emoji.Sprintf(":mag: using %s: %s", tool, path))
+	}
 
 	log.Info(emoji.Sprintf(":point_right: Initializing Helm"))
 	if err = exec.Command("helm", "init", "--client-only").Run(); err != nil {
