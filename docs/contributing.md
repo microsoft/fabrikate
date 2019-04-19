@@ -76,8 +76,7 @@ Fabrikate utilizes test driven development to maintain quality across commits. E
 You can run project tests by executing the following commands:
 
 ```sh
-$ go test -v ./core
-$ go test -v ./cmd
+$ go test -v -race ./...
 ```
 
 And run the linter with:
