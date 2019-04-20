@@ -28,7 +28,7 @@ func SplitPathValuePairs(pathValuePairStrings []string) (pathValuePairs []core.P
 	return pathValuePairs, nil
 }
 
-func Set(environment string, subcomponent string, pathValuePairStrings []string) (err error) {
+func Set(environment string, subcomponent string, pathValuePairStrings []string, noNewConfigKeys bool) (err error) {
 	subcomponentPath := []string{}
 	if len(subcomponent) > 0 {
 		subcomponentPath = strings.Split(subcomponent, ".")
@@ -46,12 +46,30 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string)
 		return err
 	}
 
+	newConfigError := errors.New("New configuration was specified and the --no-new-config-keys switch is on.")		
+	
 	for _, pathValue := range pathValuePairs {
+			if noNewConfigKeys {
+				if (!componentConfig.HasSubcomponentConfig(subcomponentPath)) {
+					return newConfigError
+				} else {
+					sc := componentConfig.GetSubcomponentConfig(subcomponentPath)
+
+					if(!sc.HasComponentConfig(pathValue.Path)) {
+						return newConfigError
+					}
+				}
+			}
+
 		componentConfig.SetConfig(subcomponentPath, pathValue.Path, pathValue.Value)
 	}
 
 	return componentConfig.Write(environment)
 }
+
+var subcomponent string
+var environment string
+var noNewConfigKeys bool
 
 var setCmd = &cobra.Command{
 	Use:   "set <config> [--subcomponent subcomponent] <path1>=<value1> <path2>=<value2> ...",
@@ -69,22 +87,24 @@ Sets the value of 'endpoint' equal to 'east-db' in the 'common' config (the defa
 $ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 
 
 Sets the subkey "replicas" in the key 'data' equal to 5 in the 'common' config (the default) for the subcomponent 'mysubcomponent' of the subcomponent 'myapp'.
+
+$ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 --no-new-config-keys
+
+Use the --no-new-config-keys switch to prevent the creation of new config.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("'set' takes one or more key=value arguments")
 		}
 
-		subcomponent := cmd.Flag("subcomponent").Value.String()
-		environment := cmd.Flag("environment").Value.String()
-
-		return Set(environment, subcomponent, args)
+		return Set(environment, subcomponent, args, noNewConfigKeys)
 	},
 }
 
 func init() {
-	setCmd.PersistentFlags().String("environment", "common", "Environment this configuration should apply to")
-	setCmd.PersistentFlags().String("subcomponent", "", "Subcomponent this configuration should apply to")
+	setCmd.PersistentFlags().StringVar(&environment, "environment", "common", "Environment this configuration should apply to")
+	setCmd.PersistentFlags().StringVar(&subcomponent, "subcomponent", "", "Subcomponent this configuration should apply to")
+	setCmd.PersistentFlags().BoolVar(&noNewConfigKeys, "no-new-config-keys", false, "'Prevent creation of new config keys and only allow updating existing config values.")
 
 	rootCmd.AddCommand(setCmd)
 }

@@ -71,6 +71,28 @@ func (cc *ComponentConfig) Load(environment string) (err error) {
 	return nil
 }
 
+// HasComponentConfig checks if the component contains the given component configuration.
+// The given component is specified via a configuration `path`.
+// Returns true if it contains it, otherwise it returns false.
+func (cc *ComponentConfig) HasComponentConfig(path []string) (bool) {
+	configLevel := cc.Config
+	
+	for levelIndex, pathPart := range path {
+		// if this key is not the final one, we need to decend in the config.
+		if _, ok := configLevel[pathPart]; !ok {
+			return false;
+		}
+
+		if levelIndex < len(path)-1 {
+			configLevel = configLevel[pathPart].(map[string]interface{})
+		}
+	}
+
+	return true
+}
+
+// SetComponentConfig sets the `value` of the given configuration setting.
+// The configuration setting is indicated via a configuration `path`.
 func (cc *ComponentConfig) SetComponentConfig(path []string, value string) {
 	configLevel := cc.Config
 	createdNewConfig := false
@@ -93,6 +115,10 @@ func (cc *ComponentConfig) SetComponentConfig(path []string, value string) {
 	}
 }
 
+// GetSubcomponentConfig returns the subcomponent config of the given component.
+// If the subcomponent does not exist, it creates it
+//
+// Returns the subcomponent config
 func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (subcomponentConfig ComponentConfig) {
 	subcomponentConfig = *cc
 	for _, subcomponentName := range subcomponentPath {
@@ -111,6 +137,29 @@ func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (sub
 	return subcomponentConfig
 }
 
+
+// HasSubcomponentConfig checks if a component contains the given subcomponents of the `subcomponentPath`
+//
+// Returns true if it contains the subcomponent, otherwise it returns false
+func (cc *ComponentConfig) HasSubcomponentConfig(subcomponentPath []string) (bool) {
+	subcomponentConfig := *cc 
+
+	for _, subcomponentName := range subcomponentPath {
+		if subcomponentConfig.Subcomponents == nil {
+			return false;
+		}
+
+		if _, ok := subcomponentConfig.Subcomponents[subcomponentName]; !ok {
+			return false;
+		}
+
+		subcomponentConfig = subcomponentConfig.Subcomponents[subcomponentName]
+	}
+
+	return true;
+}
+
+// SetConfig sets or creates the configuration `value` for the given `subcomponentPath`.
 func (cc *ComponentConfig) SetConfig(subcomponentPath []string, path []string, value string) {
 	subcomponentConfig := cc.GetSubcomponentConfig(subcomponentPath)
 	subcomponentConfig.SetComponentConfig(path, value)
