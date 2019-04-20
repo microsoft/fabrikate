@@ -22,15 +22,16 @@ Fabrikate is written in [golang](https://golang.org/) so the first step is to ma
 
 If you intend to make contributions to Fabrikate (versus just build it), the first step is to [fork Fabrikate on Github](https://github.com/Microsoft/fabrikate) into your own account.
 
-Next, clone Fabrikate into your GOPATH (which defaults to $HOME/go) with `go get` (substitute your GitHub username for `Microsoft` below if you forked the repo):
+Next, clone Fabrikate into your GOPATH (which defaults to \$HOME/go) with `go get` (substitute your GitHub username for `Microsoft` below if you forked the repo):
 
 ```sh
 $ go get github.com/Microsoft/fabrikate
 ```
 
-If you forked Fabrikate, this will clone your fork into `$GOPATH/<github username>/fabrikate`.  You will want to move to $GOPATH/Microsoft/fabrikate such that the imports in the project work correctly.
+If you forked Fabrikate, this will clone your fork into `$GOPATH/<github username>/fabrikate`. You will want to move to \$GOPATH/Microsoft/fabrikate such that the imports in the project work correctly.
 
 ### Configuring git
+
 Under `$GOPATH/Microsoft/fabrikate` set up git so that you can push changes to the fork:
 
 ```sh
@@ -56,6 +57,8 @@ From the root of the project (which if you followed the instructions above shoul
 ```sh
 $ go get ./...
 ```
+
+Note: to run tests, you will need to run `go get -t ./...` to install test dependencies.
 
 You can then build a Fabrikate executable with:
 
