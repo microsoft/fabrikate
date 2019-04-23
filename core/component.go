@@ -322,7 +322,7 @@ func SynchronizeWalkResult(results <-chan WalkResult) (components []Component, e
 	components = []Component{}
 	for result := range results {
 		if result.Error != nil {
-			return components, err
+			return components, result.Error
 		} else if result.Component != nil {
 			components = append(components, *result.Component)
 		}

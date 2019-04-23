@@ -1,27 +1,27 @@
 ## Component Object Model
 
-A deployment definition in Fabrikate is specified via one or more component.yaml/json files.  Each of these file contains a
+A deployment definition in Fabrikate is specified via one or more component.yaml/json files. Each of these file contains a
 specification of a component with the following schema:
 
-* `name`: A free form text name for this component.  This name is used to refer to the component in [config specifications](./config).
+- `name`: A free form text name for this component. This name is used to refer to the component in [config specifications](./config).
 
-* `generator`: Method used to generate the resource manifests for this particular component.  Currently, `static` (file based), `helm` (helm based), and `component` are supported values.
+- `generator`: Method used to generate the resource manifests for this particular component. Currently, `static` (file based), `helm` (helm based), and `component` are supported values.
 
-* `source`: The source for this component. This can be a URL in the case of remote components or a local path to specify a local filesystem component.
+- `source`: The source for this component. This can be a URL in the case of remote components or a local path to specify a local filesystem component.
 
-* `method`: The method by which this component is sourced.  Currently, only `git` and `local` are supported values.
+- `method`: The method by which this component is sourced. Currently, only `git` and `local` are supported values.
 
-* `path`: For some components, like ones generated with `helm`, the desired target of the component might not be located at the root of the repo.  Path enables you to specify the relative `path` to this target from the root of the `source`.
+- `path`: For some components, like ones generated with `helm`, the desired target of the component might not be located at the root of the repo. Path enables you to specify the relative `path` to this target from the root of the `source`.
 
-* `version`: For git `method` components, this specifies a specific commit SHA hash that the component should be locked to, enabling you to lock the component to a consistent version.
+- `version`: For git `method` components, this specifies a specific commit SHA hash that the component should be locked to, enabling you to lock the component to a consistent version.
 
-* `branch`: For git `method` components, this specifies the branch that should be checked out after the git `source` is cloned.
+- `branch`: For git `method` components, this specifies the branch that should be checked out after the git `source` is cloned.
 
-* `hooks`: Hooks enable you to execute one or more shell commands before or after the following component lifecycle events: `before-install`, `before-generate`, `after-install`, `after-generate`.
+- `hooks`: Hooks enable you to execute one or more shell commands before or after the following component lifecycle events: `before-install`, `before-generate`, `after-install`, `after-generate`.
 
-* `repositories`: A field of key/value pairs consisting of a set of helm repositories that should be added. 
+- `repositories`: A field of key/value pairs consisting of a set of helm repositories that should be added.
 
-* `subcomponents`: Zero or more subcomponents that define how to build the resource manifests that make up this component. These subcomponents are components themselves and have exactly the same schema as above.
+- `subcomponents`: Zero or more subcomponents that define how to build the resource manifests that make up this component. These subcomponents are components themselves and have exactly the same schema as above.
 
 ## Examples
 
@@ -34,16 +34,16 @@ name: "prometheus-grafana"
 generator: "static"
 path: "./manifests"
 subcomponents:
-- name: "grafana"
-  generator: "helm"
-  source: "https://github.com/helm/charts"
-  method: "git"
-  path: "stable/grafana"
-- name: "prometheus"
-  generator: "helm"
-  source: "https://github.com/helm/charts"
-  method: "git"
-  path: "stable/prometheus"
+  - name: "grafana"
+    generator: "helm"
+    source: "https://github.com/helm/charts"
+    method: "git"
+    path: "stable/grafana"
+  - name: "prometheus"
+    generator: "helm"
+    source: "https://github.com/helm/charts"
+    method: "git"
+    path: "stable/prometheus"
 ```
 
 ### Istio
@@ -72,24 +72,24 @@ subcomponents:
 
 ### Jaeger
 
-This [component specification](https://github.com/bnookala/fabrikate-jaeger) is specified in JSON and also utilizes a `repositories` field to add the incubator repo to helm. 
+This [component specification](https://github.com/bnookala/fabrikate-jaeger) is specified in JSON and also utilizes a `repositories` field to add the incubator repo to helm.
 
 ```json
 {
-    "name": "fabrikate-jaeger",
-    "generator": "static",
-    "path": "./manifests",
-    "subcomponents": [
-        {
-            "name": "jaeger",
-            "generator": "helm",
-            "repositories": {
-                "incubator": "https://kubernetes-charts-incubator.storage.googleapis.com/"
-            },
-            "source": "https://github.com/helm/charts",
-            "method": "git",
-            "path": "incubator/jaeger"
-        }
-    ]
+  "name": "fabrikate-jaeger",
+  "generator": "static",
+  "path": "./manifests",
+  "subcomponents": [
+    {
+      "name": "jaeger",
+      "generator": "helm",
+      "repositories": {
+        "incubator": "https://kubernetes-charts-incubator.storage.googleapis.com/"
+      },
+      "source": "https://github.com/helm/charts",
+      "method": "git",
+      "path": "incubator/jaeger"
+    }
+  ]
 }
 ```
