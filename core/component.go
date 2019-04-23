@@ -2,21 +2,23 @@ package core
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 
 	"github.com/kyokomi/emoji"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/timfpark/yaml"
 )
 
+// Component documentation: https://github.com/Microsoft/fabrikate/blob/master/docs/component.md
 type Component struct {
 	Name          string              `yaml:"name" json:"name"`
 	Config        ComponentConfig     `yaml:"-" json:"-"`
@@ -38,9 +40,11 @@ type Component struct {
 	Manifest string `yaml:"-" json:"-"`
 }
 
-type UnmarshalFunction func(in []byte, v interface{}) error
+type unmarshalFunction func(in []byte, v interface{}) error
 
-func UnmarshalFile(path string, unmarshalFunc UnmarshalFunction, obj interface{}) (err error) {
+// UnmarshalFile is an unmarshal wrapper which reads in any file from `path` and attempts to
+// unmarshal to `output` using the `unmarshalFunc`.
+func UnmarshalFile(path string, unmarshalFunc unmarshalFunction, output interface{}) (err error) {
 	_, err = os.Stat(path)
 	if err != nil {
 		return err
@@ -53,12 +57,15 @@ func UnmarshalFile(path string, unmarshalFunc UnmarshalFunction, obj interface{}
 
 	log.Info(emoji.Sprintf(":floppy_disk: Loading %s", path))
 
-	return unmarshalFunc(marshaled, obj)
+	return unmarshalFunc(marshaled, output)
 }
 
-func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc UnmarshalFunction, component *Component) error {
+// UnmarshalComponent finds and unmarshal the component.<format> of a component using the
+// provided `unmarshalFunc` function.
+func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmarshalFunction, component *Component) error {
 	componentFilename := fmt.Sprintf("component.%s", marshaledType)
 	componentPath := path.Join(c.PhysicalPath, componentFilename)
+	fmt.Printf("COMPONENT PATH %s\n", componentPath)
 
 	return UnmarshalFile(componentPath, unmarshalFunc, component)
 }
@@ -71,10 +78,9 @@ func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 		err = c.UnmarshalComponent("json", json.Unmarshal, &mergedComponent)
 		if err != nil {
 			errorMessage := fmt.Sprintf("Error loading component in path %s", c.PhysicalPath)
-			return mergedComponent, errors.Errorf(errorMessage)
-		} else {
-			mergedComponent.Serialization = "json"
+			return mergedComponent, errors.New(errorMessage)
 		}
+		mergedComponent.Serialization = "json"
 	} else {
 		mergedComponent.Serialization = "yaml"
 	}
@@ -96,11 +102,14 @@ func (c *Component) LoadConfig(environments []string) (err error) {
 	return c.Config.MergeConfigFile(c.PhysicalPath, "common")
 }
 
+// RelativePathTo returns the relative filesystem path where this component should be.
+// If the method the component is retrieved is `git`: the convention "components/<component.Name>" is used
+// If the method not git but the component has a `source`, that value is used
 func (c *Component) RelativePathTo() string {
 	if c.Method == "git" {
 		return fmt.Sprintf("components/%s", c.Name)
 	} else if c.Source != "" {
-		return c.Name
+		return c.Source
 	} else {
 		return "./"
 	}
@@ -216,7 +225,7 @@ func (c *Component) Generate(generator Generator) (err error) {
 	return c.AfterGenerate()
 }
 
-type ComponentIteration func(path string, component *Component) (err error)
+type componentIteration func(path string, component *Component) (err error)
 
 // WalkResult is what WalkComponentTree returns.
 // Will contain either a Component OR an Error (Error is nillable; meaning both fields can be nil)
@@ -232,7 +241,7 @@ type WalkResult struct {
 //
 // Same level ordering is not ensured; any nodes on the same tree level can be visited in any order.
 // Parent->Child ordering is ensured; A parent is always visited via `iterator` before the children are visited.
-func WalkComponentTree(startingPath string, environments []string, iterator ComponentIteration) <-chan WalkResult {
+func WalkComponentTree(startingPath string, environments []string, iterator componentIteration) <-chan WalkResult {
 	queue := make(chan Component)    // components enqueued to be 'visited' (ie; walked over)
 	results := make(chan WalkResult) // To pass WalkResults to
 	walking := sync.WaitGroup{}      // Keep track of all nodes being worked on
@@ -297,7 +306,17 @@ func WalkComponentTree(startingPath string, environments []string, iterator Comp
 					isNotInlined := (len(subcomponent.Generator) == 0 || subcomponent.Generator == "component") && len(subcomponent.Source) > 0
 					if isNotInlined {
 						// This subcomponent is not inlined, so set the paths to their relative positions and prepare the configs
-						subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
+						if subcomponent.Path == "" {
+							// Standard component
+							subcomponent.PhysicalPath = path.Join(component.PhysicalPath, subcomponent.RelativePathTo())
+						} else {
+							// Components Source points to a Fabrikate component library; concat Path to get to target component
+							physicalPath := path.Join(subcomponent.RelativePathTo(), subcomponent.Path)
+							if !filepath.IsAbs(subcomponent.RelativePathTo()) {
+								physicalPath = path.Join(component.PhysicalPath, physicalPath)
+							}
+							subcomponent.PhysicalPath = physicalPath
+						}
 						subcomponent.LogicalPath = path.Join(component.LogicalPath, subcomponent.Name)
 						subcomponent = prepareComponent(subcomponent)
 					} else {
