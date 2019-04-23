@@ -22,7 +22,7 @@ func TestRelativePathToDirectoryComponent(t *testing.T) {
 		Source: "./infra",
 	}
 
-	assert.Equal(t, subcomponent.RelativePathTo(), "infra")
+	assert.Equal(t, subcomponent.RelativePathTo(), "./infra")
 }
 
 func TestLoadComponent(t *testing.T) {
