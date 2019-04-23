@@ -22,9 +22,9 @@ This short guide shows a self-contained example of generating resource manifests
 3. Set public IP address for west region 
     - ` $ fab set --environment west --subcomponent cloud-native.istio gateways.istio-ingressgateway.loadBalancerIP=40.65.120.17 gateways.istio-ingressgateway.serviceAnnotations."service.beta.kubernetes.io/azure-load-balancer-resource-group"="mycluster-west-rg"`
 4. Set public IP address for central region 
-    - ` $ fab set --environment west --subcomponent cloud-native.istio gateways.istio-ingressgateway.loadBalancerIP=40.65.120.17 gateways.istio-ingressgateway.serviceAnnotations."service.beta.kubernetes.io/azure-load-balancer-resource-group"="mycluster-central-rg"`
+    - ` $ fab set --environment west --subcomponent cloud-native.istio gateways.istio-ingressgateway.loadBalancerIP=45.63.429.29 gateways.istio-ingressgateway.serviceAnnotations."service.beta.kubernetes.io/azure-load-balancer-resource-group"="mycluster-central-rg"`
 5. Set public IP address for east region 
-    - ` $ fab set --environment west --subcomponent cloud-native.istio gateways.istio-ingressgateway.loadBalancerIP=40.65.120.17 gateways.istio-ingressgateway.serviceAnnotations."service.beta.kubernetes.io/azure-load-balancer-resource-group"="mycluster-east-rg"`
+    - ` $ fab set --environment west --subcomponent cloud-native.istio gateways.istio-ingressgateway.loadBalancerIP=59.32.793.49 gateways.istio-ingressgateway.serviceAnnotations."service.beta.kubernetes.io/azure-load-balancer-resource-group"="mycluster-east-rg"`
 
 ## Generate Resource Manifests
 * Install remote components
