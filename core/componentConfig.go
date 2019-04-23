@@ -14,6 +14,7 @@ import (
 	yaml "github.com/timfpark/yaml"
 )
 
+// ComponentConfig documentation: https://github.com/Microsoft/fabrikate/blob/master/docs/config.md
 type ComponentConfig struct {
 	Path            string                     `yaml:"-" json:"-"`
 	Serialization   string                     `yaml:"-" json:"-"`
@@ -74,13 +75,13 @@ func (cc *ComponentConfig) Load(environment string) (err error) {
 // HasComponentConfig checks if the component contains the given component configuration.
 // The given component is specified via a configuration `path`.
 // Returns true if it contains it, otherwise it returns false.
-func (cc *ComponentConfig) HasComponentConfig(path []string) (bool) {
+func (cc *ComponentConfig) HasComponentConfig(path []string) bool {
 	configLevel := cc.Config
-	
+
 	for levelIndex, pathPart := range path {
 		// if this key is not the final one, we need to decend in the config.
 		if _, ok := configLevel[pathPart]; !ok {
-			return false;
+			return false
 		}
 
 		if levelIndex < len(path)-1 {
@@ -137,26 +138,25 @@ func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (sub
 	return subcomponentConfig
 }
 
-
 // HasSubcomponentConfig checks if a component contains the given subcomponents of the `subcomponentPath`
 //
 // Returns true if it contains the subcomponent, otherwise it returns false
-func (cc *ComponentConfig) HasSubcomponentConfig(subcomponentPath []string) (bool) {
-	subcomponentConfig := *cc 
+func (cc *ComponentConfig) HasSubcomponentConfig(subcomponentPath []string) bool {
+	subcomponentConfig := *cc
 
 	for _, subcomponentName := range subcomponentPath {
 		if subcomponentConfig.Subcomponents == nil {
-			return false;
+			return false
 		}
 
 		if _, ok := subcomponentConfig.Subcomponents[subcomponentName]; !ok {
-			return false;
+			return false
 		}
 
 		subcomponentConfig = subcomponentConfig.Subcomponents[subcomponentName]
 	}
 
-	return true;
+	return true
 }
 
 // SetConfig sets or creates the configuration `value` for the given `subcomponentPath`.

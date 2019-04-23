@@ -3,7 +3,7 @@
 A deployment definition in Fabrikate is specified via one or more component.yaml/json files. Each of these file contains a
 specification of a component with the following schema:
 
-- `name`: A free form text name for this component. This name is used to refer to the component in [config specifications](./config).
+- `name`: A free form text name for this component. This name is used to refer to the component in [config specifications](./config.md).
 
 - `generator`: Method used to generate the resource manifests for this particular component. Currently, `static` (file based), `helm` (helm based), and `component` are supported values.
 
