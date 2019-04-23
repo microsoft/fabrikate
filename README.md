@@ -141,7 +141,7 @@ subcomponents:
           elasticsearch.url: "http://elasticsearch-client.elasticsearch.svc.cluster.local:9200"
 ```
 
-This `common` configuration, which applies to all environments, can be mixed with more specific configuration. For example, let's say that we were deploying this in Azure and wanted to utilize its `managed-premium` SSD storage class for Elasticsearch, but only in `azure` deployments. We can build an `azure` configuration that allows us to do exactly that, and Fabrikate has a convenience function called `set` that enables to do exactly that:
+This `cloud-native` `common` configuration, which applies to all environments, can be mixed with more specific configuration. For example, let's say that we were deploying this in Azure and wanted to utilize its `managed-premium` SSD storage class for Elasticsearch, but only in `azure` deployments. We can build an `azure` configuration that allows us to do exactly that, and Fabrikate has a convenience function called `set` that enables to do exactly that:
 
 ```
 $ fab set --environment azure --subcomponent cloud-native.elasticsearch data.persistence.storageClass="managed-premium" master.persistence.storageClass="managed-premium"
@@ -161,6 +161,28 @@ subcomponents:
           master:
             persistence:
               storageClass: managed-premium
+```
+
+The `cloud-native` logging stack `common` and `azure` specific configurations can be extended further with deployment level configurations. For example, let's say that we were deploying a `prod` environment in Azure cloud and we wanted to use a static public IP `40.65.120.17` from `mycluster-prod-RG` resource group for `Istio-IngressGateway` specific to `prod` environment. We can build a `prod` configuration using a Fabrikate `set` command.
+
+
+```
+$ fab set --environment prod --subcomponent cloud-native.istio gateways.istio-ingressgateway.loadBalancerIP=40.65.120.17 gateways.istio-ingressgateway.serviceAnnotations."service.beta.kubernetes.io/azure-load-balancer-resource-group"="mycluster-prod-rg"
+```
+
+This creates file called `config/prod.yaml` that looks like this.
+
+```yaml
+subcomponents:
+  cloud-native:
+    subcomponents:
+      istio:
+        config:
+          gateways:
+            istio-ingressgateway:
+              loadBalancerIP: 40.65.120.17
+              serviceAnnotations:
+                service.beta.kubernetes.io/azure-load-balancer-resource-group: mycluster-prod-rg
 ```
 
 Naturally, an observability stack is just the base infrastructure we need, and our real goal is to deploy a set of microservices. Furthermore, let's assume that we want to be able to split the incoming traffic for these services between `canary` and `stable` tiers with [Istio](https://istio.io) so that we can more safely launch new versions of the service.
@@ -248,6 +270,12 @@ We have complete details about how to use and contribute to Fabrikate in these d
 * [Component Definitions](./docs/component.md)
 * [Config Definitions](./docs/config.md)
 * [Contributing](./docs/contributing.md)
+
+## Examples
+
+We have outlined detailed steps to build the following scenario using Fabrikate.
+
+* [Generate `cloud-native` resource manifests for multicluster environment](./docs/multicluster.md)
 
 ## Community
 
