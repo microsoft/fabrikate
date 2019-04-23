@@ -41,6 +41,10 @@ func TestSetValue(t *testing.T) {
 	err = Set("new", "myapp.mysubapp", []string{"foo.bar=zoo"}, noNewConfigKeys)
 	assert.Nil(t, err)
 
+	// deep subcomponent config set with string literal in double quotes. ex: \"k8.beta.io/load-balancer-group\"
+	err = Set("new", "myservice.mysubservice", []string{"foo.bar.\"k8.beta.io/load-balancer-group\"=foo-bar-group"}, noNewConfigKeys)
+	assert.Nil(t, err)
+
 	// set existing value with new noNewConfigKeys switch on
 	noNewConfigKeys = true
 	err = Set("test", "", []string{"foo=faa"}, noNewConfigKeys)
