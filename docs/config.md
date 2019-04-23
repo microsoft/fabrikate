@@ -2,14 +2,14 @@
 
 Configuration files in Fabrikate allow you to define the structure of your deployment once via [components](./component.md) while enabling elements of it to vary across different environments like QA, staging, and production or across on-prem and a public cloud -- or both.
 
-By convention, configuration is placed into a directory called `config` with the name of the environment that it applies to.  Also by convention, if a `common.yaml` (or `common.json`) config definition exists, it is applied globally as config.
+By convention, configuration is placed into a directory called `config` with the name of the environment that it applies to. Also by convention, if a `common.yaml` (or `common.json`) config definition exists, it is applied globally as config.
 
 The schema for these config definitions is fairly simple:
 
-* `config`: A set of configuration values for the component in the parent directory that is intended to be used in conjunction with a generator. For example, with a Helm generator, these configuration values will be applied through a `values.yaml` file to the helm template specified.
-* `namespace`: The namespace that should be applied for this component.
-* `injectNamespace`: Directs Fabrikate to inject the specified namespace into every resource manifest generated for this component. This is intended for generators that don't support applying namespaces or where the template for the generator doesn't parameterize the namespace such that it is user accessible.
-* `subcomponents`: A set of key/value pairs for the subcomponents of this component that specify the configuration for those components. Each of the values of these keys is a config definition in its own right and has the same schema as this config definition.
+- `config`: A set of configuration values for the component in the parent directory that is intended to be used in conjunction with a generator. For example, with a Helm generator, these configuration values will be applied through a `values.yaml` file to the helm template specified.
+- `namespace`: The namespace that should be applied for this component.
+- `injectNamespace`: Directs Fabrikate to inject the specified namespace into every resource manifest generated for this component. This is intended for generators that don't support applying namespaces or where the template for the generator doesn't parameterize the namespace such that it is user accessible.
+- `subcomponents`: A set of key/value pairs for the subcomponents of this component that specify the configuration for those components. Each of the values of these keys is a config definition in its own right and has the same schema as this config definition.
 
 Configuration in Fabrikate is collected from the top of the hierarchy down, meaning if a config definition lower in the hierarchy specifies a value for a key of configuration that has been already collected, the configuration provided higher in the hierarchy wins out. The reasoning behind this is because configuration higher in the hierarchy has a higher level of context over how the portions of the deployment definition should work with each other.
 
@@ -24,13 +24,13 @@ In this [config definition](https://github.com/bnookala/fabrikate-jaeger/blob/ma
 ```yaml
 config:
 subcomponents:
-    jaeger:
-        namespace: "jaeger"
-        injectNamespace: true
-        config:
-            collector:
-                annotations:
-                    sidecar.istio.io/inject: "false"
+  jaeger:
+    namespace: "jaeger"
+    injectNamespace: true
+    config:
+      collector:
+        annotations:
+          sidecar.istio.io/inject: "false"
 ```
 
 ### Istio

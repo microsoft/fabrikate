@@ -29,11 +29,11 @@ Since our directory was empty, this creates a component.yaml file in this direct
 ```yaml
 name: mycluster
 subcomponents:
-- name: cloud-native
-  generator: component
-  source: https://github.com/timfpark/fabrikate-cloud-native
-  method: git
-  branch: master
+  - name: cloud-native
+    generator: component
+    source: https://github.com/timfpark/fabrikate-cloud-native
+    method: git
+    branch: master
 ```
 
 A Fabrikate definition, like this one, always contains a `component.yaml` file in its root that defines how to generate the Kubernetes resource manifests for its directory tree scope.
@@ -267,9 +267,10 @@ This will cause a very large number of containers to spin up (which will take ti
 ## Documentation
 
 We have complete details about how to use and contribute to Fabrikate in these documentation items:
-* [Component Definitions](./docs/component.md)
-* [Config Definitions](./docs/config.md)
-* [Contributing](./docs/contributing.md)
+
+- [Component Definitions](./docs/component.md)
+- [Config Definitions](./docs/config.md)
+- [Contributing](./docs/contributing.md)
 
 ## Examples
 
@@ -286,6 +287,7 @@ We have outlined detailed steps to build the following scenario using Fabrikate.
 We maintain a sister project called [Bedrock](https://github.com/Microsoft/bedrock). Bedrock provides automa that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier, automating a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from Fabrikate defintions.
 
 <!-- refs -->
+
 [azure-devops-build-status]: https://tpark.visualstudio.com/fabrikate/_apis/build/status/fabrikate-cicd?branchName=master
 [azure-devops-build-link]: https://tpark.visualstudio.com/fabrikate/_build/latest?definitionId=35&branchName=master
 [go-report-card]: https://goreportcard.com/report/github.com/Microsoft/fabrikate
