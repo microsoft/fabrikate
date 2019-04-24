@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"strings"
@@ -9,16 +10,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// SplitPathValuePairs splits array of key/value pairs and returns array of path value pairs ([] PathValuePair) //
 func SplitPathValuePairs(pathValuePairStrings []string) (pathValuePairs []core.PathValuePair, err error) {
 	for _, pathValuePairString := range pathValuePairStrings {
 		pathValuePairParts := strings.Split(pathValuePairString, "=")
 
+		errMessage := "%s is not a properly formated configuration key/value pair"
+
 		if len(pathValuePairParts) != 2 {
-			return pathValuePairs, fmt.Errorf("%s is not a properly formated configuration key/value pair.", pathValuePairString)
+			return pathValuePairs, fmt.Errorf(errMessage, pathValuePairString)
+		}
+
+		pathParts, err := SplitPathParts(pathValuePairParts[0])
+
+		if err != nil {
+			return pathValuePairs, fmt.Errorf(errMessage, pathValuePairString)
 		}
 
 		pathValuePair := core.PathValuePair{
-			Path:  strings.Split(pathValuePairParts[0], "."),
+			Path:  pathParts,
 			Value: pathValuePairParts[1],
 		}
 
@@ -26,6 +36,35 @@ func SplitPathValuePairs(pathValuePairStrings []string) (pathValuePairs []core.P
 	}
 
 	return pathValuePairs, nil
+}
+
+// SplitPathParts splits path string at . while ignoring string literals enclosed in quotes (".") and returns an array //
+func SplitPathParts(path string) (pathParts []string, err error) {
+
+	csv := csv.NewReader(strings.NewReader(path))
+
+	// Comma is the field delimiter. Dot (.) will be the value for config key
+	csv.Comma = '.'
+
+	// setting it to true, a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field.
+	csv.LazyQuotes = true
+
+	// FieldsPerRecord is the number of expected fields per record.
+	// > 0: Read requires each record to have the given number of fields.
+	// == 0, Read sets it to the number of fields in the first record, so that future records must have the same field count.
+	// < 0, no check is made and config key may have a variable number of fields.
+	csv.FieldsPerRecord = -1
+
+	// Read parts and the error
+	parts, err := csv.Read()
+
+	// return err and empty parts
+	if err != nil {
+		return nil, err
+	}
+
+	// return key parts
+	return parts, nil
 }
 
 func Set(environment string, subcomponent string, pathValuePairStrings []string, noNewConfigKeys bool) (err error) {
@@ -46,20 +85,20 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string,
 		return err
 	}
 
-	newConfigError := errors.New("New configuration was specified and the --no-new-config-keys switch is on.")		
-	
-	for _, pathValue := range pathValuePairs {
-			if noNewConfigKeys {
-				if (!componentConfig.HasSubcomponentConfig(subcomponentPath)) {
-					return newConfigError
-				} else {
-					sc := componentConfig.GetSubcomponentConfig(subcomponentPath)
+	newConfigError := errors.New("New configuration was specified and the --no-new-config-keys switch is on.")
 
-					if(!sc.HasComponentConfig(pathValue.Path)) {
-						return newConfigError
-					}
+	for _, pathValue := range pathValuePairs {
+		if noNewConfigKeys {
+			if !componentConfig.HasSubcomponentConfig(subcomponentPath) {
+				return newConfigError
+			} else {
+				sc := componentConfig.GetSubcomponentConfig(subcomponentPath)
+
+				if !sc.HasComponentConfig(pathValue.Path) {
+					return newConfigError
 				}
 			}
+		}
 
 		componentConfig.SetConfig(subcomponentPath, pathValue.Path, pathValue.Value)
 	}
