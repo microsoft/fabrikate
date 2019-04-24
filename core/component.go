@@ -65,7 +65,6 @@ func UnmarshalFile(path string, unmarshalFunc unmarshalFunction, output interfac
 func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmarshalFunction, component *Component) error {
 	componentFilename := fmt.Sprintf("component.%s", marshaledType)
 	componentPath := path.Join(c.PhysicalPath, componentFilename)
-	fmt.Printf("COMPONENT PATH %s\n", componentPath)
 
 	return UnmarshalFile(componentPath, unmarshalFunc, component)
 }
