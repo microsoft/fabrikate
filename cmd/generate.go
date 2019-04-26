@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func WriteGeneratedManifests(generationPath string, components []core.Component) (err error) {
+func writeGeneratedManifests(generationPath string, components []core.Component) (err error) {
 	// Delete the old version, so we don't end up with a mishmash of two builds.
 	os.RemoveAll(generationPath)
 
@@ -40,7 +40,7 @@ func WriteGeneratedManifests(generationPath string, components []core.Component)
 	return nil
 }
 
-func ValidateGeneratedManifests(generationPath string) (err error) {
+func validateGeneratedManifests(generationPath string) (err error) {
 	log.Println(emoji.Sprintf(":microscope: validating generated manifests in path %s", generationPath))
 	output, err := exec.Command("kubectl", "apply", "--validate=true", "--dry-run", "--recursive", "-f", generationPath).Output()
 
@@ -54,6 +54,9 @@ func ValidateGeneratedManifests(generationPath string) (err error) {
 	return nil
 }
 
+// Generate implements the 'generate' command. It takes a set of environments and a validation flag
+// and iterates through the component tree, generating components as it reaches them, and writing all
+// of the generated manifests at the very end.
 func Generate(startPath string, environments []string, validate bool) (components []core.Component, err error) {
 	// Iterate through component tree and generate
 	results := core.WalkComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
@@ -82,12 +85,12 @@ func Generate(startPath string, environments []string, validate bool) (component
 
 	generationPath := path.Join(startPath, "generated", environmentName)
 
-	if err = WriteGeneratedManifests(generationPath, components); err != nil {
+	if err = writeGeneratedManifests(generationPath, components); err != nil {
 		return nil, err
 	}
 
 	if validate {
-		if err = ValidateGeneratedManifests(generationPath); err != nil {
+		if err = validateGeneratedManifests(generationPath); err != nil {
 			return nil, err
 		}
 	}
@@ -99,7 +102,6 @@ func Generate(startPath string, environments []string, validate bool) (component
 	return components, err
 }
 
-// generateCmd represents the generate command
 var generateCmd = &cobra.Command{
 	Use:   "generate <config1> <config2> ... <configN>",
 	Short: "Generates Kubernetes resource definitions from deployment definition.",

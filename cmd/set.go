@@ -67,6 +67,9 @@ func SplitPathParts(path string) (pathParts []string, err error) {
 	return parts, nil
 }
 
+// Set implements the 'set' command. It takes an environment, a set of config path / value strings (and a subcomponent if the config
+// should be set on a subcomponent versus the component itself) and sets the config in the appropriate config file,
+// writing the result out to disk at the end.
 func Set(environment string, subcomponent string, pathValuePairStrings []string, noNewConfigKeys bool) (err error) {
 	subcomponentPath := []string{}
 	if len(subcomponent) > 0 {

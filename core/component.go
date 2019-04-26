@@ -69,6 +69,7 @@ func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmar
 	return UnmarshalFile(componentPath, unmarshalFunc, component)
 }
 
+// LoadComponent loads the component at c.PhysicalPath
 func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &mergedComponent)
@@ -91,6 +92,7 @@ func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 	return mergedComponent, err
 }
 
+// LoadConfig loads and merges the config specified by the passed set of environments.
 func (c *Component) LoadConfig(environments []string) (err error) {
 	for _, environment := range environments {
 		if err := c.Config.MergeConfigFile(c.PhysicalPath, environment); err != nil {
@@ -114,6 +116,7 @@ func (c *Component) RelativePathTo() string {
 	}
 }
 
+// ExecuteHook executes the passed hook
 func (c *Component) ExecuteHook(hook string) (err error) {
 	if c.Hooks[hook] == nil {
 		return nil
@@ -148,22 +151,27 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 	return nil
 }
 
+// BeforeGenerate executes the 'before-generate' hook (if any) of the component.
 func (c *Component) BeforeGenerate() (err error) {
 	return c.ExecuteHook("before-generate")
 }
 
+// AfterGenerate executes the 'after-generate' hook (if any) of the component.
 func (c *Component) AfterGenerate() (err error) {
 	return c.ExecuteHook("after-generate")
 }
 
+// BeforeInstall executes the 'before-install' hook (if any) of the component.
 func (c *Component) BeforeInstall() (err error) {
 	return c.ExecuteHook("before-install")
 }
 
+// AfterInstall executes the 'after-install' hook (if any) of the component.
 func (c *Component) AfterInstall() (err error) {
 	return c.ExecuteHook("after-install")
 }
 
+// InstallComponent installs the component (if needed) utilizing its Method.
 func (c *Component) InstallComponent(componentPath string) (err error) {
 	if c.Method == "git" {
 		componentsPath := fmt.Sprintf("%s/components", componentPath)
@@ -185,6 +193,8 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 	return nil
 }
 
+// Install encapsulates the install lifecycle of a component including before-install,
+// installation, and after-install hooks.
 func (c *Component) Install(componentPath string, generator Generator) (err error) {
 	if err := c.BeforeInstall(); err != nil {
 		return err
@@ -205,6 +215,8 @@ func (c *Component) Install(componentPath string, generator Generator) (err erro
 	return c.AfterInstall()
 }
 
+// Generate encapsulates the generate lifecycle of a component including before-generate,
+// generation, and after-generate hooks.
 func (c *Component) Generate(generator Generator) (err error) {
 	if err := c.BeforeGenerate(); err != nil {
 		return err
