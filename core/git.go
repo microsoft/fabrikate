@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// CloneRepo is a helper func to centralize cloning a repo with the spec provided by its arguments.
 func CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
 	cloneArgs := []string{
 		"clone",

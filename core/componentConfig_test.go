@@ -83,7 +83,7 @@ func TestWriteYAML(t *testing.T) {
 			"foo": "bar",
 		},
 		Subcomponents: map[string]ComponentConfig{
-			"myapp": ComponentConfig{
+			"myapp": {
 				Config: map[string]interface{}{
 					"zoo": "zar",
 				},
@@ -109,7 +109,7 @@ func TestWriteJSON(t *testing.T) {
 			"foo": "bar",
 		},
 		Subcomponents: map[string]ComponentConfig{
-			"myapp": ComponentConfig{
+			"myapp": {
 				Config: map[string]interface{}{
 					"zoo": "zar",
 				},

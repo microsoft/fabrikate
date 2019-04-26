@@ -10,8 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// StaticGenerator uses a static directory of resource manifests to create a rolled up multi-part manifest.
 type StaticGenerator struct{}
 
+// Generate iterates a static directory of resource manifests and creates a multi-part manifest.
 func (sg *StaticGenerator) Generate(component *core.Component) (manifest string, err error) {
 	log.Println(emoji.Sprintf(":truck: generating component '%s' statically from path %s", component.Name, component.Path))
 
@@ -33,6 +35,8 @@ func (sg *StaticGenerator) Generate(component *core.Component) (manifest string,
 	return manifests, err
 }
 
-func (hg *StaticGenerator) Install(component *core.Component) (err error) {
+// Install is provided such that the StaticGenerator fulfills the Generator interface.
+// Currently is a no-op, but could be extended to support remote static content (see #155)
+func (sg *StaticGenerator) Install(component *core.Component) (err error) {
 	return nil
 }

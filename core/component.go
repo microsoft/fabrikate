@@ -111,9 +111,9 @@ func (c *Component) RelativePathTo() string {
 		return fmt.Sprintf("components/%s", c.Name)
 	} else if c.Source != "" {
 		return c.Source
-	} else {
-		return "./"
 	}
+
+	return "./"
 }
 
 // ExecuteHook executes the passed hook
@@ -360,6 +360,7 @@ func SynchronizeWalkResult(results <-chan WalkResult) (components []Component, e
 	return components, err
 }
 
+// Write serializes a component to YAML (default) or JSON (chosen via c.Serialization) at c.PhysicalPath
 func (c *Component) Write() (err error) {
 	var marshaledComponent []byte
 
