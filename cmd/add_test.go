@@ -23,21 +23,21 @@ func TestAdd(t *testing.T) {
 	_ = os.Remove("./component.yaml")
 
 	componentComponent := core.Component{
-		Name:      "cloud-native",
-		Source:    "https://github.com/timfpark/fabrikate-cloud-native",
-		Method:    "git",
-		Generator: "component",
+		Name:          "cloud-native",
+		Source:        "https://github.com/timfpark/fabrikate-cloud-native",
+		Method:        "git",
+		ComponentType: "component",
 	}
 
 	err = Add(componentComponent)
 	assert.Nil(t, err)
 
 	helmComponent := core.Component{
-		Name:      "elasticsearch",
-		Source:    "https://github.com/helm/charts",
-		Method:    "git",
-		Path:      "stable/elasticsearch",
-		Generator: "helm",
+		Name:          "elasticsearch",
+		Source:        "https://github.com/helm/charts",
+		Method:        "git",
+		Path:          "stable/elasticsearch",
+		ComponentType: "helm",
 	}
 
 	err = Add(helmComponent)
