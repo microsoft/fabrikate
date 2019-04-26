@@ -14,9 +14,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// HelmGenerator provides 'helm generate' generator functionality to Fabrikate
 type HelmGenerator struct{}
 
-func AddNamespaceToManifests(manifests string, namespace string) (namespacedManifests string, err error) {
+func addNamespaceToManifests(manifests string, namespace string) (namespacedManifests string, err error) {
 	splitManifest := strings.Split(manifests, "\n---")
 
 	for _, manifest := range splitManifest {
@@ -49,14 +50,15 @@ func AddNamespaceToManifests(manifests string, namespace string) (namespacedMani
 	return namespacedManifests, nil
 }
 
-func (hg *HelmGenerator) MakeHelmRepoPath(component *core.Component) string {
+func (hg *HelmGenerator) makeHelmRepoPath(component *core.Component) string {
 	if component.Method != "git" {
 		return component.PhysicalPath
-	} else {
-		return path.Join(component.PhysicalPath, "helm_repos", component.Name)
 	}
+
+	return path.Join(component.PhysicalPath, "helm_repos", component.Name)
 }
 
+// Generate returns the helm templated manifests specified by this component.
 func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, err error) {
 	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Source))
 
@@ -66,7 +68,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		return "", err
 	}
 
-	helmRepoPath := hg.MakeHelmRepoPath(component)
+	helmRepoPath := hg.makeHelmRepoPath(component)
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
 	if err != nil {
 		return "", err
@@ -105,7 +107,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	// opt into injecting these namespaces manually.  We should reassess if this is necessary after Helm 3 is released and client side
 	// templating really becomes a first class function in Helm.
 	if component.Config.InjectNamespace && component.Config.Namespace != "" {
-		stringManifests, err = AddNamespaceToManifests(stringManifests, component.Config.Namespace)
+		stringManifests, err = addNamespaceToManifests(stringManifests, component.Config.Namespace)
 	}
 
 	_ = exec.Command("rm", absOverriddenPath).Run()
@@ -113,12 +115,14 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	return stringManifests, err
 }
 
+// Install installs the helm chart specified by the passed component and performs any
+// helm lifecycle events needed.
 func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	if len(component.Source) == 0 || component.Method != "git" {
 		return nil
 	}
 
-	helmRepoPath := hg.MakeHelmRepoPath(component)
+	helmRepoPath := hg.makeHelmRepoPath(component)
 	if err := exec.Command("rm", "-rf", helmRepoPath).Run(); err != nil {
 		return err
 	}

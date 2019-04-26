@@ -24,6 +24,7 @@ type ComponentConfig struct {
 	Subcomponents   map[string]ComponentConfig `yaml:"subcomponents,omitempty" json:"subcomponents,omitempty"`
 }
 
+// NewComponentConfig creates a ComponentConfig at the passed path.
 func NewComponentConfig(path string) ComponentConfig {
 	return ComponentConfig{
 		Path:          path,
@@ -32,21 +33,26 @@ func NewComponentConfig(path string) ComponentConfig {
 	}
 }
 
+// GetPath returns the path to the config file for the specified environment.
 func (cc *ComponentConfig) GetPath(environment string) string {
 	configFilename := fmt.Sprintf("config/%s.%s", environment, cc.Serialization)
 	return path.Join(cc.Path, configFilename)
 }
 
+// UnmarshalJSONConfig unmarshals the JSON config file for the specified environment.
 func (cc *ComponentConfig) UnmarshalJSONConfig(environment string) (err error) {
 	cc.Serialization = "json"
 	return UnmarshalFile(cc.GetPath(environment), json.Unmarshal, &cc)
 }
 
+// UnmarshalYAMLConfig unmarshals the YAML config file for the specified environment.
 func (cc *ComponentConfig) UnmarshalYAMLConfig(environment string) (err error) {
 	cc.Serialization = "yaml"
 	return UnmarshalFile(cc.GetPath(environment), yaml.Unmarshal, &cc)
 }
 
+// MergeConfigFile loads the config for the specified environment and path and
+// merges it with the current set of config.
 func (cc *ComponentConfig) MergeConfigFile(path string, environment string) (err error) {
 	componentConfig := NewComponentConfig(path)
 	if err := componentConfig.Load(environment); err != nil {
@@ -56,6 +62,7 @@ func (cc *ComponentConfig) MergeConfigFile(path string, environment string) (err
 	return cc.Merge(componentConfig)
 }
 
+// Load loads the config for the specified environment.
 func (cc *ComponentConfig) Load(environment string) (err error) {
 	err = cc.UnmarshalYAMLConfig(environment)
 
@@ -165,6 +172,8 @@ func (cc *ComponentConfig) SetConfig(subcomponentPath []string, path []string, v
 	subcomponentConfig.SetComponentConfig(path, value)
 }
 
+// MergeNamespaces merges the namespaces between the componentConfig passed and this
+// ComponentConfig.
 func (cc *ComponentConfig) MergeNamespaces(newConfig ComponentConfig) ComponentConfig {
 	if cc.Namespace == "" {
 		cc.Namespace = newConfig.Namespace
@@ -178,6 +187,8 @@ func (cc *ComponentConfig) MergeNamespaces(newConfig ComponentConfig) ComponentC
 	return *cc
 }
 
+// Merge merges the config (and the namespace spec) between the passed componentConfig
+// and this componentConfig.  In the case of conflicts, this componentConfig wins.
 func (cc *ComponentConfig) Merge(newConfig ComponentConfig) (err error) {
 	options := conjungo.NewOptions()
 	options.Overwrite = false
@@ -189,6 +200,8 @@ func (cc *ComponentConfig) Merge(newConfig ComponentConfig) (err error) {
 	return err
 }
 
+// Write writes this componentConfig to a file using the serialization specified in
+// cc.Serialization.
 func (cc *ComponentConfig) Write(environment string) (err error) {
 	var marshaledConfig []byte
 

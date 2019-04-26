@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Add implements the 'add' command in Fabrikate.  It takes a spec for the new subcomponent, loads
+// the previous component (if any), adds the subcomponent, and serializes the new component back out.
 func Add(subcomponent core.Component) (err error) {
 	component := core.Component{
 		PhysicalPath: "./",
