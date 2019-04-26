@@ -59,7 +59,7 @@ func Generate(startPath string, environments []string, validate bool) (component
 	results := core.WalkComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
 
 		var generator core.Generator
-		switch component.Generator {
+		switch component.ComponentType {
 		case "helm":
 			generator = &generators.HelmGenerator{}
 		case "static":
