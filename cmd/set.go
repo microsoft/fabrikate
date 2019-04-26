@@ -94,12 +94,12 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string,
 		if noNewConfigKeys {
 			if !componentConfig.HasSubcomponentConfig(subcomponentPath) {
 				return newConfigError
-			} else {
-				sc := componentConfig.GetSubcomponentConfig(subcomponentPath)
+			}
 
-				if !sc.HasComponentConfig(pathValue.Path) {
-					return newConfigError
-				}
+			sc := componentConfig.GetSubcomponentConfig(subcomponentPath)
+
+			if !sc.HasComponentConfig(pathValue.Path) {
+				return newConfigError
 			}
 		}
 
