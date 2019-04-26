@@ -4,7 +4,7 @@
 
 Adds a subcomponent to the current component (or the component specified by the passed path).
 
-### Usage
+#### Usage
 
 ```sh
 $ fab add <component-name> --source <component-source> [--type component] [--method git] [--path .]
@@ -17,7 +17,7 @@ Where:
 * `method` specifies the method that should be used to fetch the component (`git` (default))
 * `path` specifies the path to the component that this subcomponent should be added to.
 
-### Example 
+#### Example 
 
 ```sh
 $ fab add cloud-native --source https://github.com/timfpark/fabrikate-cloud-native
@@ -27,7 +27,7 @@ $ fab add cloud-native --source https://github.com/timfpark/fabrikate-cloud-nati
 
 Generates Kubernetes resource definitions from deployment definition in the current subtree.
 
-### Usage
+#### Usage
 
 ```sh
 $ fab generate <config1> <config2> ... <configN>
@@ -39,7 +39,7 @@ if you specified `prod azure east`, `prod`'s config would be applied first, and 
 would only be applied if they did not conflict with `prod`. Likewise, `east`'s config would only be applied
 if it did not conflict with `prod` or `azure`.
 
-### Example
+#### Example
 
 ```sh
 $ fab generate prod azure east
@@ -51,7 +51,7 @@ Installs all of the remote components specified in the current deployment tree l
 component subtree from the current directory to do so.  Required to be executed before generate (if needed), such
 that Fabrikate has all of the dependencies locally to use to generate the resource manifests.
 
-### Example
+#### Example
 
 ```sh
 $ fab install
@@ -61,13 +61,13 @@ $ fab install
 
 Sets a config value for a component for a particular config environment in the Fabrikate definition.
 
-## Usage
+#### Usage
 
 ```sh
 $ fab set --environment <name> [--subcomponent <subcomponent name>] keyPath1=value1 keyPath2=value2 ... keyPathN=valueN
 ```
 
-### Examples
+#### Examples
 
 ```sh
 $ fab set --environment prod data.replicas=4 username="ops"
@@ -97,7 +97,7 @@ Use the --no-new-config-keys switch to prevent the creation of new config.
 
 Prints the Fabrikate version
 
-## Usage
+#### Usage
 
 ```sh
 $ fab version
