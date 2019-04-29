@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Microsoft/fabrikate/core"
+	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -75,7 +76,13 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 
 	chartPath := path.Join(absHelmRepoPath, component.Path)
-	absOverriddenPath := path.Join(chartPath, "overriddenValues.yaml")
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+
+	overriddenValuesFileName := fmt.Sprintf("overriddenValues-%s.yaml", uuid.String())
+	absOverriddenPath := path.Join(chartPath, overriddenValuesFileName)
 
 	log.Debugf("writing config %s to %s\n", configYaml, absOverriddenPath)
 	err = ioutil.WriteFile(absOverriddenPath, configYaml, 0644)
