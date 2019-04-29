@@ -36,7 +36,7 @@ func Add(subcomponent core.Component) (err error) {
 }
 
 var addCmd = &cobra.Command{
-	Use:   "'add <component-name> --source <component-source> [--type component] [--method git] [--path .]",
+	Use:   "add <component-name> --source <component-source> [--type component] [--method git] [--path .]",
 	Short: "Adds a subcomponent to the current component (or the component specified by the passed path).",
 	Long: `Adds a subcomponent to the current component (or the component specified by the passed path).
 
@@ -47,7 +47,7 @@ path: the path to the component that this subcomponent should be added to.
 
 example:
 
-$ fab add cloud-native --source https://github.com/timfpark/fabrikate-cloud-native
+$ fab add cloud-native --source https://github.com/Microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
