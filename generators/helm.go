@@ -3,6 +3,7 @@ package generators
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -75,7 +76,8 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 
 	chartPath := path.Join(absHelmRepoPath, component.Path)
-	absOverriddenPath := path.Join(chartPath, "overriddenValues.yaml")
+	overriddenValuesFileName := fmt.Sprintf("overriddenValues-%d.yaml", rand.Uint64())
+	absOverriddenPath := path.Join(chartPath, overriddenValuesFileName)
 
 	log.Debugf("writing config %s to %s\n", configYaml, absOverriddenPath)
 	err = ioutil.WriteFile(absOverriddenPath, configYaml, 0644)
