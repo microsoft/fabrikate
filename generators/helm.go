@@ -3,13 +3,13 @@ package generators
 import (
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/Microsoft/fabrikate/core"
+	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -76,7 +76,12 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 
 	chartPath := path.Join(absHelmRepoPath, component.Path)
-	overriddenValuesFileName := fmt.Sprintf("overriddenValues-%d.yaml", rand.Uint64())
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+
+	overriddenValuesFileName := fmt.Sprintf("overriddenValues-%s.yaml", uuid.String())
 	absOverriddenPath := path.Join(chartPath, overriddenValuesFileName)
 
 	log.Debugf("writing config %s to %s\n", configYaml, absOverriddenPath)
