@@ -64,7 +64,9 @@ func Install(path string) (err error) {
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Installs all of the remote components specified in the current deployment tree locally",
-	Long:  ``,
+	Long: `Installs all of the remote components specified in the current deployment tree locally, iterating the 
+component subtree from the current directory to do so.  Required to be executed before generate (if needed), such
+that Fabrikate has all of the dependencies locally to use to generate the resource manifests.`,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		PrintVersion()
 

@@ -1,4 +1,4 @@
-## Component Object Model
+# Component Object Model
 
 A deployment definition in Fabrikate is specified via one or more component.yaml/json files. Each of these file contains a
 specification of a component with the following schema:

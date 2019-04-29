@@ -107,9 +107,11 @@ var generateCmd = &cobra.Command{
 	Short: "Generates Kubernetes resource definitions from deployment definition.",
 	Long: `Generate produces Kubernetes resource manifests from a deployment definition.
 
-If multiple configurations are specified, each will be applied in left to right priority order at each level of the definition, and the final generated environment directory will have the form <config1>-<config2>-...-<configN>.
-
-For example, 'fab generate prod east' will generate to a directory named prod-east and 'prod' will take priority over 'east'.`,
+Where the generate command takes a list of the configurations that should be used to generate the resource
+definitions for the deployment.  These configurations should be specified in priority order.  For example,
+if you specified "prod azure east", prod's config would be applied first, and azure's config
+would only be applied if they did not conflict with prod. Likewise, east's config would only be applied
+if it did not conflict with prod or azure.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		PrintVersion()
 

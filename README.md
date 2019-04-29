@@ -248,6 +248,7 @@ We have complete details about how to use and contribute to Fabrikate in these d
 
 - [Component Definitions](./docs/component.md)
 - [Config Definitions](./docs/config.md)
+- [Command Reference](./docs/commands.md)
 - [Contributing](./docs/contributing.md)
 
 ## Community
