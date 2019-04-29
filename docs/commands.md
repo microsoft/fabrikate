@@ -85,13 +85,11 @@ Sets the value of 'endpoint' equal to 'east-db' in the 'common' config (the defa
 $ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 
 ```
 
-Sets the subkey "replicas" in the key 'data' equal to 5 in the 'common' config (the default) for the subcomponent 'mysubcomponent' of the subcomponent 'myapp'.
+Sets the subkey "replicas" in the key 'data' equal to 5 in the 'common' config (the default) for the subcomponent 'mysubcomponent' of the subcomponent 'myapp', but raises an error via the --no-new-config-keys switch if doing so would create new config.
 
 ```sh
 $ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 --no-new-config-keys
 ```
-
-Use the --no-new-config-keys switch to prevent the creation of new config.
 
 ## version
 
