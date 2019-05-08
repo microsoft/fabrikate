@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/core"
 	"github.com/spf13/cobra"
 )
 

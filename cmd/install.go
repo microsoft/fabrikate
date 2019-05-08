@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os/exec"
 
-	"github.com/Microsoft/fabrikate/core"
-	"github.com/Microsoft/fabrikate/generators"
+	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/generators"
 	"github.com/kyokomi/emoji"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

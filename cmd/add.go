@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/core"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +49,7 @@ path: the path to the component that this subcomponent should be added to.
 
 example:
 
-$ fab add cloud-native --source https://github.com/Microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native
+$ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {

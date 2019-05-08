@@ -14,7 +14,7 @@ import (
 	yaml "github.com/timfpark/yaml"
 )
 
-// ComponentConfig documentation: https://github.com/Microsoft/fabrikate/blob/master/docs/config.md
+// ComponentConfig documentation: https://github.com/microsoft/fabrikate/blob/master/docs/config.md
 type ComponentConfig struct {
 	Path            string                     `yaml:"-" json:"-"`
 	Serialization   string                     `yaml:"-" json:"-"`

@@ -1,0 +1,11 @@
+name: add
+subcomponents:
+- name: cloud-native
+  generator: component
+  source: https://github.com/timfpark/fabrikate-cloud-native
+  method: git
+- name: elasticsearch
+  generator: helm
+  source: https://github.com/helm/charts
+  method: git
+  path: stable/elasticsearch
