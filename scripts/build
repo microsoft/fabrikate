@@ -1,19 +1,46 @@
 #!/bin/bash
 
-if [ $# -ne 1 ]; then
-  echo "$0: takes exactly one argument: the version number of the the release."
+if [ $# -lt 1 ]; then
+  echo "$0: takes at least one argument: 'get-deps' or 'release <version_number>'"
   exit 1
 fi
 
-rm -rf releases/$1
-mkdir -p releases/$1
+if [ $1 == "get-deps" ]; then
+  echo "cleaning test files"
+  echo "cleaning test/fixtures/install/infra/components"
+  rm -rf test/fixtures/install/infra/components
+  
+  echo "cleaning test/fixtures/install/infra/helm_repos"
+  rm -rf test/fixtures/install/infra/helm_repos
 
-echo "Building for Mac"
-GOOS=darwin GOARCH=amd64 go build -o fab
-zip releases/$1/fab-v$1-darwin-amd64.zip fab
+  echo "cleaning test/fixtures/install-yaml/components"
+  rm -rf test/fixtures/install-yaml/components
 
-echo "Building for Linux"
-GOOS=linux GOARCH=amd64 go build -o fab
-zip releases/$1/fab-v$1-linux-amd64.zip fab
+  echo "cleaning test/fixtures/install-yaml/helm_repos"
+  rm -rf test/fixtures/install-yaml/helm_repos
 
-echo "Release zip files can be found in releases/$1"
+  echo "go get ./..."
+  go get ./...
+
+  echo "get-deps finished"
+fi
+
+if [ $1 == "release" ]; then
+  if [ $# -ne 2 ]; then
+    echo "release takes one argument: the version number of the release."
+    exit 1
+  fi
+
+  rm -rf releases/$2
+  mkdir -p releases/$2
+
+  echo "Building for Mac"
+  GOOS=darwin GOARCH=amd64 go build -o fab
+  zip releases/$2/fab-v$2-darwin-amd64.zip fab
+
+  echo "Building for Linux"
+  GOOS=linux GOARCH=amd64 go build -o fab
+  zip releases/$2/fab-v$2-linux-amd64.zip fab
+
+  echo "Release zip files can be found in releases/$2"
+fi
