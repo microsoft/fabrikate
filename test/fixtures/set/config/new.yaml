@@ -1,0 +1,13 @@
+subcomponents:
+  myapp:
+    config:
+      zoo:
+        zii: zbb
+  myservice:
+    subcomponents:
+      mysubservice:
+        config:
+          foo:
+            bar:
+              k8.beta.io/load-balancer-group: foo-bar-updated
+              line: solid

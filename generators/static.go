@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/Microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/core"
 	"github.com/kyokomi/emoji"
 	log "github.com/sirupsen/logrus"
 )

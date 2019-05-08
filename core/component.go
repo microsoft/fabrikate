@@ -18,7 +18,7 @@ import (
 	"github.com/timfpark/yaml"
 )
 
-// Component documentation: https://github.com/Microsoft/fabrikate/blob/master/docs/component.md
+// Component documentation: https://github.com/microsoft/fabrikate/blob/master/docs/component.md
 type Component struct {
 	Name          string              `yaml:"name" json:"name"`
 	Config        ComponentConfig     `yaml:"-" json:"-"`

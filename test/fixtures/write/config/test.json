@@ -1,0 +1,12 @@
+{
+  "config": {
+    "foo": "bar"
+  },
+  "subcomponents": {
+    "myapp": {
+      "config": {
+        "zoo": "zar"
+      }
+    }
+  }
+}

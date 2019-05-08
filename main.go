@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Microsoft/fabrikate/cmd"
+	"github.com/microsoft/fabrikate/cmd"
 	log "github.com/sirupsen/logrus"
 )
 

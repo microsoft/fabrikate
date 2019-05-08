@@ -9,7 +9,7 @@ In particular, Fabrikate simplifies the frontend of the GitOps workflow: it take
 
 ## Getting Started
 
-First, install the latest `fab` cli on your local machine from [our releases](https://github.com/Microsoft/fabrikate/releases), unzipping the appropriate binary and placing `fab` in your path. The `fab` cli tool, `helm`, and `git` are the only tools you need to have installed.
+First, install the latest `fab` cli on your local machine from [our releases](https://github.com/microsoft/fabrikate/releases), unzipping the appropriate binary and placing `fab` in your path. The `fab` cli tool, `helm`, and `git` are the only tools you need to have installed.
 
 Let's walk through building an example Fabrikate definition to see how it works in practice. First off, let's create a directory for our cluster definition:
 
@@ -257,11 +257,11 @@ We have complete details about how to use and contribute to Fabrikate in these d
 
 ## Bedrock
 
-We maintain a sister project called [Bedrock](https://github.com/Microsoft/bedrock). Bedrock provides automa that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier, automating a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from Fabrikate defintions.
+We maintain a sister project called [Bedrock](https://github.com/microsoft/bedrock). Bedrock provides automa that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier, automating a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from Fabrikate defintions.
 
 <!-- refs -->
 
 [azure-devops-build-status]: https://tpark.visualstudio.com/fabrikate/_apis/build/status/fabrikate-cicd?branchName=master
 [azure-devops-build-link]: https://tpark.visualstudio.com/fabrikate/_build/latest?definitionId=35&branchName=master
-[go-report-card]: https://goreportcard.com/report/github.com/Microsoft/fabrikate
-[go-report-card-badge]: https://goreportcard.com/badge/github.com/Microsoft/fabrikate
+[go-report-card]: https://goreportcard.com/report/github.com/microsoft/fabrikate
+[go-report-card-badge]: https://goreportcard.com/badge/github.com/microsoft/fabrikate

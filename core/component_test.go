@@ -10,7 +10,7 @@ func TestRelativePathToGitComponent(t *testing.T) {
 	subcomponent := Component{
 		Name:   "efk",
 		Method: "git",
-		Source: "https://github.com/Microsoft/fabrikate-elasticsearch-fluentd-kibana",
+		Source: "https://github.com/microsoft/fabrikate-elasticsearch-fluentd-kibana",
 	}
 
 	assert.Equal(t, subcomponent.RelativePathTo(), "components/efk")
@@ -38,7 +38,7 @@ func TestLoadComponent(t *testing.T) {
 	assert.Equal(t, component.Name, "infra")
 	assert.Equal(t, len(component.Subcomponents), 1)
 	assert.Equal(t, component.Subcomponents[0].Name, "efk")
-	assert.Equal(t, component.Subcomponents[0].Source, "https://github.com/Microsoft/fabrikate-elasticsearch-fluentd-kibana")
+	assert.Equal(t, component.Subcomponents[0].Source, "https://github.com/microsoft/fabrikate-elasticsearch-fluentd-kibana")
 	assert.Equal(t, component.Subcomponents[0].Method, "git")
 }
 
