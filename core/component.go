@@ -70,8 +70,20 @@ func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmar
 	return UnmarshalFile(componentPath, unmarshalFunc, component)
 }
 
-// LoadComponent loads the component at c.PhysicalPath
-func (c *Component) LoadComponent() (mergedComponent Component, err error) {
+func (c *Component) applyDefaultsAndMigrations() {
+	if len(c.Generator) > 0 {
+		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version 0.7.0."))
+		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'type' in place of 'generator'."))
+
+		c.ComponentType = c.Generator
+	}
+
+	if len(c.ComponentType) == 0 {
+		c.ComponentType = "component"
+	}
+}
+
+func (c *Component) LoadComponent() (loadedComponent Component, err error) {
 	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &loadedComponent)
 
@@ -86,12 +98,7 @@ func (c *Component) LoadComponent() (mergedComponent Component, err error) {
 		loadedComponent.Serialization = "yaml"
 	}
 
-	if len(loadedComponent.Generator) > 0 {
-		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version 0.7.0."))
-		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'type' in place of 'generator'."))
-
-		loadedComponent.ComponentType = loadedComponent.Generator
-	}
+	loadedComponent.applyDefaultsAndMigrations()
 
 	loadedComponent.PhysicalPath = c.PhysicalPath
 	loadedComponent.LogicalPath = c.LogicalPath
@@ -320,6 +327,8 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 					// Prep component config
 					subcomponent.Config = component.Config.Subcomponents[subcomponent.Name]
 
+					subcomponent.applyDefaultsAndMigrations()
+
 					// Depending if the subcomponent is inlined or not; prepare the component to either load
 					// config/path info from filesystem (non-inlined) or inherit from parent (inlined)
 					isNotInlined := (len(subcomponent.ComponentType) == 0 || subcomponent.ComponentType == "component") && len(subcomponent.Source) > 0
@@ -344,7 +353,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 						subcomponent.LogicalPath = component.LogicalPath
 					}
 
-					log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
+					log.Infof("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
 					enqueue(subcomponent)
 				}
 			}(component)
