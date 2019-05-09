@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Microsoft/fabrikate/core"
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
+	"github.com/microsoft/fabrikate/core"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )

@@ -4,7 +4,7 @@ We do not claim to have all the answers and would gratefully appreciate contribu
 
 ## Issues and Feature Requests
 
-This project tracks issues exclusively via our project on Github: please [file issues](https://github.com/Microsoft/fabrikate/issues/new/choose) there.
+This project tracks issues exclusively via our project on Github: please [file issues](https://github.com/microsoft/fabrikate/issues/new/choose) there.
 
 Please do not ask questions via Github issues. Instead, please [join us on Slack](https://publicslack.com/slacks/https-bedrockco-slack-com/invites/new) and ask there.
 
@@ -20,19 +20,19 @@ When submitting a pull request, please reference the issue the pull request is i
 
 Fabrikate is written in [golang](https://golang.org/) so the first step is to make sure you have a fully functioning go development enviroment.
 
-If you intend to make contributions to Fabrikate (versus just build it), the first step is to [fork Fabrikate on Github](https://github.com/Microsoft/fabrikate) into your own account.
+If you intend to make contributions to Fabrikate (versus just build it), the first step is to [fork Fabrikate on Github](https://github.com/microsoft/fabrikate) into your own account.
 
-Next, clone Fabrikate into your GOPATH (which defaults to \$HOME/go) with `go get` (substitute your GitHub username for `Microsoft` below if you forked the repo):
+Next, clone Fabrikate into your GOPATH (which defaults to \$HOME/go) with `go get` (substitute your GitHub username for `microsoft` below if you forked the repo):
 
 ```sh
-$ go get github.com/Microsoft/fabrikate
+$ go get github.com/microsoft/fabrikate
 ```
 
-If you forked Fabrikate, this will clone your fork into `$GOPATH/<github username>/fabrikate`. You will want to move to \$GOPATH/Microsoft/fabrikate such that the imports in the project work correctly.
+If you forked Fabrikate, this will clone your fork into `$GOPATH/<github username>/fabrikate`. You will want to move to \$GOPATH/microsoft/fabrikate such that the imports in the project work correctly.
 
 ### Configuring git
 
-Under `$GOPATH/Microsoft/fabrikate` set up git so that you can push changes to the fork:
+Under `$GOPATH/microsoft/fabrikate` set up git so that you can push changes to the fork:
 
 ```sh
 $ git remote add <name> <github_url_of_fork>
@@ -52,7 +52,7 @@ $ git push myremote mycurrentbranch
 
 ## Building Fabrikate
 
-From the root of the project (which if you followed the instructions above should be `$GOPATH/Microsoft/fabrikate`), first fetch project dependencies with:
+From the root of the project (which if you followed the instructions above should be `$GOPATH/microsoft/fabrikate`), first fetch project dependencies with:
 
 ```sh
 $ scripts/build get-deps
