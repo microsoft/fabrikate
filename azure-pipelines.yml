@@ -30,6 +30,7 @@ steps:
 
   - script: |
       go get github.com/golangci/golangci-lint/cmd/golangci-lint
+      scripts/build clean
       go get -v -t -d ./...
     workingDirectory: "$(modulePath)"
     displayName: "Get Go dependencies"

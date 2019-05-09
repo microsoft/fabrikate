@@ -1,19 +1,78 @@
 #!/bin/bash
 
-if [ $# -ne 1 ]; then
-  echo "$0: takes exactly one argument: the version number of the the release."
+if [ $# -lt 1 ]; then
+  echo "$0: takes at least one argument: 'get-deps', 'clean', 'build fab' or 'build release <version_number>'"
   exit 1
 fi
 
-rm -rf releases/$1
-mkdir -p releases/$1
+# cleans test directories helm_repos
+function clean() {
+  echo "cleaning test files"
+  echo "cleaning test/fixtures/install/infra/components"
+  rm -rf test/fixtures/install/infra/components
+  
+  echo "cleaning test/fixtures/install/infra/helm_repos"
+  rm -rf test/fixtures/install/infra/helm_repos
 
-echo "Building for Mac"
-GOOS=darwin GOARCH=amd64 go build -o fab
-zip releases/$1/fab-v$1-darwin-amd64.zip fab
+  echo "cleaning test/fixtures/install-yaml/components"
+  rm -rf test/fixtures/install-yaml/components
 
-echo "Building for Linux"
-GOOS=linux GOARCH=amd64 go build -o fab
-zip releases/$1/fab-v$1-linux-amd64.zip fab
+  echo "cleaning test/fixtures/install-yaml/helm_repos"
+  rm -rf test/fixtures/install-yaml/helm_repos
+}
 
-echo "Release zip files can be found in releases/$1"
+
+# runs go get ./...
+function get-deps() {
+  clean
+  echo "go get ./..."
+  go get ./...
+
+  echo "get-deps finished"
+}
+
+
+if [ $1 == "get-deps" ]; then
+  get-deps
+fi
+
+if [ $1 == "clean" ]; then
+  clean
+fi
+
+
+if [ $1 == "build" ]; then
+  
+  # build fabrikate
+  if [ $2 == "fab" ]; then
+     get-deps
+     echo "go build -o fab"
+     go build -o fab
+     echo "finished building fab"
+  fi  
+
+  # gets fabrikate dependencies and builds fabrikate release
+  if [ $2 == "release" ]; then
+    if [ $# -ne 3 ]; then
+      echo "Error: build release takes one argument: the version number of the release."
+      exit 1
+    fi
+
+    get-deps
+
+    rm -rf releases/$3
+    mkdir -p releases/$3
+
+    echo "Building for Mac"
+    GOOS=darwin GOARCH=amd64 go build -o fab
+    zip releases/$3/fab-v$3-darwin-amd64.zip fab
+
+    echo "Building for Linux"
+    GOOS=linux GOARCH=amd64 go build -o fab
+   zip releases/$3/fab-v$3-linux-amd64.zip fab
+
+   echo "Release zip files can be found in releases/$3"
+  fi
+fi
+
+
