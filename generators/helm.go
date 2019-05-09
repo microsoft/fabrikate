@@ -61,11 +61,11 @@ func (hg *HelmGenerator) makeHelmRepoPath(component *core.Component) string {
 
 // Generate returns the helm templated manifests specified by this component.
 func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, err error) {
-	log.Println(emoji.Sprintf(":truck: generating component '%s' with helm with repo %s", component.Name, component.Source))
+	log.Println(emoji.Sprintf(":truck: Generating component '%s' with helm with repo %s", component.Name, component.Source))
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
-		log.Errorf("marshalling config yaml for helm generated component '%s' failed with: %s\n", component.Name, err.Error())
+		log.Errorf("Marshalling config yaml for helm generated component '%s' failed with: %s\n", component.Name, err.Error())
 		return "", err
 	}
 
@@ -84,7 +84,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	overriddenValuesFileName := fmt.Sprintf("overriddenValues-%s.yaml", uuid.String())
 	absOverriddenPath := path.Join(chartPath, overriddenValuesFileName)
 
-	log.Debugf("writing config %s to %s\n", configYaml, absOverriddenPath)
+	log.Debugf("Writing config %s to %s\n", configYaml, absOverriddenPath)
 	err = ioutil.WriteFile(absOverriddenPath, configYaml, 0644)
 	if err != nil {
 		return "", err
@@ -138,7 +138,7 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 		return err
 	}
 
-	log.Println(emoji.Sprintf(":helicopter: installing helm repo %s for %s into %s", component.Source, component.Name, helmRepoPath))
+	log.Println(emoji.Sprintf(":helicopter: Installing helm repo %s for %s into %s", component.Source, component.Name, helmRepoPath))
 	if err = core.CloneRepo(component.Source, component.Version, helmRepoPath, component.Branch); err != nil {
 		return err
 	}
@@ -151,18 +151,18 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	chartPath := path.Join(absHelmRepoPath, component.Path)
 
 	for name, url := range component.Repositories {
-		log.Println(emoji.Sprintf(":helicopter: adding helm repo '%s' at %s for component '%s'", name, url, component.Name))
+		log.Println(emoji.Sprintf(":helicopter: Adding helm repo '%s' at %s for component '%s'", name, url, component.Name))
 		if err = exec.Command("helm", "repo", "add", name, url).Run(); err != nil {
 			return err
 		}
 	}
 
-	log.Println(emoji.Sprintf(":helicopter: updating helm chart's dependencies for component '%s'", component.Name))
+	log.Println(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for component '%s'", component.Name))
 	err = exec.Command("helm", "dependency", "update", chartPath).Run()
 
 	if err != nil {
-		log.Errorf("updating chart dependencies failed\n")
-		log.Errorf("run 'helm dependency update %s' for more error details.\n", chartPath)
+		log.Errorf("Updating chart dependencies failed\n")
+		log.Errorf("Run 'helm dependency update %s' for more error details.\n", chartPath)
 	}
 
 	return err
