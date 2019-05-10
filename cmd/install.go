@@ -4,9 +4,9 @@ import (
 	"errors"
 	"os/exec"
 
+	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
 	"github.com/microsoft/fabrikate/generators"
-	"github.com/kyokomi/emoji"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +21,7 @@ func Install(path string) (err error) {
 		if err != nil {
 			return err
 		}
-		log.Info(emoji.Sprintf(":mag: using %s: %s", tool, path))
+		log.Info(emoji.Sprintf(":mag: Using %s: %s", tool, path))
 	}
 
 	log.Info(emoji.Sprintf(":point_right: Initializing Helm"))
@@ -30,7 +30,7 @@ func Install(path string) (err error) {
 	}
 
 	results := core.WalkComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
-		log.Info(emoji.Sprintf(":point_right: starting install for component: %s", component.Name))
+		log.Info(emoji.Sprintf(":point_right: Starting install for component: %s", component.Name))
 
 		var generator core.Generator
 
@@ -43,7 +43,7 @@ func Install(path string) (err error) {
 			return err
 		}
 
-		log.Info(emoji.Sprintf(":point_left: finished install for component: %s", component.Name))
+		log.Info(emoji.Sprintf(":point_left: Finished install for component: %s", component.Name))
 
 		return err
 	})
@@ -54,9 +54,9 @@ func Install(path string) (err error) {
 	}
 
 	for _, component := range components {
-		log.Info(emoji.Sprintf(":white_check_mark: installed successfully: %s", component.Name))
+		log.Info(emoji.Sprintf(":white_check_mark: Installed successfully: %s", component.Name))
 	}
-	log.Info(emoji.Sprintf(":raised_hands: finished install"))
+	log.Info(emoji.Sprintf(":raised_hands: Finished install"))
 
 	return err
 }

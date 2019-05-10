@@ -8,9 +8,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
 	"github.com/microsoft/fabrikate/generators"
-	"github.com/kyokomi/emoji"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -41,12 +41,12 @@ func writeGeneratedManifests(generationPath string, components []core.Component)
 }
 
 func validateGeneratedManifests(generationPath string) (err error) {
-	log.Println(emoji.Sprintf(":microscope: validating generated manifests in path %s", generationPath))
+	log.Println(emoji.Sprintf(":microscope: Validating generated manifests in path %s", generationPath))
 	output, err := exec.Command("kubectl", "apply", "--validate=true", "--dry-run", "--recursive", "-f", generationPath).Output()
 
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			log.Errorf("validating generated manifests failed with: %s: output: %s\n", ee.Stderr, output)
+			log.Errorf("Validating generated manifests failed with: %s: output: %s\n", ee.Stderr, output)
 			return err
 		}
 	}
@@ -96,7 +96,7 @@ func Generate(startPath string, environments []string, validate bool) (component
 	}
 
 	if err == nil {
-		log.Info(emoji.Sprintf(":raised_hands: finished generate"))
+		log.Info(emoji.Sprintf(":raised_hands: Finished generate"))
 	}
 
 	return components, err
