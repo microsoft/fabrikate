@@ -261,7 +261,7 @@ We maintain a sister project called [Bedrock](https://github.com/microsoft/bedro
 
 <!-- refs -->
 
-[azure-devops-build-status]: https://tpark.visualstudio.com/fabrikate/_apis/build/status/fabrikate-cicd?branchName=master
+[azure-devops-build-status]: https://tpark.visualstudio.com/fabrikate/_apis/build/status/microsoft.fabrikate?branchName=master
 [azure-devops-build-link]: https://tpark.visualstudio.com/fabrikate/_build/latest?definitionId=35&branchName=master
 [go-report-card]: https://goreportcard.com/report/github.com/microsoft/fabrikate
 [go-report-card-badge]: https://goreportcard.com/badge/github.com/microsoft/fabrikate
