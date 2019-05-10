@@ -55,7 +55,7 @@ $ git push myremote mycurrentbranch
 From the root of the project (which if you followed the instructions above should be `$GOPATH/microsoft/fabrikate`), first fetch project dependencies with:
 
 ```sh
-$ go get ./...
+$ scripts/build get-deps
 ```
 
 Note: to run tests, you will need to run `go get -t ./...` to install test dependencies.
@@ -69,7 +69,7 @@ $ go build -o fab
 To build a complete set of release binaries across supported architectures, use our build script, specifying a version number of the release:
 
 ```sh
-$ scripts/build 0.5.0
+$ scripts/build release 0.5.0
 ```
 
 ## Testing Fabrikate
