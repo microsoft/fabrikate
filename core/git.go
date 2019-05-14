@@ -15,15 +15,15 @@ func CloneRepo(repo string, commit string, intoPath string, branch string) (err 
 	}
 
 	if len(commit) == 0 {
-		log.Println(emoji.Sprintf(":helicopter: component requested latest commit: fast cloning at --depth 1"))
+		log.Println(emoji.Sprintf(":helicopter: Component requested latest commit: fast cloning at --depth 1"))
 
 		cloneArgs = append(cloneArgs, "--depth", "1")
 	} else {
-		log.Println(emoji.Sprintf(":helicopter: component requested commit '%s': need full clone", commit))
+		log.Println(emoji.Sprintf(":helicopter: Component requested commit '%s': need full clone", commit))
 	}
 
 	if len(branch) != 0 {
-		log.Println(emoji.Sprintf(":helicopter: component requested branch '%s'", branch))
+		log.Println(emoji.Sprintf(":helicopter: Component requested branch '%s'", branch))
 		cloneArgs = append(cloneArgs, "--branch", branch)
 	}
 
@@ -34,7 +34,7 @@ func CloneRepo(repo string, commit string, intoPath string, branch string) (err 
 	}
 
 	if len(commit) != 0 {
-		log.Println(emoji.Sprintf(":helicopter: performing checkout at commit %s", commit))
+		log.Println(emoji.Sprintf(":helicopter: Performing checkout at commit %s", commit))
 		checkoutCommit := exec.Command("git", "checkout", commit)
 		checkoutCommit.Dir = intoPath
 		if err = checkoutCommit.Run(); err != nil {

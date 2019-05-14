@@ -137,10 +137,10 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 		return nil
 	}
 
-	log.Info(emoji.Sprintf(":fishing_pole_and_fish: executing hooks for: %s", hook))
+	log.Info(emoji.Sprintf(":fishing_pole_and_fish: Executing hooks for: %s", hook))
 
 	for _, command := range c.Hooks[hook] {
-		log.Info(emoji.Sprintf(":fishing_pole_and_fish: executing command: %s", command))
+		log.Info(emoji.Sprintf(":fishing_pole_and_fish: Executing command: %s", command))
 		if len(command) != 0 {
 			cmd := exec.Command("sh", "-c", command)
 			cmd.Dir = c.PhysicalPath
@@ -151,7 +151,7 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 				log.Error(fmt.Sprintf("ERROR IN: %s", cwd))
 				log.Error(emoji.Sprintf(":no_entry_sign: %s\n", err.Error()))
 				if ee, ok := err.(*exec.ExitError); ok {
-					log.Error(emoji.Sprintf(":no_entry_sign: hook command failed with: %s\n", ee.Stderr))
+					log.Error(emoji.Sprintf(":no_entry_sign: Hook command failed with: %s\n", ee.Stderr))
 				}
 				return err
 			}
@@ -199,7 +199,7 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 			return err
 		}
 
-		log.Println(emoji.Sprintf(":helicopter: installing component %s with git from %s", c.Name, c.Source))
+		log.Println(emoji.Sprintf(":helicopter: Installing component %s with git from %s", c.Name, c.Source))
 		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
 			return err
 		}
@@ -288,7 +288,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	enqueue := func(component Component) {
 		// Increment working counter; MUST happen BEFORE sending to queue or race condition can occur
 		walking.Add(1)
-		log.Debugf("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", component.Name, component.PhysicalPath, component.LogicalPath)
+		log.Debugf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", component.Name, component.PhysicalPath, component.LogicalPath)
 		queue <- component
 	}
 
@@ -353,7 +353,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 						subcomponent.LogicalPath = component.LogicalPath
 					}
 
-					log.Infof("adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
+					log.Debugf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
 					enqueue(subcomponent)
 				}
 			}(component)
