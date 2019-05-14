@@ -8,7 +8,7 @@ subcomponents:
   method: "git"
   path: "stable/grafana"
 - name: "prometheus"
-  generator: "helm"
+  type: "helm"
   source: "https://github.com/helm/charts"
   method: "git"
   path: "stable/prometheus"

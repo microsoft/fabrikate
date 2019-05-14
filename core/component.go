@@ -22,6 +22,7 @@ import (
 type Component struct {
 	Name          string              `yaml:"name" json:"name"`
 	Config        ComponentConfig     `yaml:"-" json:"-"`
+	ComponentType string              `yaml:"type,omitempty" json:"type,omitempty"`
 	Generator     string              `yaml:"generator,omitempty" json:"generator,omitempty"`
 	Hooks         map[string][]string `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	Serialization string              `yaml:"-" json:"-"`
@@ -69,27 +70,41 @@ func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmar
 	return UnmarshalFile(componentPath, unmarshalFunc, component)
 }
 
-// LoadComponent loads the component at c.PhysicalPath
-func (c *Component) LoadComponent() (mergedComponent Component, err error) {
-	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
-	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &mergedComponent)
+func (c *Component) applyDefaultsAndMigrations() {
+	if len(c.Generator) > 0 {
+		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version 0.7.0."))
+		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'type' in place of 'generator'."))
 
-	if err != nil {
-		err = c.UnmarshalComponent("json", json.Unmarshal, &mergedComponent)
-		if err != nil {
-			errorMessage := fmt.Sprintf("Error loading component in path %s", c.PhysicalPath)
-			return mergedComponent, errors.New(errorMessage)
-		}
-		mergedComponent.Serialization = "json"
-	} else {
-		mergedComponent.Serialization = "yaml"
+		c.ComponentType = c.Generator
 	}
 
-	mergedComponent.PhysicalPath = c.PhysicalPath
-	mergedComponent.LogicalPath = c.LogicalPath
-	err = mergedComponent.Config.Merge(c.Config)
+	if len(c.ComponentType) == 0 {
+		c.ComponentType = "component"
+	}
+}
 
-	return mergedComponent, err
+func (c *Component) LoadComponent() (loadedComponent Component, err error) {
+	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
+	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &loadedComponent)
+
+	if err != nil {
+		err = c.UnmarshalComponent("json", json.Unmarshal, &loadedComponent)
+		if err != nil {
+			errorMessage := fmt.Sprintf("Error loading component in path %s", c.PhysicalPath)
+			return loadedComponent, errors.New(errorMessage)
+		}
+		loadedComponent.Serialization = "json"
+	} else {
+		loadedComponent.Serialization = "yaml"
+	}
+
+	loadedComponent.applyDefaultsAndMigrations()
+
+	loadedComponent.PhysicalPath = c.PhysicalPath
+	loadedComponent.LogicalPath = c.LogicalPath
+	err = loadedComponent.Config.Merge(c.Config)
+
+	return loadedComponent, err
 }
 
 // LoadConfig loads and merges the config specified by the passed set of environments.
@@ -312,9 +327,11 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 					// Prep component config
 					subcomponent.Config = component.Config.Subcomponents[subcomponent.Name]
 
+					subcomponent.applyDefaultsAndMigrations()
+
 					// Depending if the subcomponent is inlined or not; prepare the component to either load
 					// config/path info from filesystem (non-inlined) or inherit from parent (inlined)
-					isNotInlined := (len(subcomponent.Generator) == 0 || subcomponent.Generator == "component") && len(subcomponent.Source) > 0
+					isNotInlined := (len(subcomponent.ComponentType) == 0 || subcomponent.ComponentType == "component") && len(subcomponent.Source) > 0
 					if isNotInlined {
 						// This subcomponent is not inlined, so set the paths to their relative positions and prepare the configs
 						if subcomponent.Path == "" {

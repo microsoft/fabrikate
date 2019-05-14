@@ -34,7 +34,7 @@ func Install(path string) (err error) {
 
 		var generator core.Generator
 
-		switch component.Generator {
+		switch component.ComponentType {
 		case "helm":
 			generator = &generators.HelmGenerator{}
 		}

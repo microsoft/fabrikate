@@ -5,7 +5,7 @@ specification of a component with the following schema:
 
 - `name`: A free form text name for this component. This name is used to refer to the component in [config specifications](./config.md).
 
-- `generator`: Method used to generate the resource manifests for this particular component. Currently, `static` (file based), `helm` (helm based), and `component` are supported values.
+- `type`: Method used to generate the resource manifests for this particular component. Currently, `static` (file based), `helm` (helm based), and `component` (default) are supported values.
 
 - `source`: The source for this component. This can be a URL in the case of remote components or a local path to specify a local filesystem component.
 
