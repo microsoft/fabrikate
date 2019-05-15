@@ -57,12 +57,12 @@ $ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitio
 		}
 
 		component := core.Component{
-			Name:      args[0],
-			Source:    cmd.Flag("source").Value.String(),
-			Method:    cmd.Flag("method").Value.String(),
-			Branch:    cmd.Flag("branch").Value.String(),
-			Path:      cmd.Flag("path").Value.String(),
-			Generator: cmd.Flag("type").Value.String(),
+			Name:          args[0],
+			Source:        cmd.Flag("source").Value.String(),
+			Method:        cmd.Flag("method").Value.String(),
+			Branch:        cmd.Flag("branch").Value.String(),
+			Path:          cmd.Flag("path").Value.String(),
+			ComponentType: cmd.Flag("type").Value.String(),
 		}
 
 		return Add(component)
