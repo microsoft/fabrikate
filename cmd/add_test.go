@@ -42,4 +42,47 @@ func TestAdd(t *testing.T) {
 
 	err = Add(helmComponent)
 	assert.Nil(t, err)
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Test adding a subcomponent
+	////////////////////////////////////////////////////////////////////////////////
+	subcomponentName := "My subcomponent"
+	initialSource := "the initial URL; should not see this"
+	newSource := "this should be the final value"
+	err = componentComponent.AddSubcomponent(core.Component{
+		Name:          subcomponentName,
+		Source:        initialSource,
+		Method:        "git",
+		ComponentType: "component",
+	})
+
+	assert.Nil(t, err)
+	assert.True(t, componentComponent.Subcomponents[0].Name == subcomponentName)
+	assert.True(t, componentComponent.Subcomponents[0].Source == initialSource)
+
+	err = componentComponent.AddSubcomponent(core.Component{
+		Name:          subcomponentName,
+		Source:        newSource,
+		Method:        "git",
+		ComponentType: "component",
+	})
+
+	// should still only have 1 subcomponent
+	assert.Nil(t, err)
+	assert.True(t, len(componentComponent.Subcomponents) == 1)
+	assert.True(t, componentComponent.Subcomponents[0].Source == newSource)
+
+	err = componentComponent.AddSubcomponent(core.Component{
+		Name:          "this is a new name, so it should add a new subcomponent entry",
+		Source:        newSource,
+		Method:        "git",
+		ComponentType: "component",
+	})
+
+	// there should be 2 subcomponents now
+	assert.Nil(t, err)
+	assert.True(t, len(componentComponent.Subcomponents) == 2)
+	////////////////////////////////////////////////////////////////////////////////
+	//End adding a subcomponent
+	////////////////////////////////////////////////////////////////////////////////
 }
