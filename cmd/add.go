@@ -32,7 +32,10 @@ func Add(subcomponent core.Component) (err error) {
 		}
 	}
 
-	component.Subcomponents = append(component.Subcomponents, subcomponent)
+	err = component.AddSubcomponent(subcomponent)
+	if err != nil {
+		return err
+	}
 
 	return component.Write()
 }

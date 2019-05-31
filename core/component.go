@@ -400,3 +400,24 @@ func (c *Component) Write() (err error) {
 
 	return ioutil.WriteFile(path, marshaledComponent, 0644)
 }
+
+// AddSubcomponent adds the provided subcomponent to a component.
+// If the subcomponents Name matches an existing entry, the existing entry is overwritten.
+// If the subcomponents Name does not match, a new subcomponent entry is created.
+func (c *Component) AddSubcomponent(subcomponent Component) (err error) {
+	// Index all existing components based on name and add the new component
+	// Warning: this will remove any duplicates with the same name if present
+	nameComponentMap := map[string]Component{}
+	for _, subcomponent := range c.Subcomponents {
+		nameComponentMap[subcomponent.Name] = subcomponent
+	}
+	nameComponentMap[subcomponent.Name] = subcomponent
+
+	// Re-add all subcomponents so no named collisions occur
+	c.Subcomponents = []Component{}
+	for _, subcomponent := range nameComponentMap {
+		c.Subcomponents = append(c.Subcomponents, subcomponent)
+	}
+
+	return nil
+}
