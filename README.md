@@ -233,7 +233,7 @@ $ fab generate prod azure
 
 This will iterate through our deployment definition, collect configuration values from `azure`, `prod`, and `common` (in that priority order) and generate manifests as it descends breadth first. You can see the generated manifests in `./generated/prod-azure`, which has the same logical directory structure as your deployment definition.
 
-Fabrikate is meant to used as part of a CI / CD pipeline that commits the generated manifests checked into a repo so thatthey can be applied from a pod within the cluster like [Flux](https://github.com/weaveworks/flux), but if you have a Kubernetes cluster up and running you can also apply them directly with:
+Fabrikate is meant to used as part of a CI / CD pipeline that commits the generated manifests checked into a repo so that they can be applied from a pod within the cluster like [Flux](https://github.com/weaveworks/flux), but if you have a Kubernetes cluster up and running you can also apply them directly with:
 
 ```sh
 $ cd generated/prod-azure
@@ -257,7 +257,7 @@ We have complete details about how to use and contribute to Fabrikate in these d
 
 ## Bedrock
 
-We maintain a sister project called [Bedrock](https://github.com/microsoft/bedrock). Bedrock provides automa that makes operationalizing Kubernetes clusters with a GitOps deployment workflow easier, automating a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from Fabrikate defintions.
+We maintain a sister project called [Bedrock](https://github.com/microsoft/bedrock). Bedrock provides automata that make operationalizing Kubernetes clusters with a GitOps deployment workflow easier, automating a [GitOps](https://www.weave.works/blog/gitops-operations-by-pull-request) deployment model leveraging [Flux](https://github.com/weaveworks/flux), and provides automation for building a CI/CD pipeline that automatically builds resource manifests from Fabrikate defintions.
 
 <!-- refs -->
 
