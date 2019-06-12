@@ -17,4 +17,6 @@ releases
 helm_repos
 .DS_Store
 .idea
+.vscode
 fab
+fabrikate
