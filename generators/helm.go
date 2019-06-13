@@ -12,7 +12,7 @@ import (
 	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	"github.com/timfpark/yaml"
 )
 
 // HelmGenerator provides 'helm generate' generator functionality to Fabrikate
