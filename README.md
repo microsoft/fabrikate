@@ -18,10 +18,10 @@ $ mkdir mycluster
 $ cd mycluster
 ```
 
-The first thing I want to do is pull in a common set of observability and service mesh platforms so I can operate this cluster. My organization has settled on a [cloud native](https://github.com/timfpark/fabrikate-cloud-native) stack, and Fabrikate makes it easy to leverage reusable stacks of infrastructure like this:
+The first thing I want to do is pull in a common set of observability and service mesh platforms so I can operate this cluster. My organization has settled on a [cloud-native](https://github.com/microsoft/fabrikate-definitions/tree/master/definitions/fabrikate-cloud-native) stack, and Fabrikate makes it easy to leverage reusable stacks of infrastructure like this:
 
 ```sh
-$ fab add cloud-native --source https://github.com/timfpark/fabrikate-cloud-native
+$ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native
 ```
 
 Since our directory was empty, this creates a component.yaml file in this directory:
@@ -29,16 +29,17 @@ Since our directory was empty, this creates a component.yaml file in this direct
 ```yaml
 name: mycluster
 subcomponents:
-  - name: cloud-native
-    generator: component
-    source: https://github.com/timfpark/fabrikate-cloud-native
-    method: git
-    branch: master
+- name: cloud-native
+  type: component
+  source: https://github.com/microsoft/fabrikate-definitions
+  method: git
+  path: definitions/fabrikate-cloud-native
+  branch: master
 ```
 
 A Fabrikate definition, like this one, always contains a `component.yaml` file in its root that defines how to generate the Kubernetes resource manifests for its directory tree scope.
 
-The `cloud-native` component we added is a remote component backed by a git repo [fabrikate-cloud-native](https://github.com/timfpark/fabrikate-cloud-native). Fabrikate definitions use remote definitions like this one to enable multiple deployments to reuse common components (like this cloud-native infrastructure stack) from a centrally updated location.
+The `cloud-native` component we added is a remote component backed by a git repo [fabrikate-cloud-native](https://github.com/microsoft/fabrikate-definitions/tree/master/definitions/fabrikate-cloud-native). Fabrikate definitions use remote definitions like this one to enable multiple deployments to reuse common components (like this cloud-native infrastructure stack) from a centrally updated location.
 
 Looking inside this component at its own root `component.yaml` definition, you can see that it itself uses a set of remote components:
 
@@ -48,25 +49,18 @@ generator: "static"
 path: "./manifests"
 subcomponents:
   - name: "elasticsearch-fluentd-kibana"
-    source: "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana"
-    method: "git"
+    source: "../fabrikate-elasticsearch-fluentd-kibana"
   - name: "prometheus-grafana"
-    source: "https://github.com/timfpark/fabrikate-prometheus-grafana"
-    method: "git"
+    source: "../fabrikate-prometheus-grafana"
   - name: "istio"
-    source: "https://github.com/evanlouie/fabrikate-istio"
-    method: "git"
+    source: "../fabrikate-istio"
   - name: "kured"
-    source: "https://github.com/timfpark/fabrikate-kured"
-    method: "git"
-  - name: "jaeger"
-    source: "https://github.com/bnookala/fabrikate-jaeger"
-    method: "git"
+    source: "../fabrikate-kured"
 ```
 
 Fabrikate recursively iterates component definitions, so as it processes this lower level component definition, it will in turn iterate the remote component definitions used in its implementation. Being able to mix in remote components like this makes Fabrikate deployments composable and reusable across deployments.
 
-Let's look at the component definition for the [elasticsearch-fluentd-kibana component](https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana/blob/master/component.json):
+Let's look at the component definition for the [elasticsearch-fluentd-kibana component](https://github.com/microsoft/fabrikate-definitions/tree/master/definitions/fabrikate-elasticsearch-fluentd-kibana):
 
 ```json
 {
@@ -77,25 +71,29 @@ Let's look at the component definition for the [elasticsearch-fluentd-kibana com
     {
       "name": "elasticsearch",
       "generator": "helm",
-      "repo": "https://github.com/helm/charts",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
       "path": "stable/elasticsearch"
     },
     {
       "name": "elasticsearch-curator",
       "generator": "helm",
-      "repo": "https://github.com/helm/charts",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
       "path": "stable/elasticsearch-curator"
     },
     {
       "name": "fluentd-elasticsearch",
       "generator": "helm",
-      "repo": "https://github.com/helm/charts",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
       "path": "stable/fluentd-elasticsearch"
     },
     {
       "name": "kibana",
       "generator": "helm",
-      "repo": "https://github.com/helm/charts",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
       "path": "stable/kibana"
     }
   ]
@@ -115,9 +113,16 @@ subcomponents:
     namespace: elasticsearch
     injectNamespace: true
     config:
+      client:
+        resources:
+          limits:
+            memory: "2048Mi"
   elasticsearch-curator:
+    namespace: elasticsearch
+    injectNamespace: true
     config:
-      namespace: elasticsearch
+      cronjob:
+        successfulJobsHistoryLimit: 0
       configMaps:
         config_yml: |-
           ---
@@ -125,7 +130,7 @@ subcomponents:
             hosts:
               - elasticsearch-client.elasticsearch.svc.cluster.local
             port: 9200
-            use_ssl: True
+            use_ssl: False
   fluentd-elasticsearch:
     namespace: fluentd
     injectNamespace: true
@@ -165,10 +170,10 @@ subcomponents:
 
 Naturally, an observability stack is just the base infrastructure we need, and our real goal is to deploy a set of microservices. Furthermore, let's assume that we want to be able to split the incoming traffic for these services between `canary` and `stable` tiers with [Istio](https://istio.io) so that we can more safely launch new versions of the service.
 
-There is a Fabrikate component for that as well called [fabrikate-istio-service](https://github.com/timfpark/fabrikate-istio-service) that we'll leverage to add this service, so let's do just that:
+There is a Fabrikate component for that as well called [fabrikate-istio-service](https://github.com/microsoft/fabrikate-definitions/tree/master/definitions/fabrikate-istio) that we'll leverage to add this service, so let's do just that:
 
 ```
-$ fab add simple-service --source https://github.com/timfpark/fabrikate-istio-service
+$ fab add simple-service --source https://github.com/microsoft/fabrikate-definitions --path definitions/fabrikate-istio
 ```
 
 This component creates these traffic split services using the config applied to it. Let's create a `prod` config that does this for a `prod` cluster by creating `config/prod.yaml` and placing the following in it:
