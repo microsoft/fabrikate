@@ -72,7 +72,7 @@ func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmar
 
 func (c *Component) applyDefaultsAndMigrations() {
 	if len(c.Generator) > 0 {
-		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version 0.7.0."))
+		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version v1.0.0."))
 		log.Println(emoji.Sprintf(":boom: DEPRECATION WARNING: Update your component definition to use 'type' in place of 'generator'."))
 
 		c.ComponentType = c.Generator
