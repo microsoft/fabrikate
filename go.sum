@@ -116,8 +116,6 @@ github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/timfpark/conjungo v1.0.1 h1:W4v6Bvvz8fLGoZm2vqXUlRs14xwt9UH3H/zOOAQ5FpQ=
 github.com/timfpark/conjungo v1.0.1/go.mod h1:86oCya4EhpIkCOkNEkmYjCSlI55Ga7SIFlP3D8uHWyg=
-github.com/timfpark/yaml v0.0.0-20190612221433-aec9177fd591 h1:0byKuYqWEss8HPzeTTkOD/XqKWbg45/XrHllh/nAijk=
-github.com/timfpark/yaml v0.0.0-20190612221433-aec9177fd591/go.mod h1:xP+8WOZuY7X55ZX0giNcmB4g0VeHE+DQEVhlzBczF40=
 github.com/timfpark/yaml v0.0.0-20190612232118-2e9e29c9df01 h1:j6cfQEP5CoVnEWdKXq3zS8UjI34t4sMUZn9rgXpBkzE=
 github.com/timfpark/yaml v0.0.0-20190612232118-2e9e29c9df01/go.mod h1:qN0JrENOke+OBA89CZ7X3EKZrqMSU7n+lqmjgi6CWOU=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
@@ -160,6 +158,7 @@ golang.org/x/time v0.0.0-20190308202827-9d24e82272b4/go.mod h1:tRJNPiyCQ0inRvYxb
 golang.org/x/tools v0.0.0-20180221164845-07fd8470d635/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190114222345-bf090417da8b/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190311212946-11955173bddd/go.mod h1:LCzVGOaR6xXOjkQ3onu1FJEFr0SW1gC7cKk1uF8kGRs=
+google.golang.org/appengine v1.1.0 h1:igQkv0AAhEIvTEpD5LIpAfav2eeVO9HBTjvKHVJPRSs=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8/go.mod h1:JiN7NxoALGmiZfu7CAH4rXhgtRTLTxftemlI0sWmxmc=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
