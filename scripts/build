@@ -10,7 +10,7 @@ function clean() {
   echo "cleaning test files"
   echo "cleaning test/fixtures/install/infra/components"
   rm -rf test/fixtures/install/infra/components
-  
+
   echo "cleaning test/fixtures/install/infra/helm_repos"
   rm -rf test/fixtures/install/infra/helm_repos
 
@@ -21,16 +21,14 @@ function clean() {
   rm -rf test/fixtures/install-yaml/helm_repos
 }
 
-
 # runs go get ./...
 function get-deps() {
   clean
-  echo "go get ./..."
-  go get ./...
+  echo "go mod download"
+  go mod download
 
   echo "get-deps finished"
 }
-
 
 if [ $1 == "get-deps" ]; then
   get-deps
@@ -40,16 +38,15 @@ if [ $1 == "clean" ]; then
   clean
 fi
 
-
 if [ $1 == "build" ]; then
-  
+
   # build fabrikate
   if [ $2 == "fab" ]; then
-     get-deps
-     echo "go build -o fab"
-     go build -o fab
-     echo "finished building fab"
-  fi  
+    get-deps
+    echo "go build -o fab"
+    go build -o fab
+    echo "finished building fab"
+  fi
 
   # gets fabrikate dependencies and builds fabrikate release
   if [ $2 == "release" ]; then
@@ -69,10 +66,8 @@ if [ $1 == "build" ]; then
 
     echo "Building for Linux"
     GOOS=linux GOARCH=amd64 go build -o fab
-   zip releases/$3/fab-v$3-linux-amd64.zip fab
+    zip releases/$3/fab-v$3-linux-amd64.zip fab
 
-   echo "Release zip files can be found in releases/$3"
+    echo "Release zip files can be found in releases/$3"
   fi
 fi
-
-
