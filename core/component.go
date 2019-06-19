@@ -423,7 +423,42 @@ func (c *Component) AddSubcomponent(subcomponents ...Component) (err error) {
 	}
 
 	// Sort by subcomponent name to ensure order is maintained
-	sort.Slice(c.Subcomponents, func(i, j int) bool { return c.Subcomponents[i].Name < c.Subcomponents[j].Name })
+	c.sortSubcomponents()
 
 	return nil
+}
+
+// RemoveSubcomponent takes in a variadic amount of subcomponents and attempts to remove them from the component.
+// If a subcomponent is found with the same name, it is removed. If not, it is a noop.
+func (c *Component) RemoveSubcomponent(subcomponents ...Component) (err error) {
+	// Index all existing components based on name and then delete necessary ones based on name
+	// Warning: this will remove any duplicates with the same name if present
+	nameComponentMap := map[string]Component{}
+	for _, subcomponent := range c.Subcomponents {
+		nameComponentMap[subcomponent.Name] = subcomponent
+	}
+
+	// Delete all components matching .Name of subcomponents
+	for _, subcomponent := range subcomponents {
+		delete(nameComponentMap, subcomponent.Name)
+	}
+
+	// Re-add all subcomponents so no named collisions occur
+	c.Subcomponents = []Component{}
+	for _, subcomponent := range nameComponentMap {
+		c.Subcomponents = append(c.Subcomponents, subcomponent)
+	}
+
+	// Sort by subcomponent name to ensure order is maintained
+	c.sortSubcomponents()
+
+	return nil
+}
+
+// sortSubcomponents sorts a components subcomponents in decending alphabetical order.
+func (c *Component) sortSubcomponents() {
+	// Sort by subcomponent name to ensure order is maintained
+	sort.Slice(c.Subcomponents, func(i, j int) bool {
+		return c.Subcomponents[i].Name < c.Subcomponents[j].Name
+	})
 }
