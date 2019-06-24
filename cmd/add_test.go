@@ -82,6 +82,27 @@ func TestAdd(t *testing.T) {
 	// there should be 2 subcomponents now
 	assert.Nil(t, err)
 	assert.True(t, len(componentComponent.Subcomponents) == 2)
+
+	// Testing: ensure subcomponents sorted by name
+	componentComponent.Subcomponents = []core.Component{}
+	assert.True(t, len(componentComponent.Subcomponents) == 0)
+	subcomponentA := core.Component{
+		Name: "a",
+	}
+	subcomponentB := core.Component{
+		Name: "b",
+	}
+	subcomponentC := core.Component{
+		Name: "c",
+	}
+
+	// Add subcomponents in random order
+	assert.Nil(t, componentComponent.AddSubcomponent(subcomponentC, subcomponentA, subcomponentB))
+
+	// Subcomponent should be sorted by name
+	assert.EqualValues(t, componentComponent.Subcomponents[0].Name, "a")
+	assert.EqualValues(t, componentComponent.Subcomponents[1].Name, "b")
+	assert.EqualValues(t, componentComponent.Subcomponents[2].Name, "c")
 	////////////////////////////////////////////////////////////////////////////////
 	//End adding a subcomponent
 	////////////////////////////////////////////////////////////////////////////////
