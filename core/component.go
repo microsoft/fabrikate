@@ -190,13 +190,13 @@ func (c *Component) AfterInstall() (err error) {
 // InstallComponent installs the component (if needed) utilizing its Method.
 func (c *Component) InstallComponent(componentPath string, accessTokens map[string]string) (err error) {
 	if c.Method == "git" {
-		componentsPath := fmt.Sprintf("%s/components", componentPath)
-		if err := exec.Command("mkdir", "-p", componentsPath).Run(); err != nil {
+		componentsPath := path.Join(componentPath, "components")
+		if err := os.MkdirAll(componentsPath, 0777); err != nil {
 			return err
 		}
 
 		subcomponentPath := path.Join(componentPath, c.RelativePathTo())
-		if err = exec.Command("rm", "-rf", subcomponentPath).Run(); err != nil {
+		if err = os.RemoveAll(subcomponentPath); err != nil {
 			return err
 		}
 
