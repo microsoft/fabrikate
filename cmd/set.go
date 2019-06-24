@@ -4,10 +4,14 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"reflect"
 	"strings"
 
 	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/util"
 	"github.com/spf13/cobra"
+	"github.com/timfpark/yaml"
 )
 
 // SplitPathValuePairs splits array of key/value pairs and returns array of path value pairs ([] PathValuePair) //
@@ -70,7 +74,8 @@ func SplitPathParts(path string) (pathParts []string, err error) {
 // Set implements the 'set' command. It takes an environment, a set of config path / value strings (and a subcomponent if the config
 // should be set on a subcomponent versus the component itself) and sets the config in the appropriate config file,
 // writing the result out to disk at the end.
-func Set(environment string, subcomponent string, pathValuePairStrings []string, noNewConfigKeys bool) (err error) {
+func Set(environment string, subcomponent string, pathValuePairStrings []string, noNewConfigKeys bool, inputFile string) (err error) {
+
 	subcomponentPath := []string{}
 	if len(subcomponent) > 0 {
 		subcomponentPath = strings.Split(subcomponent, ".")
@@ -78,7 +83,33 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string,
 
 	componentConfig := core.NewComponentConfig(".")
 
-	pathValuePairs, err := SplitPathValuePairs(pathValuePairStrings)
+	// Load input file if provided
+	inputFileValuePairList := []string{}
+	if inputFile != "" {
+		bytes, err := ioutil.ReadFile(inputFile)
+		if err != nil {
+			return err
+		}
+		yamlContent := map[string]interface{}{}
+		*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
+		err = yaml.Unmarshal(bytes, &yamlContent)
+		if err != nil {
+			return err
+		}
+
+		// Flatten the map
+		flattenedInputFileContentMap := util.FlattenMap(yamlContent, ".", []string{})
+
+		// Append all key/value in map to the flattened list
+		for k, v := range flattenedInputFileContentMap {
+			// Join to PathValue strings with "="
+			valueAsString := fmt.Sprintf("%v", v)
+			joined := strings.Join([]string{k, valueAsString}, "=")
+			inputFileValuePairList = append(inputFileValuePairList, joined)
+		}
+	}
+
+	pathValuePairs, err := SplitPathValuePairs(append(inputFileValuePairList, pathValuePairStrings...))
 
 	if err != nil {
 		return err
@@ -112,9 +143,10 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string,
 var subcomponent string
 var environment string
 var noNewConfigKeys bool
+var inputFile string
 
 var setCmd = &cobra.Command{
-	Use:   "set <config> [--subcomponent subcomponent] <path1>=<value1> <path2>=<value2> ...",
+	Use:   "set <config> [--subcomponent subcomponent] [--file <my-yaml-file.yaml>] <path1>=<value1> <path2>=<value2> ...",
 	Short: "Sets a config value for a component for a particular config environment in the Fabrikate definition.",
 	Long: `Sets a config value for a component for a particular config environment in the Fabrikate definition.
 eg.
@@ -135,11 +167,11 @@ $ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 --no-new-config-
 Use the --no-new-config-keys switch to prevent the creation of new config.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("'set' takes one or more key=value arguments")
+		if len(args) < 1 && inputFile == "" {
+			return errors.New("'set' takes one or more key=value arguments and/or a --file")
 		}
 
-		return Set(environment, subcomponent, args, noNewConfigKeys)
+		return Set(environment, subcomponent, args, noNewConfigKeys, inputFile)
 	},
 }
 
@@ -147,6 +179,7 @@ func init() {
 	setCmd.PersistentFlags().StringVar(&environment, "environment", "common", "Environment this configuration should apply to")
 	setCmd.PersistentFlags().StringVar(&subcomponent, "subcomponent", "", "Subcomponent this configuration should apply to")
 	setCmd.PersistentFlags().BoolVar(&noNewConfigKeys, "no-new-config-keys", false, "'Prevent creation of new config keys and only allow updating existing config values.")
+	setCmd.Flags().StringVarP(&inputFile, "file", "f", "", "Path to a single YAML file which can be read in and the values of which will be set; note '.' can not occur in keys and list values are not supported.")
 
 	rootCmd.AddCommand(setCmd)
 }

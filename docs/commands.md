@@ -80,7 +80,7 @@ Sets a config value for a component for a particular config environment in the F
 ### Usage
 
 ```sh
-$ fab set --environment <name> [--subcomponent <subcomponent name>] keyPath1=value1 keyPath2=value2 ... keyPathN=valueN
+$ fab set --environment <name> [--subcomponent <subcomponent name>] [--file <input yaml file>] keyPath1=value1 keyPath2=value2 ... keyPathN=valueN
 ```
 
 ### Examples
@@ -105,6 +105,35 @@ Sets the subkey "replicas" in the key 'data' equal to 5 in the 'common' config (
 
 ```sh
 $ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 --no-new-config-keys
+```
+
+#### `Set` from a file
+
+Note:
+
+- `.` in keys is not supported
+- List values are not supported; they will be converted to raw strings (`[1, 2, 3]` will convert to `"[1 2 3]"`)
+
+my-config.yaml:
+
+```yaml
+this:
+  is:
+    my:
+      config: file
+      foo: bar
+it: has many keys
+```
+
+```sh
+$ fab set --subcomponent "myapp.mysubcomponent" --file my-config-file.yaml
+```
+
+will set the the config for the subcomponent "mysubcomponent" of the "myapp" component to the contents of my-config.yaml.
+This is the equivalent of executing:
+
+```sh
+$ fab set --subcomponent "myapp.mysubcomponent" this.is.my.config=file this.is.my.foo=bar it="has many keys"
 ```
 
 ## version
