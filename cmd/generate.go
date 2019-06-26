@@ -21,8 +21,7 @@ func writeGeneratedManifests(generationPath string, components []core.Component)
 
 	for _, component := range components {
 		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
-		err := os.MkdirAll(componentGenerationPath, 0755)
-		if err != nil {
+		if err = os.MkdirAll(componentGenerationPath, 0777); err != nil {
 			return err
 		}
 

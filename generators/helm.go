@@ -3,6 +3,7 @@ package generators
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -102,7 +103,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			log.Errorf("helm template failed with: %s\n", ee.Stderr)
-			_ = exec.Command("rm", absOverriddenPath).Run()
+			_ = os.RemoveAll(absOverriddenPath)
 			return "", err
 		}
 	}
@@ -117,7 +118,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		stringManifests, err = addNamespaceToManifests(stringManifests, component.Config.Namespace)
 	}
 
-	_ = exec.Command("rm", absOverriddenPath).Run()
+	_ = os.RemoveAll(absOverriddenPath)
 
 	return stringManifests, err
 }
@@ -130,11 +131,11 @@ func (hg *HelmGenerator) Install(component *core.Component, accessTokens map[str
 	}
 
 	helmRepoPath := hg.makeHelmRepoPath(component)
-	if err := exec.Command("rm", "-rf", helmRepoPath).Run(); err != nil {
+	if err := os.RemoveAll(helmRepoPath); err != nil {
 		return err
 	}
 
-	if err := exec.Command("mkdir", "-p", helmRepoPath).Run(); err != nil {
+	if err := os.MkdirAll(helmRepoPath, 0777); err != nil {
 		return err
 	}
 

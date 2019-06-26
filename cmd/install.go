@@ -29,6 +29,8 @@ func Install(path string) (err error) {
 		return err
 	}
 
+	// Track access tokens across installations
+	accessTokens := map[string]string{}
 	results := core.WalkComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
 		log.Info(emoji.Sprintf(":point_right: Starting install for component: %s", component.Name))
 
@@ -40,7 +42,6 @@ func Install(path string) (err error) {
 		}
 
 		// Attempt to load access tokens if we are on the root component
-		accessTokens := map[string]string{}
 		if path == "./" {
 			accessTokens, err = component.GetAccessTokens()
 			if err != nil {
