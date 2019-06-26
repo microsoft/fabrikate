@@ -188,7 +188,7 @@ func (c *Component) AfterInstall() (err error) {
 }
 
 // InstallComponent installs the component (if needed) utilizing its Method.
-func (c *Component) InstallComponent(componentPath string) (err error) {
+func (c *Component) InstallComponent(componentPath string, accessTokens map[string]string) (err error) {
 	if c.Method == "git" {
 		componentsPath := fmt.Sprintf("%s/components", componentPath)
 		if err := exec.Command("mkdir", "-p", componentsPath).Run(); err != nil {
@@ -201,7 +201,13 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 		}
 
 		log.Println(emoji.Sprintf(":helicopter: Installing component %s with git from %s", c.Name, c.Source))
-		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
+
+		accessToken := ""
+		if foundToken, ok := accessTokens[c.Source]; ok {
+			accessToken = foundToken
+		}
+
+		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch, accessToken); err != nil {
 			return err
 		}
 	}
@@ -211,19 +217,19 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 
 // Install encapsulates the install lifecycle of a component including before-install,
 // installation, and after-install hooks.
-func (c *Component) Install(componentPath string, generator Generator) (err error) {
+func (c *Component) Install(componentPath string, generator Generator, accessTokens map[string]string) (err error) {
 	if err := c.BeforeInstall(); err != nil {
 		return err
 	}
 
 	for _, subcomponent := range c.Subcomponents {
-		if err := subcomponent.InstallComponent(componentPath); err != nil {
+		if err := subcomponent.InstallComponent(componentPath, accessTokens); err != nil {
 			return err
 		}
 	}
 
 	if generator != nil {
-		if err := generator.Install(c); err != nil {
+		if err := generator.Install(c, accessTokens); err != nil {
 			return err
 		}
 	}
@@ -461,4 +467,25 @@ func (c *Component) sortSubcomponents() {
 	sort.Slice(c.Subcomponents, func(i, j int) bool {
 		return c.Subcomponents[i].Name < c.Subcomponents[j].Name
 	})
+}
+
+// GetAccessTokens attempts to find an access.yaml file in the same physical directory of the component.
+// Un-marshalling if found,
+func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
+	// If access.yaml is found in same directory of component.yaml, see if c.Source is in the map and use the value as accessToken
+	accessYamlPath := path.Join(c.PhysicalPath, "access.yaml")
+	err = UnmarshalFile(accessYamlPath, yaml.Unmarshal, &tokens)
+	if os.IsNotExist(err) {
+		// If the file is not found, return an empty map with no error
+		return map[string]string{}, nil
+	}
+	for repo, envVar := range tokens {
+		token := os.Getenv(envVar)
+		if token == "" {
+			log.Error(emoji.Sprintf(":no_entry_sign: attempted to load environment variable %s; but is either not set or an empty string.", envVar))
+		} else {
+			tokens[repo] = token
+		}
+	}
+	return tokens, err
 }

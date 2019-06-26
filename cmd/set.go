@@ -119,7 +119,7 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string,
 		return err
 	}
 
-	newConfigError := errors.New("New configuration was specified and the --no-new-config-keys switch is on.")
+	newConfigError := errors.New("new configuration was specified and the --no-new-config-keys switch is on")
 
 	for _, pathValue := range pathValuePairs {
 		if noNewConfigKeys {
