@@ -1,49 +1,67 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
-	"os/exec"
 	"testing"
 
+	"github.com/microsoft/fabrikate/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInstallJSON(t *testing.T) {
-	err := Install("../test/fixtures/install")
-
-	if ee, ok := err.(*exec.ExitError); ok {
-		fmt.Printf("TestInstallJSON failed with error %s\n", ee.Stderr)
-	}
-
-	assert.Nil(t, err)
-}
-
-func TestInstallYAML(t *testing.T) {
-	err := Install("../test/fixtures/install-yaml")
-
-	if ee, ok := err.(*exec.ExitError); ok {
-		fmt.Printf("TestInstallYAML failed with error %s\n", ee.Stderr)
-	}
-
-	assert.Nil(t, err)
-}
-
-func TestInstallWithHooks(t *testing.T) {
-	err := Install("../test/fixtures/install-hooks")
-
-	assert.Nil(t, err)
-}
-
-func TestInstallPrivateComponent(t *testing.T) {
+	componentDir := "../test/fixtures/install"
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
 	defer func() {
-		_ = os.Chdir(cwd)
+		assert.Nil(t, os.Chdir(cwd))
+		assert.Nil(t, util.UninstallComponents(componentDir))
 	}()
 
 	// Change cwd to component directory
-	assert.Nil(t, os.Chdir("../test/fixtures/install-private"))
+	assert.Nil(t, os.Chdir(componentDir))
+	assert.Nil(t, Install("./"))
+}
+
+func TestInstallYAML(t *testing.T) {
+	componentDir := "../test/fixtures/install-yaml"
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	defer func() {
+		assert.Nil(t, os.Chdir(cwd))
+		assert.Nil(t, util.UninstallComponents(componentDir))
+	}()
+
+	// Change cwd to component directory
+	assert.Nil(t, os.Chdir(componentDir))
+	assert.Nil(t, Install("./"))
+}
+
+func TestInstallWithHooks(t *testing.T) {
+	componentDir := "../test/fixtures/install-hooks"
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	defer func() {
+		assert.Nil(t, os.Chdir(cwd))
+		assert.Nil(t, util.UninstallComponents(componentDir))
+	}()
+
+	// Change cwd to component directory
+	assert.Nil(t, os.Chdir(componentDir))
+
+	assert.Nil(t, Install("./"))
+}
+
+func TestInstallPrivateComponent(t *testing.T) {
+	componentDir := "../test/fixtures/install-private"
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	defer func() {
+		assert.Nil(t, os.Chdir(cwd))
+		assert.Nil(t, util.UninstallComponents(componentDir))
+	}()
+
+	// Change cwd to component directory
+	assert.Nil(t, os.Chdir(componentDir))
 
 	// Should fail with no environment var set to personal_access_token
 	assert.NotNil(t, Install("./"))
