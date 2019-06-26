@@ -1,14 +1,33 @@
 package core
 
 import (
+	"fmt"
 	"os/exec"
+	"regexp"
 
 	"github.com/kyokomi/emoji"
 	log "github.com/sirupsen/logrus"
 )
 
-// CloneRepo is a helper func to centralize cloning a repo with the spec provided by its arguments.
-func CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
+// CloneRepo is a helper func to centralize cloning a repository with the spec provided by its arguments.
+func CloneRepo(repo string, commit string, intoPath string, branch string, accessToken string) (err error) {
+	if accessToken != "" {
+		// Only match when the repo string does not contain a an access token already
+		// "(https?)://(?!(.+:)?.+@)(.+)" would be preferred but go does not support negative lookahead
+		pattern, err := regexp.Compile("^(https?)://([^@]+@)?(.+)$")
+		if err != nil {
+			return err
+		}
+		// If match is found, inject the access token into the repo string
+		matches := pattern.FindStringSubmatch(repo)
+		if matches != nil {
+			protocol := matches[1]
+			// credentialsWithAtSign := matches[2]
+			cleanedRepoString := matches[3]
+			repo = fmt.Sprintf("%v://%v@%v", protocol, accessToken, cleanedRepoString)
+		}
+	}
+
 	cloneArgs := []string{
 		"clone",
 		repo,
@@ -28,8 +47,9 @@ func CloneRepo(repo string, commit string, intoPath string, branch string) (err 
 	}
 
 	cloneArgs = append(cloneArgs, intoPath)
-
-	if err = exec.Command("git", cloneArgs...).Run(); err != nil {
+	cloneCommand := exec.Command("git", cloneArgs...)
+	cloneCommand.Env = append(cloneCommand.Env, "GIT_TERMINAL_PROMPT=0") // tell git to fail if it asks for credentials
+	if err = cloneCommand.Run(); err != nil {
 		return err
 	}
 

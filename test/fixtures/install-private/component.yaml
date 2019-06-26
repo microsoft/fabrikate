@@ -1,0 +1,5 @@
+name: foobar
+subcomponents:
+  - name: my-private-repo
+    source: https://github.com/evanlouie/fabrikate-private-component
+    method: git
