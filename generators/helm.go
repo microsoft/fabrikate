@@ -124,7 +124,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 
 // Install installs the helm chart specified by the passed component and performs any
 // helm lifecycle events needed.
-func (hg *HelmGenerator) Install(component *core.Component) (err error) {
+func (hg *HelmGenerator) Install(component *core.Component, accessTokens map[string]string) (err error) {
 	if len(component.Source) == 0 || component.Method != "git" {
 		return nil
 	}
@@ -139,7 +139,14 @@ func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	}
 
 	log.Println(emoji.Sprintf(":helicopter: Installing helm repo %s for %s into %s", component.Source, component.Name, helmRepoPath))
-	if err = core.CloneRepo(component.Source, component.Version, helmRepoPath, component.Branch); err != nil {
+
+	// Access token lookup
+	accessToken := ""
+	if foundToken, ok := accessTokens[component.Source]; ok {
+		accessToken = foundToken
+	}
+
+	if err = core.CloneRepo(component.Source, component.Version, helmRepoPath, component.Branch, accessToken); err != nil {
 		return err
 	}
 

@@ -39,7 +39,16 @@ func Install(path string) (err error) {
 			generator = &generators.HelmGenerator{}
 		}
 
-		if err := component.Install(path, generator); err != nil {
+		// Attempt to load access tokens if we are on the root component
+		accessTokens := map[string]string{}
+		if path == "./" {
+			accessTokens, err = component.GetAccessTokens()
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := component.Install(path, generator, accessTokens); err != nil {
 			return err
 		}
 

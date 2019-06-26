@@ -1,5 +1,6 @@
 {
   "name": "microservices-workload",
+  "type": "component",
   "subcomponents": [
     {
       "name": "infra",

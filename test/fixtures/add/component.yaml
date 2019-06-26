@@ -1,11 +1,12 @@
 name: add
+type: component
 subcomponents:
 - name: cloud-native
-  generator: component
+  type: component
   source: https://github.com/timfpark/fabrikate-cloud-native
   method: git
 - name: elasticsearch
-  generator: helm
+  type: helm
   source: https://github.com/helm/charts
   method: git
   path: stable/elasticsearch

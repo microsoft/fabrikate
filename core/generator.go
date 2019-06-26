@@ -4,5 +4,5 @@ package core
 // to install and generate resource manifests.
 type Generator interface {
 	Generate(component *Component) (manifest string, err error)
-	Install(component *Component) (err error)
+	Install(component *Component, accessTokens map[string]string) (err error)
 }
