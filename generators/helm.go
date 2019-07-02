@@ -70,40 +70,38 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		return "", err
 	}
 
+	// Get chart path based on helm_repo location
 	helmRepoPath := hg.makeHelmRepoPath(component)
 	absHelmRepoPath, err := filepath.Abs(helmRepoPath)
 	if err != nil {
 		return "", err
 	}
-
 	chartPath := path.Join(absHelmRepoPath, component.Path)
+
+	// Write helm config to temporary file in tmp folder
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
 	}
-
-	overriddenValuesFileName := fmt.Sprintf("overriddenValues-%s.yaml", uuid.String())
-	absOverriddenPath := path.Join(chartPath, overriddenValuesFileName)
-
-	log.Debugf("Writing config %s to %s\n", configYaml, absOverriddenPath)
-	err = ioutil.WriteFile(absOverriddenPath, configYaml, 0644)
+	overriddenValuesFileName := fmt.Sprintf("%s.yaml", uuid.String())
+	absOverriddenPath := path.Join(os.TempDir(), overriddenValuesFileName)
+	log.Debugf(emoji.Sprintf(":pencil: Writing config %s to %s\n", configYaml, absOverriddenPath))
+	err = ioutil.WriteFile(absOverriddenPath, configYaml, 0777)
 	if err != nil {
 		return "", err
 	}
 
-	name := component.Name
-
+	// Default to `default` namespace unless provided
 	namespace := "default"
 	if component.Config.Namespace != "" {
 		namespace = component.Config.Namespace
 	}
 
-	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", name, "--namespace", namespace).Output()
-
+	// Run `helm template` on the chart using the config stored in temp dir
+	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", component.Name, "--namespace", namespace).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			log.Errorf("helm template failed with: %s\n", ee.Stderr)
-			_ = os.RemoveAll(absOverriddenPath)
 			return "", err
 		}
 	}
@@ -117,8 +115,6 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	if component.Config.InjectNamespace && component.Config.Namespace != "" {
 		stringManifests, err = addNamespaceToManifests(stringManifests, component.Config.Namespace)
 	}
-
-	_ = os.RemoveAll(absOverriddenPath)
 
 	return stringManifests, err
 }
