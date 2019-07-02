@@ -7,7 +7,7 @@ specification of a component with the following schema:
 
 - `type`: Method used to generate the resource manifests for this particular component. Currently, `static` (file based), `helm` (helm based), and `component` (default) are supported values.
 
-- `source`: The source for this component. This can be a URL in the case of remote components or a local path to specify a local filesystem component.
+- `source`: The source for this component. This can be a URL for a Git repository (the url you would call `git clone` on) in the case of `method: git` components or a local path to specify a local filesystem component in the case of `method: local`.
 
 - `method`: The method by which this component is sourced. Currently, only `git` and `local` are supported values.
 
