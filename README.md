@@ -29,12 +29,12 @@ Since our directory was empty, this creates a component.yaml file in this direct
 ```yaml
 name: mycluster
 subcomponents:
-- name: cloud-native
-  type: component
-  source: https://github.com/microsoft/fabrikate-definitions
-  method: git
-  path: definitions/fabrikate-cloud-native
-  branch: master
+  - name: cloud-native
+    type: component
+    source: https://github.com/microsoft/fabrikate-definitions
+    method: git
+    path: definitions/fabrikate-cloud-native
+    branch: master
 ```
 
 A Fabrikate definition, like this one, always contains a `component.yaml` file in its root that defines how to generate the Kubernetes resource manifests for its directory tree scope.
@@ -254,6 +254,7 @@ We have complete details about how to use and contribute to Fabrikate in these d
 - [Component Definitions](./docs/component.md)
 - [Config Definitions](./docs/config.md)
 - [Command Reference](./docs/commands.md)
+- [Authentication / Personal Access Tokens (PAT) / `access.yaml`](./docs/auth.md)
 - [Contributing](./docs/contributing.md)
 
 ## Community
