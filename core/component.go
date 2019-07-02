@@ -284,10 +284,15 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	prepareComponent := func(component Component) Component {
 		// 1. Parse the component at that path into a Component
 		component, err := component.LoadComponent()
-		results <- WalkResult{Error: err}
+		if err != nil {
+			results <- WalkResult{Error: err}
+		}
 
 		// 2. Load the config for this Component
-		results <- WalkResult{Error: component.LoadConfig(environments)}
+		err = component.LoadConfig(environments)
+		if err != nil {
+			results <- WalkResult{Error: err}
+		}
 		return component
 	}
 
@@ -327,7 +332,10 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 				defer markAsVisited(&component)
 
 				// Call the iterator
-				results <- WalkResult{Error: iterator(component.PhysicalPath, &component)}
+				err := iterator(component.PhysicalPath, &component)
+				if err != nil {
+					results <- WalkResult{Error: err}
+				}
 
 				// Range over subcomponents; preparing and enqueuing
 				for _, subcomponent := range component.Subcomponents {
@@ -482,7 +490,9 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 	for repo, envVar := range tokens {
 		token := os.Getenv(envVar)
 		if token == "" {
-			log.Error(emoji.Sprintf(":no_entry_sign: attempted to load environment variable %s; but is either not set or an empty string.", envVar))
+			// Give warning that failed to load env var; but continue and attempt clone
+			msg := fmt.Sprintf("Attempted to load environment variable %s; but is either not set or an empty string. Components with source %s may fail to install", envVar, repo)
+			log.Warn(emoji.Sprintf(":no_entry_sign: %s", msg))
 		} else {
 			tokens[repo] = token
 		}
