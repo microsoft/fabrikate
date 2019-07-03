@@ -41,8 +41,4 @@ nested subcomponent) which have a matching `source` attribute to any of the keys
 found in the `access.yaml` map will use the value contained in the corresponding
 env variable as a PAT for authentication.
 
-### Warnings
-
-- Only the `access.yaml` at the root component is parsed. If your component fetches another component via `method: git` which also contains an `access.yaml`, it will not be parsed by the system.
-
 [tokens]: https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line
