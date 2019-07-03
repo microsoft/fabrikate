@@ -199,12 +199,7 @@ func (c *Component) InstallComponent(componentPath string, accessTokens map[stri
 
 		log.Println(emoji.Sprintf(":helicopter: Installing component %s with git from %s", c.Name, c.Source))
 
-		accessToken := ""
-		if foundToken, ok := accessTokens[c.Source]; ok {
-			accessToken = foundToken
-		}
-
-		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch, accessToken); err != nil {
+		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
 			return err
 		}
 	}
@@ -488,7 +483,7 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		token := os.Getenv(envVar)
 		if token == "" {
 			// Give warning that failed to load env var; but continue and attempt clone
-			msg := fmt.Sprintf("Attempted to load environment variable %s; but is either not set or an empty string. Components with source %s may fail to install", envVar, repo)
+			msg := fmt.Sprintf("Component %s attempted to load environment variable %s; but is either not set or an empty string. Components with source %s may fail to install", c.Name, envVar, repo)
 			log.Warn(emoji.Sprintf(":no_entry_sign: %s", msg))
 		} else {
 			tokens[repo] = token
