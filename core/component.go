@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -85,9 +84,7 @@ func (c *Component) applyDefaultsAndMigrations() {
 }
 
 func (c *Component) LoadComponent() (loadedComponent Component, err error) {
-	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &loadedComponent)
-
 	if err != nil {
 		err = c.UnmarshalComponent("json", json.Unmarshal, &loadedComponent)
 		if err != nil {

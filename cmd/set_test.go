@@ -3,7 +3,6 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,7 +80,6 @@ func TestSetValue(t *testing.T) {
 
 	// Parse yaml
 	fromFile := map[string]interface{}{}
-	*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	err = yaml.Unmarshal(bytes, &fromFile)
 	assert.Nil(t, err)
 

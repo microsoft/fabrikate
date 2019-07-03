@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"reflect"
 	"strings"
 
 	"github.com/microsoft/fabrikate/core"
@@ -91,7 +90,6 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string,
 			return err
 		}
 		yamlContent := map[string]interface{}{}
-		*yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 		err = yaml.Unmarshal(bytes, &yamlContent)
 		if err != nil {
 			return err
