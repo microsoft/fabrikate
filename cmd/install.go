@@ -41,12 +41,15 @@ func Install(path string) (err error) {
 			generator = &generators.HelmGenerator{}
 		}
 
-		// Attempt to load access tokens if we are on the root component
-		if path == "./" {
-			accessTokens, err = component.GetAccessTokens()
-			if err != nil {
-				return err
+		// Load access tokens and add them to the global token list. Do not overwrite if already present
+		if accessTokens, err = component.GetAccessTokens(); err == nil {
+			for repo, token := range accessTokens {
+				if _, exists := core.GitAccessTokens.Get(repo); !exists {
+					core.GitAccessTokens.Set(repo, token)
+				}
 			}
+		} else {
+			return err
 		}
 
 		if err := component.Install(path, generator, accessTokens); err != nil {

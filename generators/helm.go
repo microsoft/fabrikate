@@ -137,13 +137,7 @@ func (hg *HelmGenerator) Install(component *core.Component, accessTokens map[str
 
 	log.Println(emoji.Sprintf(":helicopter: Installing helm repo %s for %s into %s", component.Source, component.Name, helmRepoPath))
 
-	// Access token lookup
-	accessToken := ""
-	if foundToken, ok := accessTokens[component.Source]; ok {
-		accessToken = foundToken
-	}
-
-	if err = core.CloneRepo(component.Source, component.Version, helmRepoPath, component.Branch, accessToken); err != nil {
+	if err = core.CloneRepo(component.Source, component.Version, helmRepoPath, component.Branch); err != nil {
 		return err
 	}
 

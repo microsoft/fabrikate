@@ -51,7 +51,29 @@ func (cache *gitCache) set(cacheToken string, cloneResult *gitCloneResult) {
 	cache.mu.Unlock()
 }
 
-// cacheKey combines a git-repo, branch, and commit into a unique key used for caching to a map
+// Thread safe store of {[gitRepo]: token}
+type gitAccessTokenMap struct {
+	mu     sync.RWMutex
+	tokens map[string]string
+}
+
+// Get is a thread safe getter to do a map lookup in a getAccessTokens
+func (t *gitAccessTokenMap) Get(repo string) (string, bool) {
+	t.mu.RLock()
+	token, exists := t.tokens[repo]
+	t.mu.RUnlock()
+	return token, exists
+}
+
+// Set is a thread safe setter method to modify a gitAccessTokenMap
+func (t *gitAccessTokenMap) Set(repo, token string) {
+	t.mu.Lock()
+	t.tokens[repo] = token
+	t.mu.Unlock()
+}
+
+// cacheKey combines a git-repo, branch, and commit into a unique key used for
+// caching to a map
 func cacheKey(repo, branch, commit string) string {
 	if len(branch) == 0 {
 		branch = "master"
@@ -67,9 +89,15 @@ var cache = gitCache{
 	cache: map[string]*gitCloneResult{},
 }
 
+// GitAccessTokens is a thread-safe global store of Personal Access Tokens which
+// is used to store PATs as they are discovered throughout the Install lifecycle
+var GitAccessTokens = gitAccessTokenMap{
+	tokens: map[string]string{},
+}
+
 // cloneRepo clones a target git repository into the hosts temporary directory
 // and returns a gitCloneResult pointing to that location on filesystem
-func (cache *gitCache) cloneRepo(repo string, commit string, branch string, accessToken string) chan *gitCloneResult {
+func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan *gitCloneResult {
 	cloneResultChan := make(chan *gitCloneResult)
 
 	go func() {
@@ -82,9 +110,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string, acce
 			cloneResultChan <- cloneResult
 		} else {
 			// Add the clone future to cache
-			cloneResult := gitCloneResult{
-				Error: nil,
-			}
+			cloneResult := gitCloneResult{}
 			cloneResult.mu.Lock()               // lock the future
 			cache.set(cacheToken, &cloneResult) // store future in cache
 
@@ -103,10 +129,10 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string, acce
 			}
 
 			// Add the auth token to auth if provided
-			if len(accessToken) != 0 {
+			if token, exists := GitAccessTokens.Get(repo); exists {
 				cloneOptions.Auth = &http.BasicAuth{
 					Username: "not-needed-when-using-PAT-but-cant-be-blank",
-					Password: accessToken,
+					Password: token,
 				}
 			}
 
@@ -119,35 +145,23 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string, acce
 			// Clone into a random path in the host temp dir
 			uuid, err := uuid.NewRandom()
 			if err != nil {
-				cloneResultChan <- &gitCloneResult{
-					Error: err,
-				}
+				cloneResultChan <- &gitCloneResult{Error: err}
 			}
 			clonePathOnFS := path.Join(os.TempDir(), uuid.String())
 			log.Println(emoji.Sprintf(":helicopter: Cloning %s into %s", cacheToken, clonePathOnFS))
 			r, err := git.PlainClone(clonePathOnFS, false, cloneOptions)
 			if err != nil {
-				cloneResultChan <- &gitCloneResult{
-					Error: err,
-				}
+				cloneResultChan <- &gitCloneResult{Error: err}
 			}
 
 			// If commit provided, checkout the commit
 			if len(commit) != 0 {
 				w, err := r.Worktree()
 				if err != nil {
-					cloneResultChan <- &gitCloneResult{
-						Error: err,
-					}
+					cloneResultChan <- &gitCloneResult{Error: err}
 				}
-
-				err = w.Checkout(&git.CheckoutOptions{
-					Hash: plumbing.NewHash(commit),
-				})
-				if err != nil {
-					cloneResultChan <- &gitCloneResult{
-						Error: err,
-					}
+				if err = w.Checkout(&git.CheckoutOptions{Hash: plumbing.NewHash(commit)}); err != nil {
+					cloneResultChan <- &gitCloneResult{Error: err}
 				}
 			}
 
@@ -165,16 +179,16 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string, acce
 
 // CloneRepo is a helper func to centralize cloning a repository with the spec
 // provided by its arguments.
-func CloneRepo(repo string, commit string, intoPath string, branch string, accessToken string) (err error) {
+func CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
 	// Clone and get the location of where it was cloned to in tmp
-	result := <-cache.cloneRepo(repo, commit, branch, accessToken)
+	result := <-cache.cloneRepo(repo, commit, branch)
 	clonePath := result.get()
 	if result.Error != nil {
 		return result.Error
 	}
 
 	// copy the repo from tmp cache to component path
-	log.Println(emoji.Sprintf(":truck: Copying %s into %s", clonePath, intoPath))
+	log.Info(emoji.Sprintf(":truck: Copying %s into %s", clonePath, intoPath))
 	if err = copy.Copy(clonePath, intoPath); err != nil {
 		return err
 	}
