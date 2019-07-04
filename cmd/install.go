@@ -29,8 +29,6 @@ func Install(path string) (err error) {
 		return err
 	}
 
-	// Track access tokens across installations
-	accessTokens := map[string]string{}
 	results := core.WalkComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
 		log.Info(emoji.Sprintf(":point_right: Starting install for component: %s", component.Name))
 
@@ -42,14 +40,14 @@ func Install(path string) (err error) {
 		}
 
 		// Load access tokens and add them to the global token list. Do not overwrite if already present
-		if accessTokens, err = component.GetAccessTokens(); err == nil {
-			for repo, token := range accessTokens {
-				if _, exists := core.GitAccessTokens.Get(repo); !exists {
-					core.GitAccessTokens.Set(repo, token)
-				}
-			}
-		} else {
+		accessTokens, err := component.GetAccessTokens()
+		if err != nil {
 			return err
+		}
+		for repo, token := range accessTokens {
+			if _, exists := core.GitAccessTokens.Get(repo); !exists {
+				core.GitAccessTokens.Set(repo, token)
+			}
 		}
 
 		if err := component.Install(path, generator, accessTokens); err != nil {
