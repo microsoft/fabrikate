@@ -40,17 +40,17 @@ func Install(path string) (err error) {
 		}
 
 		// Load access tokens and add them to the global token list. Do not overwrite if already present
-		accessTokens, err := component.GetAccessTokens()
-		if err != nil {
+		if accessTokens, err := component.GetAccessTokens(); err != nil {
 			return err
-		}
-		for repo, token := range accessTokens {
-			if _, exists := core.GitAccessTokens.Get(repo); !exists {
-				core.GitAccessTokens.Set(repo, token)
+		} else if len(accessTokens) > 0 {
+			for repo, token := range accessTokens {
+				if _, exists := core.GitAccessTokens.Get(repo); !exists {
+					core.GitAccessTokens.Set(repo, token)
+				}
 			}
 		}
 
-		if err := component.Install(path, generator, accessTokens); err != nil {
+		if err := component.Install(path, generator); err != nil {
 			return err
 		}
 

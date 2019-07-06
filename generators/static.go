@@ -37,6 +37,6 @@ func (sg *StaticGenerator) Generate(component *core.Component) (manifest string,
 
 // Install is provided such that the StaticGenerator fulfills the Generator interface.
 // Currently is a no-op, but could be extended to support remote static content (see #155)
-func (sg *StaticGenerator) Install(component *core.Component, accessTokens map[string]string) (err error) {
+func (sg *StaticGenerator) Install(component *core.Component) (err error) {
 	return nil
 }

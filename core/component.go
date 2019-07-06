@@ -185,7 +185,7 @@ func (c *Component) AfterInstall() (err error) {
 }
 
 // InstallComponent installs the component (if needed) utilizing its Method.
-func (c *Component) InstallComponent(componentPath string, accessTokens map[string]string) (err error) {
+func (c *Component) InstallComponent(componentPath string) (err error) {
 	if c.Method == "git" {
 		componentsPath := path.Join(componentPath, "components")
 		if err := os.MkdirAll(componentsPath, 0777); err != nil {
@@ -209,19 +209,19 @@ func (c *Component) InstallComponent(componentPath string, accessTokens map[stri
 
 // Install encapsulates the install lifecycle of a component including before-install,
 // installation, and after-install hooks.
-func (c *Component) Install(componentPath string, generator Generator, accessTokens map[string]string) (err error) {
+func (c *Component) Install(componentPath string, generator Generator) (err error) {
 	if err := c.BeforeInstall(); err != nil {
 		return err
 	}
 
 	for _, subcomponent := range c.Subcomponents {
-		if err := subcomponent.InstallComponent(componentPath, accessTokens); err != nil {
+		if err := subcomponent.InstallComponent(componentPath); err != nil {
 			return err
 		}
 	}
 
 	if generator != nil {
-		if err := generator.Install(c, accessTokens); err != nil {
+		if err := generator.Install(c); err != nil {
 			return err
 		}
 	}

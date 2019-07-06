@@ -121,7 +121,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 
 // Install installs the helm chart specified by the passed component and performs any
 // helm lifecycle events needed.
-func (hg *HelmGenerator) Install(component *core.Component, accessTokens map[string]string) (err error) {
+func (hg *HelmGenerator) Install(component *core.Component) (err error) {
 	if len(component.Source) == 0 || component.Method != "git" {
 		return nil
 	}
