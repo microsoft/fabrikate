@@ -3,16 +3,15 @@ package core
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
+	"regexp"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
 	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
-	git "gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
 // A future like struct to hold the result of git clone
@@ -104,8 +103,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		cacheToken := cacheKey(repo, branch, commit)
 
 		// Check if the repo is cloned/being-cloned
-		cloneResult, ok := cache.get(cacheToken)
-		if ok {
+		if cloneResult, ok := cache.get(cacheToken); ok {
 			log.Info(emoji.Sprintf(":atm: Previously cloned %s this install; reusing", cacheToken))
 			cloneResultChan <- cloneResult
 		} else {
@@ -115,52 +113,63 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 			cache.set(cacheToken, &cloneResult) // store future in cache
 
 			// Default options for a clone
-			cloneOptions := &git.CloneOptions{
-				URL:          repo,
-				SingleBranch: true,
+			cloneCommandArgs := []string{"clone"}
+
+			// check for access token and append to repo if present
+			if token, exists := GitAccessTokens.Get(repo); exists {
+				// Only match when the repo string does not contain a an access token already
+				// "(https?)://(?!(.+:)?.+@)(.+)" would be preferred but go does not support negative lookahead
+				pattern, err := regexp.Compile("^(https?)://([^@]+@)?(.+)$")
+				if err != nil {
+					cloneResultChan <- &gitCloneResult{Error: err}
+				}
+				// If match is found, inject the access token into the repo string
+				matches := pattern.FindStringSubmatch(repo)
+				if matches != nil {
+					protocol := matches[1]
+					// credentialsWithAtSign := matches[2]
+					cleanedRepoString := matches[3]
+					repo = fmt.Sprintf("%v://%v@%v", protocol, token, cleanedRepoString)
+				}
 			}
+
+			// Add repo to clone args
+			cloneCommandArgs = append(cloneCommandArgs, repo)
 
 			// Only fetch latest commit if commit provided
 			if len(commit) == 0 {
 				log.Println(emoji.Sprintf(":helicopter: Component requested latest commit: fast cloning at --depth 1"))
-				cloneOptions.Depth = 1
+				cloneCommandArgs = append(cloneCommandArgs, "--depth", "1")
 			} else {
 				log.Println(emoji.Sprintf(":helicopter: Component requested commit '%s': need full clone", commit))
-			}
-
-			// Add the auth token to auth if provided
-			if token, exists := GitAccessTokens.Get(repo); exists {
-				cloneOptions.Auth = &http.BasicAuth{
-					Username: "not-needed-when-using-PAT-but-cant-be-blank",
-					Password: token,
-				}
 			}
 
 			// Add branch reference option if provided
 			if len(branch) != 0 {
 				log.Println(emoji.Sprintf(":helicopter: Component requested branch '%s'", branch))
-				cloneOptions.ReferenceName = plumbing.NewBranchReferenceName(branch)
+				cloneCommandArgs = append(cloneCommandArgs, "--branch", branch)
 			}
 
 			// Clone into a random path in the host temp dir
-			uuid, err := uuid.NewRandom()
+			randomFolderName, err := uuid.NewRandom()
 			if err != nil {
 				cloneResultChan <- &gitCloneResult{Error: err}
 			}
-			clonePathOnFS := path.Join(os.TempDir(), uuid.String())
+			clonePathOnFS := path.Join(os.TempDir(), randomFolderName.String())
 			log.Println(emoji.Sprintf(":helicopter: Cloning %s into %s", cacheToken, clonePathOnFS))
-			r, err := git.PlainClone(clonePathOnFS, false, cloneOptions)
-			if err != nil {
+			cloneCommandArgs = append(cloneCommandArgs, clonePathOnFS)
+			cloneCommand := exec.Command("git", cloneCommandArgs...)
+			cloneCommand.Env = append(cloneCommand.Env, "GIT_TERMINAL_PROMPT=0") // tell git to fail if it asks for credentials
+			if err = cloneCommand.Run(); err != nil {
 				cloneResultChan <- &gitCloneResult{Error: err}
 			}
 
 			// If commit provided, checkout the commit
 			if len(commit) != 0 {
-				w, err := r.Worktree()
-				if err != nil {
-					cloneResultChan <- &gitCloneResult{Error: err}
-				}
-				if err = w.Checkout(&git.CheckoutOptions{Hash: plumbing.NewHash(commit)}); err != nil {
+				log.Println(emoji.Sprintf(":helicopter: Performing checkout at commit %s", commit))
+				checkoutCommit := exec.Command("git", "checkout", commit)
+				checkoutCommit.Dir = clonePathOnFS
+				if err = checkoutCommit.Run(); err != nil {
 					cloneResultChan <- &gitCloneResult{Error: err}
 				}
 			}
