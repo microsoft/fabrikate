@@ -74,3 +74,17 @@ func TestInstallPrivateComponent(t *testing.T) {
 		assert.NotNil(t, Install("./"))
 	}
 }
+
+func TestInstallHelmMethod(t *testing.T) {
+	componentDir := "../test/fixtures/install-helm"
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	defer func() {
+		assert.Nil(t, os.Chdir(cwd))
+		assert.Nil(t, util.UninstallComponents(componentDir))
+	}()
+
+	// Change cwd to component directory
+	assert.Nil(t, os.Chdir(componentDir))
+	assert.Nil(t, Install("./"))
+}

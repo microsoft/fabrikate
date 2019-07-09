@@ -25,7 +25,8 @@ func Install(path string) (err error) {
 	}
 
 	log.Info(emoji.Sprintf(":point_right: Initializing Helm"))
-	if err = exec.Command("helm", "init", "--client-only").Run(); err != nil {
+	if output, err := exec.Command("helm", "init", "--client-only").CombinedOutput(); err != nil {
+		log.Error(emoji.Sprintf(":no_entry_sign: %s: %s", err, output))
 		return err
 	}
 

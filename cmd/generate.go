@@ -40,12 +40,10 @@ func writeGeneratedManifests(generationPath string, components []core.Component)
 }
 
 func validateGeneratedManifests(generationPath string) (err error) {
-	log.Println(emoji.Sprintf(":microscope: Validating generated manifests in path %s", generationPath))
-	output, err := exec.Command("kubectl", "apply", "--validate=true", "--dry-run", "--recursive", "-f", generationPath).Output()
-
-	if err != nil {
+	log.Info(emoji.Sprintf(":microscope: Validating generated manifests in path %s", generationPath))
+	if output, err := exec.Command("kubectl", "apply", "--validate=true", "--dry-run", "--recursive", "-f", generationPath).Output(); err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			log.Errorf("Validating generated manifests failed with: %s: output: %s\n", ee.Stderr, output)
+			log.Errorf("Validating generated manifests failed with: %s: output: %s", ee.Stderr, output)
 			return err
 		}
 	}
