@@ -15,7 +15,7 @@ type StaticGenerator struct{}
 
 // Generate iterates a static directory of resource manifests and creates a multi-part manifest.
 func (sg *StaticGenerator) Generate(component *core.Component) (manifest string, err error) {
-	log.Println(emoji.Sprintf(":truck: Generating component '%s' statically from path %s", component.Name, component.Path))
+	log.Info(emoji.Sprintf(":truck: Generating component '%s' statically from path %s", component.Name, component.Path))
 
 	staticPath := path.Join(component.PhysicalPath, component.Path)
 	staticFiles, err := ioutil.ReadDir(staticPath)

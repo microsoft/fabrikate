@@ -5,21 +5,43 @@ specification of a component with the following schema:
 
 - `name`: A free form text name for this component. This name is used to refer to the component in [config specifications](./config.md).
 
-- `type`: Method used to generate the resource manifests for this particular component. Currently, `static` (file based), `helm` (helm based), and `component` (default) are supported values.
+- `type`: Method used to install and generate the resource needed for this particular component. Currently, `static` (file based), `helm` (helm based), and `component` (default) are supported values.
 
-- `source`: The source for this component. This can be a URL for a Git repository (the url you would call `git clone` on) in the case of `method: git` components or a local path to specify a local filesystem component in the case of `method: local`.
+  - if `type: component`: the component itself does not contain any manifests to generate, but is a container for other components.
+  - if `type: helm`: `source` is the helm repository URL and `path` is the name of the target chart; `helm template` will be called on the component during `fab gen`.
+  - if `type: static`: the component holds raw kubernetes manifest files in `path`.
 
-- `method`: The method by which this component is sourced. Currently, only `git` and `local` are supported values.
+- `method`: The method by which this component is sourced. Currently, only `git`, `helm`, and `local` are supported values.
+
+  - if `method: git`: Tells fabrikate to `git clone <source>`.
+  - if `method: helm`: Tells fabrikate to `helm fetch <path>` from the `source` helm repo.
+  - if `method: local`: Tells fabrikate to use the host filesystem as a means to find the component.
+
+- `source`: The source for this component.
+
+  - if `method: git`: A URL for a Git repository (the url you would call `git clone` on).
+  - if `method: helm`: A URL to a helm repository (the url you would call `helm repo add` on).
+  - if `method: local`: A local path to specify a local filesystem component.
 
 - `path`: For some components, like ones generated with `helm`, the desired target of the component might not be located at the root of the repo. Path enables you to specify the relative `path` to this target from the root of the `source`.
 
+  - if `method: git`: the subdirectory of the component in the git repo specified in `source`.
+  - if `method: helm`: the name of the chart to install the repo specified in `source`.
+  - if `method: local`: the subdirectory on host filesystem where the component is located.
+
 - `version`: For git `method` components, this specifies a specific commit SHA hash that the component should be locked to, enabling you to lock the component to a consistent version.
+
+  - if `method: git`: a specific commit to checkout from the repository.
+  - if `method: helm`: noop
+  - if `method: local`: noop
 
 - `branch`: For git `method` components, this specifies the branch that should be checked out after the git `source` is cloned.
 
-- `hooks`: Hooks enable you to execute one or more shell commands before or after the following component lifecycle events: `before-install`, `before-generate`, `after-install`, `after-generate`.
+  - if `method: git`: a specific branch to checkout from the repository.
+  - if `method: helm`: noop
+  - if `method: local`: noop
 
-- `repositories`: A field of key/value pairs consisting of a set of helm repositories that should be added.
+- `hooks`: Hooks enable you to execute one or more shell commands before or after the following component lifecycle events: `before-install`, `before-generate`, `after-install`, `after-generate`.
 
 - `subcomponents`: Zero or more subcomponents that define how to build the resource manifests that make up this component. These subcomponents are components themselves and have exactly the same schema as above.
 

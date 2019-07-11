@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 
-	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,7 +41,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().Bool("verbose", false, "Use verbose output logs")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Use verbose output logs")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -52,7 +51,7 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := homedir.Dir()
+		home, err := os.UserHomeDir()
 		if err != nil {
 			log.Errorf("Getting home directory failed with: %s\n", err)
 			os.Exit(1)

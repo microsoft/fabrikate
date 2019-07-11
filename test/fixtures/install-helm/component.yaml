@@ -1,0 +1,22 @@
+name: prometheus
+type: helm
+method: helm
+source: https://kubernetes-charts.storage.googleapis.com
+path: prometheus
+subcomponents:
+  - name: grafana
+    type: helm
+    method: helm
+    source: https://kubernetes-charts.storage.googleapis.com
+    path: grafana
+    subcomponents:
+      - name: strimzi-kafka-operator
+        type: helm
+        method: helm
+        source: https://strimzi.io/charts/
+        path: strimzi-kafka-operator
+      - name: strimzi-kafka-operator2
+        type: helm
+        method: helm
+        source: https://strimzi.io/charts/
+        path: strimzi-kafka-operator

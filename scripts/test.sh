@@ -1,4 +1,5 @@
-# Due to some tests fetching helm repos with nested Go tests in them, we 
+#!/usr/bin/env bash
+# Due to some tests fetching helm repos with nested Go tests in them, we
 # need to specifiy to only test `core` and `cmd` to exclude `test` (which only 
 # contains fixtures)
 go get -v -t ./core/... ./cmd/...
