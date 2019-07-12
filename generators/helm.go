@@ -159,17 +159,15 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 			if err = core.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
 				return err
 			}
+			// Remove .git
+			_ = os.RemoveAll(path.Join(helmRepoPath, ".git"))
+			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart
+			chartPath, err := hg.getChartPath(c)
+			if err != nil {
+				return err
+			}
+			_ = updateHelmChartDep(chartPath)
 		}
-	}
-
-	// Update chart dependencies -- don't fail if error is returned, but throw warning
-	chartPath, err := hg.getChartPath(c)
-	if err != nil {
-		return err
-	}
-	log.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for component '%s'", c.Name))
-	if output, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-		log.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart '%s' in component '%s'; run `helm dependency update %s` for more error details.\n%s: %s", c.Name, c.Path, chartPath, err, output))
 	}
 
 	return err
@@ -217,6 +215,9 @@ func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
 		return err
 	}
 
+	// Update chart dependencies before removing temp repo
+	_ = updateHelmChartDep(into)
+
 	// Remove repository once completed
 	log.Info(emoji.Sprintf(":bomb: Removing temporary helm repo %s", randomName))
 	hd.mu.Lock()
@@ -229,4 +230,23 @@ func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
 	// copy chart to target `into` dir
 	chartDirectoryInRandomDir := path.Join(randomDir, chart)
 	return copy.Copy(chartDirectoryInRandomDir, into)
+}
+
+// updateHelmChartDep attempts to run `helm dependency update` on chartPath
+func updateHelmChartDep(chartPath string) (err error) {
+	absChartPath := chartPath
+	if isAbs := filepath.IsAbs(absChartPath); !isAbs {
+		asAbs, err := filepath.Abs(chartPath)
+		if err != nil {
+			return err
+		}
+		absChartPath = asAbs
+	}
+	log.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
+	if output, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
+		log.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, output))
+		return err
+	}
+
+	return err
 }
