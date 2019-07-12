@@ -161,7 +161,7 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 			}
 			// Remove .git
 			_ = os.RemoveAll(path.Join(helmRepoPath, ".git"))
-			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart
+			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart in the case of `method: helm`
 			chartPath, err := hg.getChartPath(c)
 			if err != nil {
 				return err
