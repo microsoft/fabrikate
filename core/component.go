@@ -391,7 +391,7 @@ func (c *Component) Write() (err error) {
 	filename := fmt.Sprintf("component.%s", c.Serialization)
 	componentPath := path.Join(c.PhysicalPath, filename)
 
-	log.Info(emoji.Sprintf(":floppy_disk: Writing %s", componentPath))
+	log.Info(emoji.Sprintf(":floppy_disk: Writing '%s'", componentPath))
 
 	return ioutil.WriteFile(componentPath, marshaledComponent, 0644)
 }
@@ -466,7 +466,7 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		// If the file is not found, return an empty map with no error
 		return map[string]string{}, nil
 	} else if err != nil {
-		log.Error(emoji.Sprintf(":no_entry_sign: Error unmarshalling access.yaml in %s", accessYamlPath))
+		log.Error(emoji.Sprintf(":no_entry_sign: Error unmarshalling access.yaml in '%s'", accessYamlPath))
 		return nil, err
 	}
 
@@ -475,7 +475,7 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		token := os.Getenv(envVar)
 		if token == "" {
 			// Give warning that failed to load env var; but continue and attempt clone
-			msg := fmt.Sprintf("Component %s attempted to load environment variable %s; but is either not set or an empty string. Components with source %s may fail to install", c.Name, envVar, repo)
+			msg := fmt.Sprintf("Component '%s' attempted to load environment variable '%s'; but is either not set or an empty string. Components with source '%s' may fail to install", c.Name, envVar, repo)
 			log.Warn(emoji.Sprintf(":no_entry_sign: %s", msg))
 		} else {
 			tokens[repo] = token
