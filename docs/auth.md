@@ -63,4 +63,5 @@ run `fab install` and look at the warning logs to see which components are
 asking for which variables and tokens (missing env vars will be logged as
 warnings during install).
 
-[tokens]: https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line
+[tokens]:
+  https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line
