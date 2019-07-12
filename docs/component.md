@@ -57,15 +57,15 @@ generator: "static"
 path: "./manifests"
 subcomponents:
   - name: "grafana"
-    generator: "helm"
-    source: "https://github.com/helm/charts"
-    method: "git"
-    path: "stable/grafana"
+    type: "helm"
+    method: "git" # fetch the `source` via `git clone`
+    source: "https://github.com/helm/charts" # source of stable helm repo
+    path: "stable/grafana" # path in stable helm repo to chart
   - name: "prometheus"
-    generator: "helm"
-    source: "https://github.com/helm/charts"
-    method: "git"
-    path: "stable/prometheus"
+    type: "helm"
+    method: "helm" # fetch the `source` via `helm fetch`
+    source: "https://kubernetes-charts.storage.googleapis.com" # url of helm repo the chart resides
+    path: "prometheus" # name of chart in helm repository
 ```
 
 ### Istio
@@ -94,7 +94,7 @@ subcomponents:
 
 ### Jaeger
 
-This [component specification](https://github.com/bnookala/fabrikate-jaeger) is specified in JSON and also utilizes a `repositories` field to add the incubator repo to helm.
+This [component specification](https://github.com/bnookala/fabrikate-jaeger) is specified in JSON and utilizes the `method: helm` feature to `helm fetch` the jaeger chart from the incubator helm repo.
 
 ```json
 {
@@ -104,13 +104,10 @@ This [component specification](https://github.com/bnookala/fabrikate-jaeger) is 
   "subcomponents": [
     {
       "name": "jaeger",
-      "generator": "helm",
-      "repositories": {
-        "incubator": "https://kubernetes-charts-incubator.storage.googleapis.com/"
-      },
-      "source": "https://github.com/helm/charts",
-      "method": "git",
-      "path": "incubator/jaeger"
+      "type": "helm",
+      "method": "helm",
+      "source": "https://kubernetes-charts-incubator.storage.googleapis.com/",
+      "path": "jaeger"
     }
   ]
 }
