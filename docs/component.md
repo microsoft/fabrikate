@@ -75,10 +75,16 @@ component with the following schema:
 
 ### Prometheus Grafana
 
-This
-[component specification](https://github.com/timfpark/fabrikate-prometheus-grafana)
+This [component specification](https://github.com/timfpark/fabrikate-prometheus-grafana)
 generates static manifests for the `grafana` and `prometheus` namespaces and
 then remotely sources two helm charts for prometheus and grafana respectively.
+
+Grafana is sourced via `method: git`, so the entire repository is cloned and the
+`path` is utilized to point to the location of the helm chart.
+
+Prometheus is sourced via `method: helm`, so the incubator repo noted in
+`source` is temporarily added to the hosts helm client and the chart noted in
+`path` is `helm fetch`d from the `source` repo.
 
 ```yaml
 name: "prometheus-grafana"
