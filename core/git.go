@@ -168,6 +168,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		log.Info(emoji.Sprintf(":helicopter: Cloning %s => %s", cacheToken, clonePathOnFS))
 		cloneCommandArgs = append(cloneCommandArgs, clonePathOnFS)
 		cloneCommand := exec.Command("git", cloneCommandArgs...)
+		cloneCommand.Env = append(cloneCommand.Env, os.Environ()...)         // pass all env variables to git command to proper SSH config is passed if needed
 		cloneCommand.Env = append(cloneCommand.Env, "GIT_TERMINAL_PROMPT=0") // tell git to fail if it asks for credentials
 
 		// TODO: implement usage of custom SSH key
