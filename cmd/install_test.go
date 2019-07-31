@@ -9,7 +9,7 @@ import (
 )
 
 func TestInstallJSON(t *testing.T) {
-	componentDir := "../test/fixtures/install"
+	componentDir := "../testdata/install"
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
 	defer func() {
@@ -23,7 +23,7 @@ func TestInstallJSON(t *testing.T) {
 }
 
 func TestInstallYAML(t *testing.T) {
-	componentDir := "../test/fixtures/install-yaml"
+	componentDir := "../testdata/install-yaml"
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
 	defer func() {
@@ -37,7 +37,7 @@ func TestInstallYAML(t *testing.T) {
 }
 
 func TestInstallWithHooks(t *testing.T) {
-	componentDir := "../test/fixtures/install-hooks"
+	componentDir := "../testdata/install-hooks"
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
 	defer func() {
@@ -52,7 +52,7 @@ func TestInstallWithHooks(t *testing.T) {
 }
 
 func TestInstallPrivateComponent(t *testing.T) {
-	componentDir := "../test/fixtures/install-private"
+	componentDir := "../testdata/install-private"
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
 	defer func() {
@@ -76,7 +76,7 @@ func TestInstallPrivateComponent(t *testing.T) {
 }
 
 func TestInstallHelmMethod(t *testing.T) {
-	componentDir := "../test/fixtures/install-helm"
+	componentDir := "../testdata/install-helm"
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
 	defer func() {

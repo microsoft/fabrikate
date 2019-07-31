@@ -17,7 +17,7 @@ func TestAdd(t *testing.T) {
 		_ = os.Chdir(cwd)
 	}()
 
-	err = os.Chdir("../test/fixtures/add")
+	err = os.Chdir("../testdata/add")
 	assert.Nil(t, err)
 
 	_ = os.Remove("./component.yaml")
