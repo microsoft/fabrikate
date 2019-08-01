@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -22,36 +23,91 @@ import (
 type HelmGenerator struct {
 }
 
-func addNamespaceToManifests(manifests, namespace string) (namespacedManifests string, err error) {
+type namespaceInjectionResponse struct {
+	namespacedManifest *[]byte
+	err                error
+	warn               *string
+}
+
+// func addNamespaceToManifests(manifests, namespace string) (namespacedManifests string, err error) {
+func addNamespaceToManifests(manifests, namespace string) chan namespaceInjectionResponse {
+	respChan := make(chan namespaceInjectionResponse)
+	syncGroup := sync.WaitGroup{}
+	splitManifest := strings.Split(manifests, "\n---")
+
+	// Wait for all manifests to be iterated over then close the channel
+	syncGroup.Add(len(splitManifest))
+	go func() {
+		syncGroup.Wait()
+		close(respChan)
+	}()
+
+	// Iterate over all manifests, decrementing the wait group for every channel put
+	for _, manifest := range splitManifest {
+		go func(manifest string) {
+			parsedManifest := make(map[interface{}]interface{})
+
+			// Push a warning if unable to unmarshal
+			if err := yaml.Unmarshal([]byte(manifest), &parsedManifest); err != nil {
+				warning := emoji.Sprintf(":question: Unable to unmarshal manifest into type '%s', this is most likely a warning message outputted from `helm template`. Skipping namespace injection of '%s' into manifest: '%s'", reflect.TypeOf(parsedManifest), namespace, manifest)
+				respChan <- namespaceInjectionResponse{warn: &warning}
+				syncGroup.Done()
+				return
+			}
+
+			// strip any empty entries
+			if len(parsedManifest) == 0 {
+				syncGroup.Done()
+				return
+			}
+
+			// Inject the namespace
+			if parsedManifest["metadata"] != nil {
+				metadataMap := parsedManifest["metadata"].(map[interface{}]interface{})
+				if metadataMap["namespace"] == nil {
+					metadataMap["namespace"] = namespace
+				}
+			}
+
+			// Marshal updated manifest and put the response on channel
+			updatedManifest, err := yaml.Marshal(&parsedManifest)
+			if err != nil {
+				respChan <- namespaceInjectionResponse{err: err}
+				syncGroup.Done()
+				return
+			}
+			respChan <- namespaceInjectionResponse{namespacedManifest: &updatedManifest}
+			syncGroup.Done()
+		}(manifest)
+	}
+
+	return respChan
+}
+
+// cleanK8sManifest attempts to remove any invalid entries in k8s yaml.
+// If any entries after being split by "---" are not a map or are empty, they are removed
+func cleanK8sManifest(manifests string) (cleanedManifests string, err error) {
 	splitManifest := strings.Split(manifests, "\n---")
 
 	for _, manifest := range splitManifest {
 		parsedManifest := make(map[interface{}]interface{})
+
+		// Log a warning if unable to unmarshal; skip the entry
 		if err := yaml.Unmarshal([]byte(manifest), &parsedManifest); err != nil {
-			return "", err
+			warning := emoji.Sprintf(":question: Unable to unmarshal manifest into type '%s', this is most likely a warning message outputted from `helm template`.\nRemoving manifest entry: '%s'\nUnmarshal error encountered: '%s'", reflect.TypeOf(parsedManifest), manifest, err)
+			log.Warn(warning)
+			continue
 		}
 
-		// strip any empty entries
+		// Remove empty entries
 		if len(parsedManifest) == 0 {
 			continue
 		}
 
-		if parsedManifest["metadata"] != nil {
-			metadataMap := parsedManifest["metadata"].(map[interface{}]interface{})
-			if metadataMap["namespace"] == nil {
-				metadataMap["namespace"] = namespace
-			}
-		}
-
-		updatedManifest, err := yaml.Marshal(&parsedManifest)
-		if err != nil {
-			return "", err
-		}
-
-		namespacedManifests += fmt.Sprintf("---\n%s\n", updatedManifest)
+		cleanedManifests += fmt.Sprintf("---\n%s\n", manifest)
 	}
 
-	return namespacedManifests, nil
+	return cleanedManifests, err
 }
 
 // makeHelmRepoPath returns the path where the components helm charts are
@@ -121,20 +177,43 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	if err != nil {
 		return "", err
 	}
-	log.Infof("Runing `helm template` on template '%s'\n", chartPath)
+	log.Info(emoji.Sprintf(":memo: Running `helm template` on template '%s'", chartPath))
 	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", component.Name, "--namespace", namespace).CombinedOutput()
 	if err != nil {
 		log.Errorf("helm template failed with:\n%s: %s", err, output)
 		return "", err
 	}
-	stringManifests := string(output)
+	// Remove any empty/non-map entries in manifests
+	stringManifests, err := cleanK8sManifest(string(output))
+	if err != nil {
+		return "", err
+	}
 
 	// helm template does not inject namespace unless chart directly provides support for it: https://github.com/helm/helm/issues/3553
 	// some helm templates expect Tiller to inject namespace, so enable Fabrikate component designer to
 	// opt into injecting these namespaces manually.  We should reassess if this is necessary after Helm 3 is released and client side
 	// templating really becomes a first class function in Helm.
 	if component.Config.InjectNamespace && component.Config.Namespace != "" {
-		stringManifests, err = addNamespaceToManifests(stringManifests, component.Config.Namespace)
+		log.Info(emoji.Sprintf(":syringe: Injecting namespace '%s' into manifests for component '%s'", component.Config.Namespace, component.Name))
+		namespacedManifests := ""
+		for resp := range addNamespaceToManifests(stringManifests, component.Config.Namespace) {
+			// If error; return the error immediately
+			if resp.err != nil {
+				log.Error(emoji.Sprintf(":exclamation: Encountered error while injecting namespace '%s' into manifests for component '%s':\n%s", component.Config.Namespace, component.Name, resp.err))
+				return stringManifests, resp.err
+			}
+
+			// If warning; just log the warning
+			if resp.warn != nil {
+				log.Warn(emoji.Sprintf(":question: Encountered warning while injecting namespace '%s' into manifests for component '%s':\n%s", component.Config.Namespace, component.Name, *resp.warn))
+			}
+
+			// Add the manifest if one was returned
+			if resp.namespacedManifest != nil {
+				namespacedManifests += fmt.Sprintf("---\n%s\n", *resp.namespacedManifest)
+			}
+		}
+		stringManifests = namespacedManifests
 	}
 
 	return stringManifests, err

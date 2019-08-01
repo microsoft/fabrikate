@@ -75,7 +75,8 @@ component with the following schema:
 
 ### Prometheus Grafana
 
-This [component specification](https://github.com/timfpark/fabrikate-prometheus-grafana)
+This
+[component specification](https://github.com/timfpark/fabrikate-prometheus-grafana)
 generates static manifests for the `grafana` and `prometheus` namespaces and
 then remotely sources two helm charts for prometheus and grafana respectively.
 
@@ -115,9 +116,8 @@ generator: helm
 path: "./tmp/istio-1.1.2/install/kubernetes/helm/istio"
 hooks:
   before-install:
-    - curl -Lv
-      https://github.com/istio/istio/releases/download/1.1.2/istio-1.1.2-linux.tar.gz
-      -o istio.tar.gz
+    - |
+      curl -Lv https://github.com/istio/istio/releases/download/1.1.2/istio-1.1.2-linux.tar.gz -o istio.tar.gz
     - mkdir -p tmp
     - tar xvf istio.tar.gz -C tmp
   after-install:
