@@ -184,6 +184,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		return "", err
 	}
 	// Remove any empty/non-map entries in manifests
+	log.Info(emoji.Sprintf(":scissors: Removing empty entries from generated manifests from chart '%s'", chartPath))
 	stringManifests, err := cleanK8sManifest(string(output))
 	if err != nil {
 		return "", err
@@ -238,14 +239,14 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 			if err = core.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
 				return err
 			}
-			// Remove .git
-			_ = os.RemoveAll(path.Join(helmRepoPath, ".git"))
 			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart in the case of `method: helm`
 			chartPath, err := hg.getChartPath(c)
 			if err != nil {
 				return err
 			}
-			_ = updateHelmChartDep(chartPath)
+			if err = updateHelmChartDep(chartPath); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -294,9 +295,6 @@ func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
 		return err
 	}
 
-	// Update chart dependencies before removing temp repo
-	_ = updateHelmChartDep(into)
-
 	// Remove repository once completed
 	log.Info(emoji.Sprintf(":bomb: Removing temporary helm repo %s", randomName))
 	hd.mu.Lock()
@@ -308,11 +306,29 @@ func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
 
 	// copy chart to target `into` dir
 	chartDirectoryInRandomDir := path.Join(randomDir, chart)
-	return copy.Copy(chartDirectoryInRandomDir, into)
+	if err = copy.Copy(chartDirectoryInRandomDir, into); err != nil {
+		return err
+	}
+
+	// update/fetch dependencies for the chart
+	return updateHelmChartDep(into)
 }
 
 // updateHelmChartDep attempts to run `helm dependency update` on chartPath
 func updateHelmChartDep(chartPath string) (err error) {
+	// A single helm dependency entry
+	type helmDependency struct {
+		Name       string
+		Version    string
+		Repository string
+		Condition  string
+	}
+
+	// Contents of requirements.yaml for a helm chart
+	type helmRequirements struct {
+		Dependencies []helmDependency
+	}
+
 	absChartPath := chartPath
 	if isAbs := filepath.IsAbs(absChartPath); !isAbs {
 		asAbs, err := filepath.Abs(chartPath)
@@ -321,10 +337,57 @@ func updateHelmChartDep(chartPath string) (err error) {
 		}
 		absChartPath = asAbs
 	}
+
+	// Parse chart dependency repositories and add them if not present
+	requirementsYamlPath := path.Join(absChartPath, "requirements.yaml")
+	addedDepRepoList := []string{}
+	if _, err := os.Stat(requirementsYamlPath); err == nil {
+		log.Infof("requirements.yaml found at '%s', ensuring repositories exist on helm client", requirementsYamlPath)
+		bytes, err := ioutil.ReadFile(requirementsYamlPath)
+		if err != nil {
+			return err
+		}
+		requirementsYaml := helmRequirements{}
+		if err = yaml.Unmarshal(bytes, &requirementsYaml); err != nil {
+			return err
+		}
+
+		// Add each dependency repo with a temp name
+		for _, dep := range requirementsYaml.Dependencies {
+			log.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
+			randomUUID, err := uuid.NewRandom()
+			if err != nil {
+				return err
+			}
+			randomRepoName := randomUUID.String()
+			hd.mu.Lock()
+			if output, err := exec.Command("helm", "repo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
+				hd.mu.Unlock()
+				log.Error(emoji.Sprintf(":no_entry_sign: Failed to add helm dependency repository '%s' for chart '%s':\n%s", dep.Repository, chartPath, output))
+				return err
+			}
+			hd.mu.Unlock()
+			addedDepRepoList = append(addedDepRepoList, randomRepoName)
+		}
+	}
+
+	// Update dependencies
 	log.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
 	if output, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
 		log.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, output))
 		return err
+	}
+
+	// Cleanup temp dependency repositories
+	for _, repo := range addedDepRepoList {
+		log.Info(emoji.Sprintf(":bomb: Removing dependency repository '%s'", repo))
+		hd.mu.Lock()
+		if output, err := exec.Command("helm", "repo", "remove", repo).CombinedOutput(); err != nil {
+			hd.mu.Unlock()
+			log.Error(output)
+			return err
+		}
+		hd.mu.Unlock()
 	}
 
 	return err
