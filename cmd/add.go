@@ -5,7 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -59,11 +61,22 @@ $ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitio
 			return errors.New("'add' takes one or more key=value arguments")
 		}
 
+		// If method not "git", set branch to zero value
+		method := cmd.Flag("method").Value.String()
+		branch := cmd.Flag("branch").Value.String()
+		if cmd.Flags().Changed("method") && method != "git" {
+			// Warn users if they explicitly set --branch that the config is being removed
+			if cmd.Flags().Changed("branch") {
+				log.Warn(emoji.Sprintf(":exclamation: Non 'git' --method and explicit --branch specified. Removing --branch configuration of 'branch: %s'", branch))
+			}
+			branch = ""
+		}
+
 		component := core.Component{
 			Name:          args[0],
 			Source:        cmd.Flag("source").Value.String(),
-			Method:        cmd.Flag("method").Value.String(),
-			Branch:        cmd.Flag("branch").Value.String(),
+			Method:        method,
+			Branch:        branch,
 			Path:          cmd.Flag("path").Value.String(),
 			ComponentType: cmd.Flag("type").Value.String(),
 		}
@@ -74,10 +87,10 @@ $ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitio
 
 func init() {
 	addCmd.PersistentFlags().String("source", "", "Source for this component")
-	addCmd.PersistentFlags().String("method", "git", "Method to use to fetch this component (default: git)")
-	addCmd.PersistentFlags().String("branch", "master", "Branch of git repo to use (default: master)")
-	addCmd.PersistentFlags().String("path", "", "Path of git repo to use (default: ./)")
-	addCmd.PersistentFlags().String("type", "component", "Type of this component (default: component)")
+	addCmd.PersistentFlags().String("method", "git", "Method to use to fetch this component")
+	addCmd.PersistentFlags().String("branch", "master", "Branch of git repo to use; noop when method != 'git'")
+	addCmd.PersistentFlags().String("path", "./", "Path of git repo to use")
+	addCmd.PersistentFlags().String("type", "component", "Type of this component")
 
 	rootCmd.AddCommand(addCmd)
 }

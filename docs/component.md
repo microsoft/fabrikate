@@ -7,24 +7,25 @@ component with the following schema:
 - `name`: A free form text name for this component. This name is used to refer
   to the component in [config specifications](./config.md).
 
-- `type`: Method used to install and generate the resource needed for this
-  particular component. Currently, `static` (file based), `helm` (helm based),
-  and `component` (default) are supported values.
+- `type`: Method used generate the manifests for this particular component.
+  Currently, `static` (static manifest based), `helm` (helm based), and
+  `component` (default) are supported values.
 
   - if `type: component`: the component itself does not contain any manifests to
     generate, but is a container for other components.
-  - if `type: helm`: `source` is the helm repository URL and `path` is the name
-    of the target chart; `helm template` will be called on the component during
-    `fab gen`.
+  - if `type: helm`: the component will use `helm template` to materialize the
+    component using the specified config under `config` as the `values.yaml`
+    file.
   - if `type: static`: the component holds raw kubernetes manifest files in
-    `path`.
+    `path`, these manifests will be copied to the generated output.
 
 - `method`: The method by which this component is sourced. Currently, only
   `git`, `helm`, and `local` are supported values.
 
   - if `method: git`: Tells fabrikate to `git clone <source>`.
-  - if `method: helm`: Tells fabrikate to `helm fetch <path>` from the `source`
-    helm repo.
+  - if `method: helm`: Tells fabrikate to `helm fetch <source>/<path>` from the
+    `source` helm repo. Essentially:
+    `helm repo add foo <my_helm_repository> && helm fetch foo/<path>`
   - if `method: local`: Tells fabrikate to use the host filesystem as a means to
     find the component.
 
@@ -75,7 +76,8 @@ component with the following schema:
 
 ### Prometheus Grafana
 
-This [component specification](https://github.com/timfpark/fabrikate-prometheus-grafana)
+This
+[component specification](https://github.com/timfpark/fabrikate-prometheus-grafana)
 generates static manifests for the `grafana` and `prometheus` namespaces and
 then remotely sources two helm charts for prometheus and grafana respectively.
 
@@ -115,9 +117,8 @@ generator: helm
 path: "./tmp/istio-1.1.2/install/kubernetes/helm/istio"
 hooks:
   before-install:
-    - curl -Lv
-      https://github.com/istio/istio/releases/download/1.1.2/istio-1.1.2-linux.tar.gz
-      -o istio.tar.gz
+    - |
+      curl -Lv https://github.com/istio/istio/releases/download/1.1.2/istio-1.1.2-linux.tar.gz -o istio.tar.gz
     - mkdir -p tmp
     - tar xvf istio.tar.gz -C tmp
   after-install:
