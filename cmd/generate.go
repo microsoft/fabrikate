@@ -13,11 +13,24 @@ import (
 	"github.com/microsoft/fabrikate/generators"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/timfpark/yaml"
 )
+
+type kustomization struct {
+	Kind       string   `yaml:"kind,omitempty"`
+	APIVersion string   `yaml:"apiversion,omitempty"`
+	Resources  []string `yaml:"resources,omitempty"`
+}
 
 func writeGeneratedManifests(generationPath string, components []core.Component) (err error) {
 	// Delete the old version, so we don't end up with a mishmash of two builds.
 	os.RemoveAll(generationPath)
+
+	kustomization := kustomization{}
+
+	kustomization.APIVersion = "kustomize.config.k8s.io/v1beta1"
+	kustomization.Kind = "Kustomization"
+	kustomization.Resources = make([]string, 0)
 
 	for _, component := range components {
 		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
@@ -34,6 +47,22 @@ func writeGeneratedManifests(generationPath string, components []core.Component)
 		if err != nil {
 			return err
 		}
+
+		log.Info(emoji.Sprintf(":truck: Adding resource %s to kustomization.yaml", componentYAMLFilename))
+		kustomization.Resources = append(kustomization.Resources, componentYAMLFilename)
+	}
+
+	kustomizationBytes, err := yaml.Marshal(kustomization)
+
+	if err != nil {
+		return err
+	}
+
+	log.Info(emoji.Sprintf(":floppy_disk: Writing kustomization.yaml"))
+	err = ioutil.WriteFile(path.Join(generationPath, "kustomization.yaml"), kustomizationBytes, 0644)
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -54,7 +83,7 @@ func validateGeneratedManifests(generationPath string) (err error) {
 // Generate implements the 'generate' command. It takes a set of environments and a validation flag
 // and iterates through the component tree, generating components as it reaches them, and writing all
 // of the generated manifests at the very end.
-func Generate(startPath string, environments []string, validate bool) (components []core.Component, err error) {
+func Generate(startPath string, environments []string, validate bool, generateKustomization bool) (components []core.Component, err error) {
 	// Iterate through component tree and generate
 	results := core.WalkComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
 
@@ -113,7 +142,8 @@ if it did not conflict with prod or azure.`,
 		PrintVersion()
 
 		validation := cmd.Flag("validate").Value.String()
-		_, err := Generate("./", args, validation == "true")
+		generateKustomization := cmd.Flag("kustomize").Value.String()
+		_, err := Generate("./", args, validation == "true", generateKustomization == "true")
 
 		return err
 	},
@@ -121,5 +151,6 @@ if it did not conflict with prod or azure.`,
 
 func init() {
 	generateCmd.PersistentFlags().Bool("validate", false, "Validate generated resource manifest YAML")
+	generateCmd.PersistentFlags().BoolP("kustomize", "k", false, "Generate a kustomization.yaml file")
 	rootCmd.AddCommand(generateCmd)
 }
