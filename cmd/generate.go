@@ -22,15 +22,42 @@ type kustomization struct {
 	Resources  []string `yaml:"resources,omitempty"`
 }
 
-func writeGeneratedManifests(generationPath string, components []core.Component) (err error) {
-	// Delete the old version, so we don't end up with a mishmash of two builds.
-	os.RemoveAll(generationPath)
+const kustomizationFileName = "kustomization.yaml"
+
+func writeKustomizationFiles(generationPath string, components []core.Component) (err error) {
 
 	kustomization := kustomization{}
 
 	kustomization.APIVersion = "kustomize.config.k8s.io/v1beta1"
 	kustomization.Kind = "Kustomization"
 	kustomization.Resources = make([]string, 0)
+
+	for _, component := range components {
+		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
+		log.Debug(emoji.Sprintf(":truck: Adding resource %s to %s", componentYAMLFilename, kustomizationFileName))
+		kustomization.Resources = append(kustomization.Resources, componentYAMLFilename)
+	}
+
+	kustomizationBytes, err := yaml.Marshal(kustomization)
+
+	if err != nil {
+		return err
+	}
+
+	kustomizationFile := path.Join(generationPath, kustomizationFileName)
+	log.Info(emoji.Sprintf(":floppy_disk: Writing %s", kustomizationFile))
+	err = ioutil.WriteFile(kustomizationFile, kustomizationBytes, 0644)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeGeneratedManifests(generationPath string, components []core.Component) (err error) {
+	// Delete the old version, so we don't end up with a mishmash of two builds.
+	os.RemoveAll(generationPath)
 
 	for _, component := range components {
 		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
@@ -47,22 +74,6 @@ func writeGeneratedManifests(generationPath string, components []core.Component)
 		if err != nil {
 			return err
 		}
-
-		log.Info(emoji.Sprintf(":truck: Adding resource %s to kustomization.yaml", componentYAMLFilename))
-		kustomization.Resources = append(kustomization.Resources, componentYAMLFilename)
-	}
-
-	kustomizationBytes, err := yaml.Marshal(kustomization)
-
-	if err != nil {
-		return err
-	}
-
-	log.Info(emoji.Sprintf(":floppy_disk: Writing kustomization.yaml"))
-	err = ioutil.WriteFile(path.Join(generationPath, "kustomization.yaml"), kustomizationBytes, 0644)
-
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -115,6 +126,12 @@ func Generate(startPath string, environments []string, validate bool, generateKu
 		return nil, err
 	}
 
+	if generateKustomization {
+		if err = writeKustomizationFiles(generationPath, components); err != nil {
+			return nil, err
+		}
+	}
+
 	if validate {
 		if err = validateGeneratedManifests(generationPath); err != nil {
 			return nil, err
@@ -151,6 +168,6 @@ if it did not conflict with prod or azure.`,
 
 func init() {
 	generateCmd.PersistentFlags().Bool("validate", false, "Validate generated resource manifest YAML")
-	generateCmd.PersistentFlags().BoolP("kustomize", "k", false, "Generate a kustomization.yaml file")
+	generateCmd.PersistentFlags().BoolP("kustomize", "k", false, fmt.Sprint("Generate a %s file", kustomizationFileName))
 	rootCmd.AddCommand(generateCmd)
 }
