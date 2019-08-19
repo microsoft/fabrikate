@@ -24,8 +24,7 @@ type kustomization struct {
 
 const kustomizationFileName = "kustomization.yaml"
 
-func writeKustomizationFiles(generationPath string, components []core.Component) (err error) {
-
+func writeKustomizationFile(generationPath string, components []core.Component) (err error) {
 	kustomization := kustomization{}
 
 	kustomization.APIVersion = "kustomize.config.k8s.io/v1beta1"
@@ -127,7 +126,7 @@ func Generate(startPath string, environments []string, validate bool, generateKu
 	}
 
 	if generateKustomization {
-		if err = writeKustomizationFiles(generationPath, components); err != nil {
+		if err = writeKustomizationFile(generationPath, components); err != nil {
 			return nil, err
 		}
 	}
@@ -168,6 +167,6 @@ if it did not conflict with prod or azure.`,
 
 func init() {
 	generateCmd.PersistentFlags().Bool("validate", false, "Validate generated resource manifest YAML")
-	generateCmd.PersistentFlags().BoolP("kustomize", "k", false, fmt.Sprint("Generate a %s file", kustomizationFileName))
+	generateCmd.PersistentFlags().BoolP("kustomize", "k", false, fmt.Sprintf("Generate a %s file", kustomizationFileName))
 	rootCmd.AddCommand(generateCmd)
 }
