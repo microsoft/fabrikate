@@ -301,11 +301,28 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
 	go func() {
 		// Manually enqueue the first root component
-		enqueue(prepareComponent(Component{
+
+		initialComponent := prepareComponent(Component{
 			PhysicalPath: startingPath,
 			LogicalPath:  "./",
 			Config:       NewComponentConfig(startingPath),
-		}))
+		})
+
+		rootComponent := Component{
+			PhysicalPath: startingPath,
+			LogicalPath:  "./",
+			Config:       NewComponentConfig(startingPath),
+		}
+
+		rootComponent.AddSubcomponent(initialComponent)
+
+		enqueue(rootComponent)
+
+		/*enqueue(prepareComponent(Component{
+			PhysicalPath: startingPath,
+			LogicalPath:  "./",
+			Config:       NewComponentConfig(startingPath),
+		}))*/
 
 		// Close results channel once all nodes visited
 		walking.Wait()
