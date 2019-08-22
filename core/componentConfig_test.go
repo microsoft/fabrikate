@@ -20,6 +20,24 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, "myapp", config.Namespace)
 }
 
+func TestFailedYAMLLoad(t *testing.T) {
+	config := ComponentConfig{
+		Path: "../testdata/badyamlconfig",
+	}
+
+	err := config.Load("common")
+	assert.NotNilNil(t, err)
+}
+
+func TestFailedJSONLoad(t *testing.T) {
+	config := ComponentConfig{
+		Path: "../testdata/badjsonconfig",
+	}
+
+	err := config.Load("common")
+	assert.NotNilNil(t, err)
+}
+
 func TestMerge(t *testing.T) {
 	currentConfig := NewComponentConfig("../testdata/merge")
 	err := currentConfig.Load("current")

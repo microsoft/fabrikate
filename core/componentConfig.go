@@ -66,16 +66,20 @@ func (cc *ComponentConfig) MergeConfigFile(path string, environment string) (err
 func (cc *ComponentConfig) Load(environment string) (err error) {
 	err = cc.UnmarshalYAMLConfig(environment)
 
-	// fall back to looking for JSON if loading YAML fails.
-	if err != nil {
-		err = cc.UnmarshalJSONConfig(environment)
-
-		if err != nil {
-			// couldn't find any config files, so default back to yaml serialization
-			cc.Serialization = "yaml"
-		}
+	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
+	if err == nil || err != nil && !os.IsNotExist(err) {
+		return err
 	}
 
+	err = cc.UnmarshalJSONConfig(environment)
+
+	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
+	if err == nil || err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	// Otherwise, no config files were found, so default to yaml serialization and return.
+	cc.Serialization = "yaml"
 	return nil
 }
 
