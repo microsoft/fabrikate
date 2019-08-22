@@ -26,7 +26,7 @@ func TestFailedYAMLLoad(t *testing.T) {
 	}
 
 	err := config.Load("common")
-	assert.NotNilNil(t, err)
+	assert.NotNil(t, err)
 }
 
 func TestFailedJSONLoad(t *testing.T) {
@@ -35,7 +35,7 @@ func TestFailedJSONLoad(t *testing.T) {
 	}
 
 	err := config.Load("common")
-	assert.NotNilNil(t, err)
+	assert.NotNil(t, err)
 }
 
 func TestMerge(t *testing.T) {
