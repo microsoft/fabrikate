@@ -314,9 +314,11 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 			Config:       NewComponentConfig(startingPath),
 		}
 
-		rootComponent.AddSubcomponent(initialComponent)
-
-		enqueue(rootComponent)
+		if err := rootComponent.AddSubcomponent(initialComponent); err == nil {
+			enqueue(rootComponent)
+		} else {
+			results <- WalkResult{Error: err}
+		}
 
 		// Close results channel once all nodes visited
 		walking.Wait()
