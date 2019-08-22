@@ -67,14 +67,14 @@ func (cc *ComponentConfig) Load(environment string) (err error) {
 	err = cc.UnmarshalYAMLConfig(environment)
 
 	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
-	if err == nil || err != nil && !os.IsNotExist(err) {
+	if err == nil || !os.IsNotExist(err) {
 		return err
 	}
 
 	err = cc.UnmarshalJSONConfig(environment)
 
 	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
-	if err == nil || err != nil && !os.IsNotExist(err) {
+	if err == nil || !os.IsNotExist(err) {
 		return err
 	}
 
