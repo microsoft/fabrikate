@@ -318,12 +318,6 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 
 		enqueue(rootComponent)
 
-		/*enqueue(prepareComponent(Component{
-			PhysicalPath: startingPath,
-			LogicalPath:  "./",
-			Config:       NewComponentConfig(startingPath),
-		}))*/
-
 		// Close results channel once all nodes visited
 		walking.Wait()
 		close(results)
