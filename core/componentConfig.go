@@ -64,17 +64,13 @@ func (cc *ComponentConfig) MergeConfigFile(path string, environment string) (err
 
 // Load loads the config for the specified environment.
 func (cc *ComponentConfig) Load(environment string) (err error) {
-	err = cc.UnmarshalYAMLConfig(environment)
-
 	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
-	if err == nil || !os.IsNotExist(err) {
+	if err = cc.UnmarshalYAMLConfig(environment); err == nil || !os.IsNotExist(err) {
 		return err
 	}
 
-	err = cc.UnmarshalJSONConfig(environment)
-
 	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
-	if err == nil || !os.IsNotExist(err) {
+	if err = cc.UnmarshalJSONConfig(environment); err == nil || !os.IsNotExist(err) {
 		return err
 	}
 
