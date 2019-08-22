@@ -33,8 +33,9 @@ func writeKustomizationFile(generationPath string, components []core.Component) 
 
 	for _, component := range components {
 		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
-		log.Debug(emoji.Sprintf(":truck: Adding resource %s to %s", componentYAMLFilename, kustomizationFileName))
-		kustomization.Resources = append(kustomization.Resources, componentYAMLFilename)
+		componentYAMLFilepath := path.Join(component.LogicalPath, componentYAMLFilename)
+		log.Debug(emoji.Sprintf(":truck: Adding resource %s to %s", componentYAMLFilepath, kustomizationFileName))
+		kustomization.Resources = append(kustomization.Resources, componentYAMLFilepath)
 	}
 
 	kustomizationBytes, err := yaml.Marshal(kustomization)
