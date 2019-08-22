@@ -63,11 +63,16 @@ func UnmarshalFile(path string, unmarshalFunc unmarshalFunction, output interfac
 
 // UnmarshalComponent finds and unmarshal the component.<format> of a component using the
 // provided `unmarshalFunc` function.
-func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmarshalFunction, component *Component) error {
-	componentFilename := fmt.Sprintf("component.%s", marshaledType)
+func (c *Component) UnmarshalComponent(serializationType string, unmarshalFunc unmarshalFunction, component *Component) error {
+	log.Debugf("Attempting to unmarshal %s for component '%s'", serializationType, c.Name)
+
+	componentFilename := fmt.Sprintf("component.%s", serializationType)
 	componentPath := path.Join(c.PhysicalPath, componentFilename)
 
-	return UnmarshalFile(componentPath, unmarshalFunc, component)
+	err := UnmarshalFile(componentPath, unmarshalFunc, component)
+	component.Serialization = serializationType
+
+	return err
 }
 
 func (c *Component) applyDefaultsAndMigrations() {
@@ -85,18 +90,24 @@ func (c *Component) applyDefaultsAndMigrations() {
 	}
 }
 
+// LoadComponent loads a component definition in either YAML or JSON formats.
 func (c *Component) LoadComponent() (loadedComponent Component, err error) {
-	log.Debugf("Attempting to unmarshal yaml for component '%s'", c.Name)
-	if err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &loadedComponent); err != nil {
-		log.Debugf("Failed to unmarshal yaml for component '%s'; attempting json", c.Name)
+
+	// If success or loading or parsing the yaml component failed for reasons other than it didn't exist, return.
+	if err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &loadedComponent); err != nil && !os.IsNotExist(err) {
+		return loadedComponent, err
+	}
+
+	// If YAML component definition did not exist, try JSON.
+	if err != nil {
 		if err = c.UnmarshalComponent("json", json.Unmarshal, &loadedComponent); err != nil {
-			log.Debugf("Failed to unmarshal json for component '%s'", c.Name)
+			if !os.IsNotExist(err) {
+				return loadedComponent, err
+			}
+
 			errorMessage := fmt.Sprintf("Error loading component in path %s", c.PhysicalPath)
 			return loadedComponent, errors.New(errorMessage)
 		}
-		loadedComponent.Serialization = "json"
-	} else {
-		loadedComponent.Serialization = "yaml"
 	}
 
 	loadedComponent.applyDefaultsAndMigrations()
