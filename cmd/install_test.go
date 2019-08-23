@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"io/ioutil"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/microsoft/fabrikate/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/timfpark/yaml"
 )
 
 func TestInstallJSON(t *testing.T) {
@@ -87,4 +90,17 @@ func TestInstallHelmMethod(t *testing.T) {
 	// Change cwd to component directory
 	assert.Nil(t, os.Chdir(componentDir))
 	assert.Nil(t, Install("./"))
+
+	// Grafana chart should be version 3.7.0
+	grafanaChartYaml := path.Join("helm_repos", "grafana", "Chart.yaml")
+	grafanaChartBytes, err := ioutil.ReadFile(grafanaChartYaml)
+	assert.Nil(t, err)
+	type helmChart struct {
+		Version string
+		Name    string
+	}
+	grafanaChart := helmChart{}
+	assert.Nil(t, yaml.Unmarshal(grafanaChartBytes, &grafanaChart))
+	assert.EqualValues(t, "grafana", grafanaChart.Name)
+	assert.EqualValues(t, "3.7.0", grafanaChart.Version)
 }
