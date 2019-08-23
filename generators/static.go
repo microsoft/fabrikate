@@ -19,6 +19,10 @@ func (sg *StaticGenerator) Generate(component *core.Component) (manifest string,
 
 	staticPath := path.Join(component.PhysicalPath, component.Path)
 	staticFiles, err := ioutil.ReadDir(staticPath)
+	if err != nil {
+		log.Errorf("error reading from directory %s", staticPath);
+		return "", err
+	}
 
 	manifests := ""
 	for _, staticFile := range staticFiles {
