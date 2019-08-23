@@ -54,7 +54,8 @@ component with the following schema:
   component to a consistent version.
 
   - if `method: git`: a specific commit to checkout from the repository.
-  - if `method: helm`: noop
+  - if `method: helm`: defines the version of the helm chart to fetch. Value
+    provided will be piped into `helm fetch --version <insert version here>...`
   - if `method: local`: noop
 
 - `branch`: For git `method` components, this specifies the branch that should

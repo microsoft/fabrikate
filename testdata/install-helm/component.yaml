@@ -9,6 +9,7 @@ subcomponents:
     method: helm
     source: https://kubernetes-charts.storage.googleapis.com
     path: grafana
+    version: 3.7.0
     subcomponents:
       - name: strimzi-kafka-operator
         type: helm
