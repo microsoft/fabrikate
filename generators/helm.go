@@ -230,7 +230,7 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 		switch c.Method {
 		case "helm":
 			log.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart '%s' from helm repository '%s'", c.Name, c.Path, c.Source))
-			if err = hd.downloadChart(c.Source, c.Path, helmRepoPath); err != nil {
+			if err = hd.downloadChart(c.Source, c.Path, c.Version, helmRepoPath); err != nil {
 				return err
 			}
 		case "git":
@@ -265,12 +265,13 @@ type helmDownloader struct {
 
 var hd = helmDownloader{}
 
-// downloadChart downloads a target `chart` from `repo` and places it in `into`
+// downloadChart downloads a target `chart` at version `version` from `repo` and
+// places it in `into`. If `version` is blank, latest is automatically fetched.
 // -- `into` will be the dir containing Chart.yaml
 // The function will add a temporary helm repo, fetch from it, and then remove
 // the temporary repo. This is a to get around a limitation in Helm 2.
 // see: https://github.com/helm/helm/issues/4527
-func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
+func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
 	// generate random name to store repo in helm in temporarily
 	randomUUID, err := uuid.NewRandom()
 	if err != nil {
@@ -289,8 +290,18 @@ func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
 	// Fetch chart to random temp dir
 	chartName := fmt.Sprintf("%s/%s", randomName, chart)
 	randomDir := path.Join(os.TempDir(), randomName)
-	log.Info(emoji.Sprintf(":helicopter: Fetching helm chart '%s' into '%s'", chart, randomDir))
-	if output, err := exec.Command("helm", "fetch", "--untar", "--untardir", randomDir, chartName).CombinedOutput(); err != nil {
+	downloadVersion := "latest"
+	if version != "" {
+		downloadVersion = version
+	}
+	log.Info(emoji.Sprintf(":helicopter: Fetching helm chart '%s' version '%s' into '%s'", chart, downloadVersion, randomDir))
+	helmFetchCommandArgs := []string{"fetch", "--untar", "--untardir", randomDir}
+	// Append version if provided
+	if version != "" {
+		helmFetchCommandArgs = append(helmFetchCommandArgs, "--version", version)
+	}
+	helmFetchCommandArgs = append(helmFetchCommandArgs, chartName)
+	if output, err := exec.Command("helm", helmFetchCommandArgs...).CombinedOutput(); err != nil {
 		log.Error(emoji.Sprintf(":no_entry_sign: Failed fetching helm chart '%s' from repo '%s'\n%s: %s", chart, repo, err, output))
 		return err
 	}
