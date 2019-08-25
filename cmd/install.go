@@ -30,6 +30,10 @@ func Install(path string) (err error) {
 		return err
 	}
 
+	rootInit := func(startingPath string, environments []string, c core.Component) (component core.Component, err error) {
+		return c.InstallRoot(startingPath, environments)
+	}
+
 	results := core.WalkComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
 		log.Info(emoji.Sprintf(":point_right: Starting install for component: %s", component.Name))
 
@@ -58,7 +62,7 @@ func Install(path string) (err error) {
 		log.Info(emoji.Sprintf(":point_left: Finished install for component: %s", component.Name))
 
 		return err
-	})
+	}, rootInit)
 
 	components, err := core.SynchronizeWalkResult(results)
 	if err != nil {

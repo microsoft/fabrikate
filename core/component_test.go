@@ -58,10 +58,15 @@ func TestLoadConfig(t *testing.T) {
 
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
+
+	rootInit := func (startPath string, environments []string, c Component) (component Component, err error) {
+		return c, nil
+	}
+
 	results := WalkComponentTree("../testdata/iterator", []string{""}, func(path string, component *Component) (err error) {
 		callbackCount++
 		return nil
-	})
+	}, rootInit)
 
 	var err error
 	components := make([]Component, 0)
