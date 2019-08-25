@@ -79,14 +79,14 @@ func TestIteratingDefinition(t *testing.T) {
 	}
 
 	assert.Nil(t, err)
-	assert.Equal(t, 4, len(components))
+	assert.Equal(t, 3, len(components))
 	assert.Equal(t, callbackCount, len(components))
 
-	assert.Equal(t, "../testdata/iterator/infra", components[2].PhysicalPath)
-	assert.Equal(t, "microservices-workload/infra", components[2].LogicalPath)
+	assert.Equal(t, components[1].PhysicalPath, "../testdata/iterator/infra")
+	assert.Equal(t, components[1].LogicalPath, "infra")
 
-	assert.Equal(t, "../testdata/iterator/infra/components/efk", components[3].PhysicalPath)
-	assert.Equal(t, "microservices-workload/infra/efk", components[3].LogicalPath)
+	assert.Equal(t, components[2].PhysicalPath, "../testdata/iterator/infra/components/efk")
+	assert.Equal(t, components[2].LogicalPath, "infra/efk")
 }
 
 func TestWriteComponent(t *testing.T) {
