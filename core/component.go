@@ -202,6 +202,27 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 	return nil
 }
 
+func (c *Component) InstallSingleComponent(componentPath string, generator Generator) (err error) {
+	if err := c.beforeInstall(); err != nil {
+		return err
+	}
+
+	//To-do remove:
+	c.applyDefaultsAndMigrations()
+	if err := c.InstallComponent(componentPath); err != nil {
+		return err
+	}
+	// end
+
+	if generator != nil {
+		if err := generator.Install(c); err != nil {
+			return err
+		}
+	}
+
+	return c.afterInstall()
+}
+
 // Install encapsulates the install lifecycle of a component including before-install,
 // installation, and after-install hooks.
 func (c *Component) Install(componentPath string, generator Generator) (err error) {
@@ -247,6 +268,8 @@ func (c *Component) Generate(generator Generator) (err error) {
 }
 
 type componentIteration func(path string, component *Component) (err error)
+
+type rootComponentInit func(startingPath string, environments []string, component *Component) (err error)
 
 // WalkResult is what WalkComponentTree returns.
 // Will contain either a Component OR an Error (Error is nillable; meaning both fields can be nil)
@@ -301,11 +324,21 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
 	go func() {
 		// Manually enqueue the first root component
-		enqueue(prepareComponent(Component{
+
+		rootComponent := prepareComponent(Component{
 			PhysicalPath: startingPath,
 			LogicalPath:  "./",
 			Config:       NewComponentConfig(startingPath),
-		}))
+		})
+
+		// Install rootComponent
+		rootComponent, err := rootComponent.InstallRoot(startingPath, environments)
+
+		if err != nil {
+			results <- WalkResult{Error: err}
+		} else {
+			enqueue(rootComponent)
+		}
 
 		// Close results channel once all nodes visited
 		walking.Wait()
@@ -482,4 +515,38 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		}
 	}
 	return tokens, err
+}
+
+// InstallRoot installs the root component
+func (c Component) InstallRoot(startingPath string, environments []string) (root Component, err error){
+	
+	// Install the root
+	if err := c.InstallSingleComponent(startingPath, nil); err != nil {
+		return c, err
+	}
+
+	return UpdateComponentPath(startingPath, environments, c)
+}
+
+// UpdateComponentPath updates the component path if it required installing another component
+func UpdateComponentPath(startingPath string, environments []string, c Component) (root Component, err error) {
+	log.Debugf("Update component path'%s'", c.Name)
+	
+	if c.ComponentType == "component" || c.ComponentType == "" {
+		relativePath := c.RelativePathTo()
+		c.PhysicalPath = path.Join(relativePath, c.Path)
+		if !filepath.IsAbs(c.RelativePathTo()) {
+			c.PhysicalPath = path.Join(startingPath, c.PhysicalPath)
+		}
+
+		c, err = c.LoadComponent()
+		if err != nil {
+			return c, err
+		}
+	
+		if err = c.LoadConfig(environments); err != nil {
+			return c, err
+		}
+	}
+	return c, err
 }
