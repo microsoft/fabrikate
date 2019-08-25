@@ -269,7 +269,7 @@ func (c *Component) Generate(generator Generator) (err error) {
 
 type componentIteration func(path string, component *Component) (err error)
 
-type rootComponentInit func(startingPath string, environments []string, component *Component) (err error)
+type rootComponentInit func(startingPath string, environments []string, c Component) (component Component, err error)
 
 // WalkResult is what WalkComponentTree returns.
 // Will contain either a Component OR an Error (Error is nillable; meaning both fields can be nil)
@@ -285,7 +285,7 @@ type WalkResult struct {
 //
 // Same level ordering is not ensured; any nodes on the same tree level can be visited in any order.
 // Parent->Child ordering is ensured; A parent is always visited via `iterator` before the children are visited.
-func WalkComponentTree(startingPath string, environments []string, iterator componentIteration) <-chan WalkResult {
+func WalkComponentTree(startingPath string, environments []string, iterator componentIteration, rootInit rootComponentInit) <-chan WalkResult {
 	queue := make(chan Component)    // components enqueued to be 'visited' (ie; walked over)
 	results := make(chan WalkResult) // To pass WalkResults to
 	walking := sync.WaitGroup{}      // Keep track of all nodes being worked on
@@ -331,8 +331,11 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 			Config:       NewComponentConfig(startingPath),
 		})
 
-		// Install rootComponent
-		rootComponent, err := rootComponent.InstallRoot(startingPath, environments)
+		// Init rootComponent
+		//rootComponent, err := rootComponent.InstallRoot(startingPath, environments)
+		
+		// to-do: temporarily comment
+		rootComponent, err := rootInit(startingPath, environments, rootComponent)
 
 		if err != nil {
 			results <- WalkResult{Error: err}
@@ -519,18 +522,27 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 
 // InstallRoot installs the root component
 func (c Component) InstallRoot(startingPath string, environments []string) (root Component, err error){
-	
+	log.Debugf("Install root component'%s'", c.Name)
+
+	if (c.Method != "git") {
+		return c, err
+	}
+
 	// Install the root
 	if err := c.InstallSingleComponent(startingPath, nil); err != nil {
 		return c, err
 	}
 
-	return UpdateComponentPath(startingPath, environments, c)
+	return c.UpdateComponentPath(startingPath, environments)
 }
 
 // UpdateComponentPath updates the component path if it required installing another component
-func UpdateComponentPath(startingPath string, environments []string, c Component) (root Component, err error) {
+func (c Component) UpdateComponentPath(startingPath string, environments []string) (root Component, err error) {
 	log.Debugf("Update component path'%s'", c.Name)
+
+	if (c.Method != "git") {
+		return c, err
+	}
 	
 	if c.ComponentType == "component" || c.ComponentType == "" {
 		relativePath := c.RelativePathTo()

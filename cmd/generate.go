@@ -56,6 +56,11 @@ func validateGeneratedManifests(generationPath string) (err error) {
 // of the generated manifests at the very end.
 func Generate(startPath string, environments []string, validate bool) (components []core.Component, err error) {
 	// Iterate through component tree and generate
+
+	rootInit := func(startPath string, environments []string, c core.Component) (component core.Component, err error) {
+		return c.UpdateComponentPath(startPath, environments)
+	}
+
 	results := core.WalkComponentTree(startPath, environments, func(path string, component *core.Component) (err error) {
 
 		var generator core.Generator
@@ -67,7 +72,7 @@ func Generate(startPath string, environments []string, validate bool) (component
 		}
 
 		return component.Generate(generator)
-	})
+	}, rootInit)
 
 	components, err = core.SynchronizeWalkResult(results)
 
