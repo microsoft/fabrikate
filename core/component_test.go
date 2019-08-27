@@ -56,6 +56,25 @@ func TestLoadConfig(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestUpdateRootComponentPath(t *testing.T) {
+	component := Component{
+		PhysicalPath: "../testdata/definition/infra-single",
+		LogicalPath:  "infra-single",
+	}
+
+	component, err := component.LoadComponent()
+	assert.Nil(t, err)
+
+	err = component.LoadConfig([]string{})
+	assert.Nil(t, err)
+
+	assert.Equal(t, 0, len(component.Subcomponents))
+
+	component, err = component.UpdateComponentPath("../testdata/definition/infra-single", []string{})
+	assert.Nil(t, err)
+	assert.Equal(t, 4, len(component.Subcomponents))
+}
+
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
 
