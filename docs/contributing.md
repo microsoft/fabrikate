@@ -142,6 +142,7 @@ Initially the debug configuration will look like this:
 ```
 
 You can specify what `fabrikate` commands you want to debug in the arguments. Below are some examples.
+
 To debug the `install` command:
 ```
 "args": ["install", "/home/edaena/Source/repos/sample-component"]
