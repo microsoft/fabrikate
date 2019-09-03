@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
-	log "github.com/sirupsen/logrus"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +67,7 @@ $ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitio
 		if cmd.Flags().Changed("method") && method != "git" {
 			// Warn users if they explicitly set --branch that the config is being removed
 			if cmd.Flags().Changed("branch") {
-				log.Warn(emoji.Sprintf(":exclamation: Non 'git' --method and explicit --branch specified. Removing --branch configuration of 'branch: %s'", branch))
+				logger.Warn(emoji.Sprintf(":exclamation: Non 'git' --method and explicit --branch specified. Removing --branch configuration of 'branch: %s'", branch))
 			}
 			branch = ""
 		}

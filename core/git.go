@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/otiai10/copy"
-	log "github.com/sirupsen/logrus"
 )
 
 // A future like struct to hold the result of git clone
@@ -105,7 +105,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 
 		// Check if the repo is cloned/being-cloned
 		if cloneResult, ok := cache.get(cacheToken); ok {
-			log.Info(emoji.Sprintf(":atm: Previously cloned '%s' this install; reusing cached result", cacheToken))
+			logger.Info(emoji.Sprintf(":atm: Previously cloned '%s' this install; reusing cached result", cacheToken))
 			cloneResultChan <- cloneResult
 			close(cloneResultChan)
 			return
@@ -146,15 +146,15 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 
 		// Only fetch latest commit if commit provided
 		if len(commit) == 0 {
-			log.Info(emoji.Sprintf(":helicopter: Component requested latest commit: fast cloning at --depth 1"))
+			logger.Info(emoji.Sprintf(":helicopter: Component requested latest commit: fast cloning at --depth 1"))
 			cloneCommandArgs = append(cloneCommandArgs, "--depth", "1")
 		} else {
-			log.Info(emoji.Sprintf(":helicopter: Component requested commit '%s': need full clone", commit))
+			logger.Info(emoji.Sprintf(":helicopter: Component requested commit '%s': need full clone", commit))
 		}
 
 		// Add branch reference option if provided
 		if len(branch) != 0 {
-			log.Info(emoji.Sprintf(":helicopter: Component requested branch '%s'", branch))
+			logger.Info(emoji.Sprintf(":helicopter: Component requested branch '%s'", branch))
 			cloneCommandArgs = append(cloneCommandArgs, "--branch", branch)
 		}
 
@@ -165,25 +165,25 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 			return
 		}
 		clonePathOnFS := path.Join(os.TempDir(), randomFolderName.String())
-		log.Info(emoji.Sprintf(":helicopter: Cloning %s => %s", cacheToken, clonePathOnFS))
+		logger.Info(emoji.Sprintf(":helicopter: Cloning %s => %s", cacheToken, clonePathOnFS))
 		cloneCommandArgs = append(cloneCommandArgs, clonePathOnFS)
 		cloneCommand := exec.Command("git", cloneCommandArgs...)
 		cloneCommand.Env = append(cloneCommand.Env, os.Environ()...)         // pass all env variables to git command so proper SSH config is passed if needed
 		cloneCommand.Env = append(cloneCommand.Env, "GIT_TERMINAL_PROMPT=0") // tell git to fail if it asks for credentials
 
 		if output, err := cloneCommand.CombinedOutput(); err != nil {
-			log.Error(emoji.Sprintf(":no_entry_sign: Error occurred while cloning: '%s'\n%s: %s", cacheToken, err, output))
+			logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred while cloning: '%s'\n%s: %s", cacheToken, err, output))
 			cloneResultChan <- &gitCloneResult{Error: err}
 			return
 		}
 
 		// If commit provided, checkout the commit
 		if len(commit) != 0 {
-			log.Info(emoji.Sprintf(":helicopter: Performing checkout commit '%s' for repo '%s' on branch '%s'", commit, repo, branch))
+			logger.Info(emoji.Sprintf(":helicopter: Performing checkout commit '%s' for repo '%s' on branch '%s'", commit, repo, branch))
 			checkoutCommit := exec.Command("git", "checkout", commit)
 			checkoutCommit.Dir = clonePathOnFS
 			if output, err := checkoutCommit.CombinedOutput(); err != nil {
-				log.Error(emoji.Sprintf(":no_entry_sign: Error occurred checking out commit '%s' from repo '%s' on branch '%s'\n%s: %s", commit, repo, branch, err, output))
+				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred checking out commit '%s' from repo '%s' on branch '%s'\n%s: %s", commit, repo, branch, err, output))
 				cloneResultChan <- &gitCloneResult{Error: err}
 				return
 			}
@@ -214,10 +214,29 @@ func CloneRepo(repo string, commit string, intoPath string, branch string) (err 
 	if err != nil {
 		return err
 	}
-	log.Info(emoji.Sprintf(":truck: Copying %s => %s", clonePath, absIntoPath))
+	logger.Info(emoji.Sprintf(":truck: Copying %s => %s", clonePath, absIntoPath))
 	if err = copy.Copy(clonePath, intoPath); err != nil {
 		return err
 	}
 
+	return err
+}
+
+// CleanGitCache deletes all temporary folders created as temporary cache for
+// git clones.
+func CleanGitCache() (err error) {
+	logger.Info(emoji.Sprintf(":bomb: Cleaning up git cache..."))
+	cache.mu.Lock()
+	for key, value := range cache.cache {
+		logger.Info(emoji.Sprintf(":bomb: Removing git cache directory '%s'", value.ClonePath))
+		if err = os.RemoveAll(value.ClonePath); err != nil {
+			logger.Error(emoji.Sprintf(":exclamation: Error deleting temporary directory '%s'", value.ClonePath))
+			cache.mu.Unlock()
+			return err
+		}
+		delete(cache.cache, key)
+	}
+	cache.mu.Unlock()
+	logger.Info(emoji.Sprintf(":white_check_mark: Completed cache clean!"))
 	return err
 }
