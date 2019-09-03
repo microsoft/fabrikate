@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
-	log "github.com/sirupsen/logrus"
+	"github.com/microsoft/fabrikate/logger"
 )
 
 // StaticGenerator uses a static directory of resource manifests to create a rolled up multi-part manifest.
@@ -15,10 +15,14 @@ type StaticGenerator struct{}
 
 // Generate iterates a static directory of resource manifests and creates a multi-part manifest.
 func (sg *StaticGenerator) Generate(component *core.Component) (manifest string, err error) {
-	log.Info(emoji.Sprintf(":truck: Generating component '%s' statically from path %s", component.Name, component.Path))
+	logger.Info(emoji.Sprintf(":truck: Generating component '%s' statically from path %s", component.Name, component.Path))
 
 	staticPath := path.Join(component.PhysicalPath, component.Path)
 	staticFiles, err := ioutil.ReadDir(staticPath)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error reading from directory %s", staticPath))
+		return "", err
+	}
 
 	manifests := ""
 	for _, staticFile := range staticFiles {

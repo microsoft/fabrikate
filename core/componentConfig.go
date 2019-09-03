@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	log "github.com/sirupsen/logrus"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/timfpark/conjungo"
 	yaml "github.com/timfpark/yaml"
 )
@@ -64,18 +64,18 @@ func (cc *ComponentConfig) MergeConfigFile(path string, environment string) (err
 
 // Load loads the config for the specified environment.
 func (cc *ComponentConfig) Load(environment string) (err error) {
-	err = cc.UnmarshalYAMLConfig(environment)
-
-	// fall back to looking for JSON if loading YAML fails.
-	if err != nil {
-		err = cc.UnmarshalJSONConfig(environment)
-
-		if err != nil {
-			// couldn't find any config files, so default back to yaml serialization
-			cc.Serialization = "yaml"
-		}
+	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
+	if err = cc.UnmarshalYAMLConfig(environment); err == nil || !os.IsNotExist(err) {
+		return err
 	}
 
+	// If success or loading or parsing the file failed for reasons other than it didn't exist, return.
+	if err = cc.UnmarshalJSONConfig(environment); err == nil || !os.IsNotExist(err) {
+		return err
+	}
+
+	// Otherwise, no config files were found, so default to yaml serialization and return.
+	cc.Serialization = "yaml"
 	return nil
 }
 
@@ -116,7 +116,7 @@ func (cc *ComponentConfig) SetComponentConfig(path []string, value string) {
 			configLevel = configLevel[pathPart].(map[string]interface{})
 		} else {
 			if createdNewConfig {
-				log.Info(emoji.Sprintf(":seedling: Created new value for %s", strings.Join(path, ".")))
+				logger.Info(emoji.Sprintf(":seedling: Created new value for %s", strings.Join(path, ".")))
 			}
 			configLevel[pathPart] = value
 		}
@@ -135,7 +135,7 @@ func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (sub
 		}
 
 		if _, ok := subcomponentConfig.Subcomponents[subcomponentName]; !ok {
-			log.Info(emoji.Sprintf(":seedling: Creating new subcomponent configuration for %s", subcomponentName))
+			logger.Info(emoji.Sprintf(":seedling: Creating new subcomponent configuration for %s", subcomponentName))
 			subcomponentConfig.Subcomponents[subcomponentName] = NewComponentConfig(".")
 		}
 

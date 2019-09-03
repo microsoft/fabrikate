@@ -14,7 +14,7 @@ import (
 	"sync"
 
 	"github.com/kyokomi/emoji"
-	log "github.com/sirupsen/logrus"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/timfpark/yaml"
 )
 
@@ -56,28 +56,33 @@ func UnmarshalFile(path string, unmarshalFunc unmarshalFunction, output interfac
 		return err
 	}
 
-	log.Info(emoji.Sprintf(":floppy_disk: Loading %s", path))
+	logger.Info(emoji.Sprintf(":floppy_disk: Loading %s", path))
 
 	return unmarshalFunc(marshaled, output)
 }
 
 // UnmarshalComponent finds and unmarshal the component.<format> of a component using the
 // provided `unmarshalFunc` function.
-func (c *Component) UnmarshalComponent(marshaledType string, unmarshalFunc unmarshalFunction, component *Component) error {
-	componentFilename := fmt.Sprintf("component.%s", marshaledType)
+func (c *Component) UnmarshalComponent(serializationType string, unmarshalFunc unmarshalFunction, component *Component) error {
+	logger.Debug(fmt.Sprintf("Attempting to unmarshal %s for component '%s'", serializationType, c.Name))
+
+	componentFilename := fmt.Sprintf("component.%s", serializationType)
 	componentPath := path.Join(c.PhysicalPath, componentFilename)
 
-	return UnmarshalFile(componentPath, unmarshalFunc, component)
+	err := UnmarshalFile(componentPath, unmarshalFunc, component)
+	component.Serialization = serializationType
+
+	return err
 }
 
 func (c *Component) applyDefaultsAndMigrations() {
 	if len(c.Generator) > 0 {
-		log.Warn(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version v1.0.0; Update component '%s' to use 'type' in place of 'generator'", c.Name))
+		logger.Warn(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version v1.0.0; Update component '%s' to use 'type' in place of 'generator'", c.Name))
 		c.ComponentType = c.Generator
 	}
 
 	if len(c.Repositories) > 0 {
-		log.Warn(emoji.Sprintf(":boom: DEPRECATION WARNING: Field `repositories` has been deprecrated and will be removed in version v1.0.0; Update component '%s' to use `method: helm`, `source: <helm_repo_url>`, and `path: <chart_name>` and remove `repositories`", c.Name))
+		logger.Warn(emoji.Sprintf(":boom: DEPRECATION WARNING: Field `repositories` has been deprecrated and will be removed in version v1.0.0; Update component '%s' to use `method: helm`, `source: <helm_repo_url>`, and `path: <chart_name>` and remove `repositories`", c.Name))
 	}
 
 	if len(c.ComponentType) == 0 {
@@ -85,18 +90,24 @@ func (c *Component) applyDefaultsAndMigrations() {
 	}
 }
 
+// LoadComponent loads a component definition in either YAML or JSON formats.
 func (c *Component) LoadComponent() (loadedComponent Component, err error) {
-	log.Debugf("Attempting to unmarshal yaml for component '%s'", c.Name)
-	if err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &loadedComponent); err != nil {
-		log.Debugf("Failed to unmarshal yaml for component '%s'; attempting json", c.Name)
+
+	// If success or loading or parsing the yaml component failed for reasons other than it didn't exist, return.
+	if err = c.UnmarshalComponent("yaml", yaml.Unmarshal, &loadedComponent); err != nil && !os.IsNotExist(err) {
+		return loadedComponent, err
+	}
+
+	// If YAML component definition did not exist, try JSON.
+	if err != nil {
 		if err = c.UnmarshalComponent("json", json.Unmarshal, &loadedComponent); err != nil {
-			log.Debugf("Failed to unmarshal json for component '%s'", c.Name)
+			if !os.IsNotExist(err) {
+				return loadedComponent, err
+			}
+
 			errorMessage := fmt.Sprintf("Error loading component in path %s", c.PhysicalPath)
 			return loadedComponent, errors.New(errorMessage)
 		}
-		loadedComponent.Serialization = "json"
-	} else {
-		loadedComponent.Serialization = "yaml"
 	}
 
 	loadedComponent.applyDefaultsAndMigrations()
@@ -140,18 +151,18 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 	}
 
 	for _, command := range c.Hooks[hook] {
-		log.Info(emoji.Sprintf(":fishing_pole_and_fish: Executing command in hook '%s' for component '%s': %s", hook, c.Name, command))
+		logger.Info(emoji.Sprintf(":fishing_pole_and_fish: Executing command in hook '%s' for component '%s': %s", hook, c.Name, command))
 		if len(command) != 0 {
 			cmd := exec.Command("sh", "-c", command)
 			cmd.Dir = c.PhysicalPath
 			output, err := cmd.CombinedOutput()
 			if err != nil {
-				log.Error(emoji.Sprintf(":no_entry_sign: Error occurred in hook '%s' for component '%s'\n%s: %s", hook, c.Name, err, output))
+				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in hook '%s' for component '%s'\n%s: %s", hook, c.Name, err, output))
 				return err
 			}
 			if len(output) > 0 {
 				outstring := emoji.Sprintf(":mag_right: Completed hook '%s' for component '%s':\n%s", hook, c.Name, output)
-				log.Trace(strings.TrimSpace(outstring))
+				logger.Trace(strings.TrimSpace(outstring))
 			}
 		}
 	}
@@ -192,7 +203,7 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 			return err
 		}
 
-		log.Info(emoji.Sprintf(":helicopter: Installing component '%s' with git from '%s'", c.Name, c.Source))
+		logger.Info(emoji.Sprintf(":helicopter: Installing component '%s' with git from '%s'", c.Name, c.Source))
 
 		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
 			return err
@@ -293,7 +304,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	// Prepares `component` by loading/de-serializing the component.yaml/json and configs
 	// Note: this is only needed for non-inlined components
 	prepareComponent := func(c Component) Component {
-		log.Debugf("Preparing component '%s'", c.Name)
+		logger.Debug(fmt.Sprintf("Preparing component '%s'", c.Name))
 		// 1. Parse the component at that path into a Component
 		c, err := c.LoadComponent()
 		if err != nil {
@@ -311,7 +322,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	enqueue := func(c Component) {
 		// Increment working counter; MUST happen BEFORE sending to queue or race condition can occur
 		walking.Add(1)
-		log.Debugf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", c.Name, c.PhysicalPath, c.LogicalPath)
+		logger.Debug(fmt.Sprintf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", c.Name, c.PhysicalPath, c.LogicalPath))
 		queue <- c
 	}
 
@@ -381,7 +392,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 						subcomponent.LogicalPath = c.LogicalPath
 					}
 
-					log.Debugf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath)
+					logger.Debug(fmt.Sprintf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath))
 					enqueue(subcomponent)
 				}
 			}(queuedComponent)
@@ -424,7 +435,7 @@ func (c *Component) Write() (err error) {
 	filename := fmt.Sprintf("component.%s", c.Serialization)
 	componentPath := path.Join(c.PhysicalPath, filename)
 
-	log.Info(emoji.Sprintf(":floppy_disk: Writing '%s'", componentPath))
+	logger.Info(emoji.Sprintf(":floppy_disk: Writing '%s'", componentPath))
 
 	return ioutil.WriteFile(componentPath, marshaledComponent, 0644)
 }
@@ -499,7 +510,7 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		// If the file is not found, return an empty map with no error
 		return map[string]string{}, nil
 	} else if err != nil {
-		log.Error(emoji.Sprintf(":no_entry_sign: Error unmarshalling access.yaml in '%s'", accessYamlPath))
+		logger.Error(emoji.Sprintf(":no_entry_sign: Error unmarshalling access.yaml in '%s'", accessYamlPath))
 		return nil, err
 	}
 
@@ -509,7 +520,7 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		if token == "" {
 			// Give warning that failed to load env var; but continue and attempt clone
 			msg := fmt.Sprintf("Component '%s' attempted to load environment variable '%s'; but is either not set or an empty string. Components with source '%s' may fail to install", c.Name, envVar, repo)
-			log.Warn(emoji.Sprintf(":no_entry_sign: %s", msg))
+			logger.Warn(emoji.Sprintf(":no_entry_sign: %s", msg))
 		} else {
 			tokens[repo] = token
 		}

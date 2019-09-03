@@ -1,0 +1,17 @@
+subcomponents:
+  anotherservice:
+    config:
+      image:
+        tag: "744"
+      replicaCount: 1
+  screenprofiler:
+    config:
+      envVar:
+        important: true
+        fabshouldfail: true
+        is_this_a_bug: definitely
+        culprit:"this is where it all goes wrong due to the lack of space between key and value"
+      image:
+        repository: somewheregood.azurecr.io/screenprofiler
+        tag: "73"
+      replicaCount: 1

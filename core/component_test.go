@@ -42,6 +42,26 @@ func TestLoadComponent(t *testing.T) {
 	assert.Equal(t, component.Subcomponents[0].Method, "git")
 }
 
+func TestLoadBadYAMLComponent(t *testing.T) {
+	component := Component{
+		PhysicalPath: "../testdata/badyamldefinition",
+		LogicalPath:  "",
+	}
+
+	component, err := component.LoadComponent()
+	assert.NotNil(t, err)
+}
+
+func TestLoadBadJSONComponent(t *testing.T) {
+	component := Component{
+		PhysicalPath: "../testdata/badjsondefinition",
+		LogicalPath:  "",
+	}
+
+	component, err := component.LoadComponent()
+	assert.NotNil(t, err)
+}
+
 func TestLoadConfig(t *testing.T) {
 	component := Component{
 		PhysicalPath: "../testdata/generate/infra",

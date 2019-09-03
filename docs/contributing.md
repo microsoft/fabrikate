@@ -118,6 +118,59 @@ And run the linter with:
 $ golangci-lint run
 ```
 
+## Debugging Fabrikate
+
+To debug Fabrikate on [Visual Studio Code](https://code.visualstudio.com/):
+
+1. Open `main.go`
+2. On the top menu select Debug > Start Debugging
+3. It will prompt you to create a `launch.json` file for the go language,
+   proceed to create it.
+4. Update the configuration to debug specific `fabrikate` commands. Follow the
+   instructions below.
+
+### Debug Configuration
+
+Initially the debug configuration will look like this:
+
+```json
+ "configurations": [
+        {
+            "name": "Launch",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${fileDirname}",
+            "env": {},
+            "args": []
+        }
+    ]
+```
+
+You can specify what `fabrikate` commands you want to debug in the arguments.
+Below are some examples.
+
+To debug the `install` command:
+
+```
+"args": ["install", "/home/edaena/Source/repos/sample-component"]
+```
+
+To debug the `generate` command:
+
+```
+ "args": ["generate", "common"]
+```
+
+### Run the Debugger
+
+For information about how to add breakpoints to the code and more detailed
+instructions on debugging refer to
+[Visual Studio Code Debugging](https://code.visualstudio.com/docs/editor/debugging).
+
+1. Go to the `main.go` file
+2. On the top menu select Debug > Start Debugging
+
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require

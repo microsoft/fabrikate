@@ -14,8 +14,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/otiai10/copy"
-	log "github.com/sirupsen/logrus"
 	"github.com/timfpark/yaml"
 )
 
@@ -95,7 +95,7 @@ func cleanK8sManifest(manifests string) (cleanedManifests string, err error) {
 		// Log a warning if unable to unmarshal; skip the entry
 		if err := yaml.Unmarshal([]byte(manifest), &parsedManifest); err != nil {
 			warning := emoji.Sprintf(":question: Unable to unmarshal manifest into type '%s', this is most likely a warning message outputted from `helm template`.\nRemoving manifest entry: '%s'\nUnmarshal error encountered: '%s'", reflect.TypeOf(parsedManifest), manifest, err)
-			log.Warn(warning)
+			logger.Warn(warning)
 			continue
 		}
 
@@ -146,11 +146,11 @@ func (hg *HelmGenerator) getChartPath(c *core.Component) (string, error) {
 
 // Generate returns the helm templated manifests specified by this component.
 func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, err error) {
-	log.Info(emoji.Sprintf(":truck: Generating component '%s' with helm with repo %s", component.Name, component.Source))
+	logger.Info(emoji.Sprintf(":truck: Generating component '%s' with helm with repo %s", component.Name, component.Source))
 
 	configYaml, err := yaml.Marshal(&component.Config.Config)
 	if err != nil {
-		log.Errorf("Marshalling config yaml for helm generated component '%s' failed with: %s\n", component.Name, err.Error())
+		logger.Error(fmt.Sprintf("Marshalling config yaml for helm generated component '%s' failed with: %s\n", component.Name, err.Error()))
 		return "", err
 	}
 
@@ -161,7 +161,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 	overriddenValuesFileName := fmt.Sprintf("%s.yaml", randomString.String())
 	absOverriddenPath := path.Join(os.TempDir(), overriddenValuesFileName)
-	log.Debug(emoji.Sprintf(":pencil: Writing config %s to %s\n", configYaml, absOverriddenPath))
+	logger.Debug(emoji.Sprintf(":pencil: Writing config %s to %s\n", configYaml, absOverriddenPath))
 	if err = ioutil.WriteFile(absOverriddenPath, configYaml, 0777); err != nil {
 		return "", err
 	}
@@ -177,14 +177,14 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	if err != nil {
 		return "", err
 	}
-	log.Info(emoji.Sprintf(":memo: Running `helm template` on template '%s'", chartPath))
+	logger.Info(emoji.Sprintf(":memo: Running `helm template` on template '%s'", chartPath))
 	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", component.Name, "--namespace", namespace).CombinedOutput()
 	if err != nil {
-		log.Errorf("helm template failed with:\n%s: %s", err, output)
+		logger.Error(fmt.Sprintf("helm template failed with:\n%s: %s", err, output))
 		return "", err
 	}
 	// Remove any empty/non-map entries in manifests
-	log.Info(emoji.Sprintf(":scissors: Removing empty entries from generated manifests from chart '%s'", chartPath))
+	logger.Info(emoji.Sprintf(":scissors: Removing empty entries from generated manifests from chart '%s'", chartPath))
 	stringManifests, err := cleanK8sManifest(string(output))
 	if err != nil {
 		return "", err
@@ -195,18 +195,18 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	// opt into injecting these namespaces manually.  We should reassess if this is necessary after Helm 3 is released and client side
 	// templating really becomes a first class function in Helm.
 	if component.Config.InjectNamespace && component.Config.Namespace != "" {
-		log.Info(emoji.Sprintf(":syringe: Injecting namespace '%s' into manifests for component '%s'", component.Config.Namespace, component.Name))
+		logger.Info(emoji.Sprintf(":syringe: Injecting namespace '%s' into manifests for component '%s'", component.Config.Namespace, component.Name))
 		namespacedManifests := ""
 		for resp := range addNamespaceToManifests(stringManifests, component.Config.Namespace) {
 			// If error; return the error immediately
 			if resp.err != nil {
-				log.Error(emoji.Sprintf(":exclamation: Encountered error while injecting namespace '%s' into manifests for component '%s':\n%s", component.Config.Namespace, component.Name, resp.err))
+				logger.Error(emoji.Sprintf(":exclamation: Encountered error while injecting namespace '%s' into manifests for component '%s':\n%s", component.Config.Namespace, component.Name, resp.err))
 				return stringManifests, resp.err
 			}
 
 			// If warning; just log the warning
 			if resp.warn != nil {
-				log.Warn(emoji.Sprintf(":question: Encountered warning while injecting namespace '%s' into manifests for component '%s':\n%s", component.Config.Namespace, component.Name, *resp.warn))
+				logger.Warn(emoji.Sprintf(":question: Encountered warning while injecting namespace '%s' into manifests for component '%s':\n%s", component.Config.Namespace, component.Name, *resp.warn))
 			}
 
 			// Add the manifest if one was returned
@@ -229,13 +229,13 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 		helmRepoPath := hg.makeHelmRepoPath(c)
 		switch c.Method {
 		case "helm":
-			log.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart '%s' from helm repository '%s'", c.Name, c.Path, c.Source))
-			if err = hd.downloadChart(c.Source, c.Path, helmRepoPath); err != nil {
+			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart '%s' from helm repository '%s'", c.Name, c.Path, c.Source))
+			if err = hd.downloadChart(c.Source, c.Path, c.Version, helmRepoPath); err != nil {
 				return err
 			}
 		case "git":
 			// Clone whole repo into helm repo path
-			log.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart in path '%s' from git repository '%s'", c.Name, c.Source, c.PhysicalPath))
+			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart in path '%s' from git repository '%s'", c.Name, c.Source, c.PhysicalPath))
 			if err = core.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
 				return err
 			}
@@ -265,23 +265,24 @@ type helmDownloader struct {
 
 var hd = helmDownloader{}
 
-// downloadChart downloads a target `chart` from `repo` and places it in `into`
+// downloadChart downloads a target `chart` at version `version` from `repo` and
+// places it in `into`. If `version` is blank, latest is automatically fetched.
 // -- `into` will be the dir containing Chart.yaml
 // The function will add a temporary helm repo, fetch from it, and then remove
 // the temporary repo. This is a to get around a limitation in Helm 2.
 // see: https://github.com/helm/helm/issues/4527
-func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
+func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
 	// generate random name to store repo in helm in temporarily
 	randomUUID, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
 	randomName := randomUUID.String()
-	log.Infof("Adding temporary helm repo %s => %s", repo, randomName)
+	logger.Info(emoji.Sprintf(":pencil: Adding temporary helm repo %s => %s", repo, randomName))
 	hd.mu.Lock()
 	if output, err := exec.Command("helm", "repo", "add", randomName, repo).CombinedOutput(); err != nil {
 		hd.mu.Unlock()
-		log.Error(emoji.Sprintf(":no_entry_sign: Failed adding helm repository '%s'\n%s: %s", repo, err, output))
+		logger.Error(emoji.Sprintf(":no_entry_sign: Failed adding helm repository '%s'\n%s: %s", repo, err, output))
 		return err
 	}
 	hd.mu.Unlock()
@@ -289,18 +290,28 @@ func (hd *helmDownloader) downloadChart(repo, chart, into string) (err error) {
 	// Fetch chart to random temp dir
 	chartName := fmt.Sprintf("%s/%s", randomName, chart)
 	randomDir := path.Join(os.TempDir(), randomName)
-	log.Info(emoji.Sprintf(":helicopter: Fetching helm chart '%s' into '%s'", chart, randomDir))
-	if output, err := exec.Command("helm", "fetch", "--untar", "--untardir", randomDir, chartName).CombinedOutput(); err != nil {
-		log.Error(emoji.Sprintf(":no_entry_sign: Failed fetching helm chart '%s' from repo '%s'\n%s: %s", chart, repo, err, output))
+	downloadVersion := "latest"
+	if version != "" {
+		downloadVersion = version
+	}
+	logger.Info(emoji.Sprintf(":helicopter: Fetching helm chart '%s' version '%s' into '%s'", chart, downloadVersion, randomDir))
+	helmFetchCommandArgs := []string{"fetch", "--untar", "--untardir", randomDir}
+	// Append version if provided
+	if version != "" {
+		helmFetchCommandArgs = append(helmFetchCommandArgs, "--version", version)
+	}
+	helmFetchCommandArgs = append(helmFetchCommandArgs, chartName)
+	if output, err := exec.Command("helm", helmFetchCommandArgs...).CombinedOutput(); err != nil {
+		logger.Error(emoji.Sprintf(":no_entry_sign: Failed fetching helm chart '%s' from repo '%s'\n%s: %s", chart, repo, err, output))
 		return err
 	}
 
 	// Remove repository once completed
-	log.Info(emoji.Sprintf(":bomb: Removing temporary helm repo %s", randomName))
+	logger.Info(emoji.Sprintf(":bomb: Removing temporary helm repo %s", randomName))
 	hd.mu.Lock()
 	if output, err := exec.Command("helm", "repo", "remove", randomName).CombinedOutput(); err != nil {
 		hd.mu.Unlock()
-		log.Error(emoji.Sprintf(":no_entry_sign: Failed to `helm repo remove %s`\n%s: %s", randomName, err, output))
+		logger.Error(emoji.Sprintf(":no_entry_sign: Failed to `helm repo remove %s`\n%s: %s", randomName, err, output))
 	}
 	hd.mu.Unlock()
 
@@ -342,7 +353,7 @@ func updateHelmChartDep(chartPath string) (err error) {
 	requirementsYamlPath := path.Join(absChartPath, "requirements.yaml")
 	addedDepRepoList := []string{}
 	if _, err := os.Stat(requirementsYamlPath); err == nil {
-		log.Infof("requirements.yaml found at '%s', ensuring repositories exist on helm client", requirementsYamlPath)
+		logger.Info(fmt.Sprintf("requirements.yaml found at '%s', ensuring repositories exist on helm client", requirementsYamlPath))
 		bytes, err := ioutil.ReadFile(requirementsYamlPath)
 		if err != nil {
 			return err
@@ -354,7 +365,7 @@ func updateHelmChartDep(chartPath string) (err error) {
 
 		// Add each dependency repo with a temp name
 		for _, dep := range requirementsYaml.Dependencies {
-			log.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
+			logger.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
 			randomUUID, err := uuid.NewRandom()
 			if err != nil {
 				return err
@@ -363,7 +374,7 @@ func updateHelmChartDep(chartPath string) (err error) {
 			hd.mu.Lock()
 			if output, err := exec.Command("helm", "repo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
 				hd.mu.Unlock()
-				log.Error(emoji.Sprintf(":no_entry_sign: Failed to add helm dependency repository '%s' for chart '%s':\n%s", dep.Repository, chartPath, output))
+				logger.Error(emoji.Sprintf(":no_entry_sign: Failed to add helm dependency repository '%s' for chart '%s':\n%s", dep.Repository, chartPath, output))
 				return err
 			}
 			hd.mu.Unlock()
@@ -372,19 +383,19 @@ func updateHelmChartDep(chartPath string) (err error) {
 	}
 
 	// Update dependencies
-	log.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
+	logger.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
 	if output, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-		log.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, output))
+		logger.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, output))
 		return err
 	}
 
 	// Cleanup temp dependency repositories
 	for _, repo := range addedDepRepoList {
-		log.Info(emoji.Sprintf(":bomb: Removing dependency repository '%s'", repo))
+		logger.Info(emoji.Sprintf(":bomb: Removing dependency repository '%s'", repo))
 		hd.mu.Lock()
 		if output, err := exec.Command("helm", "repo", "remove", repo).CombinedOutput(); err != nil {
 			hd.mu.Unlock()
-			log.Error(output)
+			logger.Error(output)
 			return err
 		}
 		hd.mu.Unlock()
