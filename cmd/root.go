@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -20,9 +21,9 @@ var rootCmd = &cobra.Command{
 		verbose := cmd.Flag("verbose").Value.String()
 
 		if verbose == "true" {
-			log.SetLevel(log.DebugLevel)
+			logger.SetLevelDebug()
 		} else {
-			log.SetLevel(log.InfoLevel)
+			logger.SetLevelInfo()
 		}
 
 		return nil
@@ -33,7 +34,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Error(err)
+		logger.Error(err)
 		os.Exit(1)
 	}
 }
@@ -53,7 +54,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := os.UserHomeDir()
 		if err != nil {
-			log.Errorf("Getting home directory failed with: %s\n", err)
+			logger.Error(fmt.Sprintf("Getting home directory failed with: %s\n", err))
 			os.Exit(1)
 		}
 
@@ -66,6 +67,6 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		log.Debugf("Using config file: %s\n", viper.ConfigFileUsed())
+		logger.Debug(fmt.Sprintf("Using config file: %s\n", viper.ConfigFileUsed()))
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	log "github.com/sirupsen/logrus"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/timfpark/conjungo"
 	yaml "github.com/timfpark/yaml"
 )
@@ -116,7 +116,7 @@ func (cc *ComponentConfig) SetComponentConfig(path []string, value string) {
 			configLevel = configLevel[pathPart].(map[string]interface{})
 		} else {
 			if createdNewConfig {
-				log.Info(emoji.Sprintf(":seedling: Created new value for %s", strings.Join(path, ".")))
+				logger.Info(emoji.Sprintf(":seedling: Created new value for %s", strings.Join(path, ".")))
 			}
 			configLevel[pathPart] = value
 		}
@@ -135,7 +135,7 @@ func (cc *ComponentConfig) GetSubcomponentConfig(subcomponentPath []string) (sub
 		}
 
 		if _, ok := subcomponentConfig.Subcomponents[subcomponentName]; !ok {
-			log.Info(emoji.Sprintf(":seedling: Creating new subcomponent configuration for %s", subcomponentName))
+			logger.Info(emoji.Sprintf(":seedling: Creating new subcomponent configuration for %s", subcomponentName))
 			subcomponentConfig.Subcomponents[subcomponentName] = NewComponentConfig(".")
 		}
 

@@ -11,7 +11,7 @@ import (
 	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
 	"github.com/microsoft/fabrikate/generators"
-	log "github.com/sirupsen/logrus"
+	"github.com/microsoft/fabrikate/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ func writeGeneratedManifests(generationPath string, components []core.Component)
 		componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
 		componentYAMLFilePath := path.Join(componentGenerationPath, componentYAMLFilename)
 
-		log.Info(emoji.Sprintf(":floppy_disk: Writing %s", componentYAMLFilePath))
+		logger.Info(emoji.Sprintf(":floppy_disk: Writing %s", componentYAMLFilePath))
 
 		err = ioutil.WriteFile(componentYAMLFilePath, []byte(component.Manifest), 0644)
 		if err != nil {
@@ -40,10 +40,10 @@ func writeGeneratedManifests(generationPath string, components []core.Component)
 }
 
 func validateGeneratedManifests(generationPath string) (err error) {
-	log.Info(emoji.Sprintf(":microscope: Validating generated manifests in path %s", generationPath))
+	logger.Info(emoji.Sprintf(":microscope: Validating generated manifests in path %s", generationPath))
 	if output, err := exec.Command("kubectl", "apply", "--validate=true", "--dry-run", "--recursive", "-f", generationPath).Output(); err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			log.Errorf("Validating generated manifests failed with: %s: output: %s", ee.Stderr, output)
+			logger.Error(fmt.Sprintf("Validating generated manifests failed with: %s: output: %s", ee.Stderr, output))
 			return err
 		}
 	}
@@ -93,7 +93,7 @@ func Generate(startPath string, environments []string, validate bool) (component
 	}
 
 	if err == nil {
-		log.Info(emoji.Sprintf(":raised_hands: Finished generate"))
+		logger.Info(emoji.Sprintf(":raised_hands: Finished generate"))
 	}
 
 	return components, err
