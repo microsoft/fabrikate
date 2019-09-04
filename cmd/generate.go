@@ -64,6 +64,8 @@ func Generate(startPath string, environments []string, validate bool) (component
 			generator = &generators.HelmGenerator{}
 		case "static":
 			generator = &generators.StaticGenerator{}
+		case "remote-url":
+			generator = &generators.StaticGenerator{}
 		}
 
 		return component.Generate(generator)

@@ -190,6 +190,39 @@ func (c *Component) afterInstall() (err error) {
 	return c.ExecuteHook("after-install")
 }
 
+// InstallRemoteStaticComponent installs a component by downloading the remote resource manifest
+func (c *Component) InstallRemoteStaticComponent(componentPath string) (err error) {
+	if (c.ComponentType != "static" ||
+		c.Method != "remote-url" ||
+		!IsValidRemoteComponentConfig(*c)){
+		return nil;
+	}
+
+	tmpComponentDir := "tmp/" + c.Name
+	dirPath, err := CreateDirectory(c.PhysicalPath, tmpComponentDir)
+
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("sh", "-c", "curl -OL " + c.Source)
+	cmd.Dir = dirPath
+
+	cmd.Dir = dirPath
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in install for component '%s'\n%s: %s", c.Name, err, output))
+		return err
+	}
+	if len(output) > 0 {
+		outstring := emoji.Sprintf(":mag_right: Completed install for component '%s':\n%s", c.Name, output)
+		logger.Trace(strings.TrimSpace(outstring))
+	}
+
+	return nil;
+}
+
 // InstallComponent installs the component (if needed) utilizing its Method.
 func (c *Component) InstallComponent(componentPath string) (err error) {
 	if (c.ComponentType == "component" || len(c.ComponentType) == 0) && c.Method == "git" {
@@ -208,6 +241,8 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
 			return err
 		}
+	} else if c.ComponentType == "static" || c.Method == "remote-url" {
+		return c.InstallRemoteStaticComponent(componentPath)
 	}
 
 	return nil
@@ -493,4 +528,34 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		}
 	}
 	return tokens, err
+}
+
+
+// CreateDirectory a directory in the given path and reports no error if the directory already exists
+func CreateDirectory(cmdDir string, dirPath string) (componentPath string, err error) {
+	
+	cmd := exec.Command("sh", "-c", "mkdir -p " + dirPath)
+	cmd.Dir = cmdDir
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in creating directory for component\n"))
+		return "", err
+	}
+	if len(output) > 0 {
+		outstring := emoji.Sprintf(":mag_right: Completed creating directory for component\n")
+		logger.Trace(strings.TrimSpace(outstring))
+	}
+
+	return path.Join(cmdDir, dirPath), nil
+}
+
+// IsValidRemoteComponentConfig checks if the given component configuration is valid for a remote component
+func IsValidRemoteComponentConfig(c Component) (bool){
+	return (
+		(c.ComponentType == "static" &&
+		 c.Method != "remote-url")) &&
+		(strings.HasSuffix(c.Source, "yaml") ||
+		 strings.HasSuffix(c.Source, "yml"))
 }
