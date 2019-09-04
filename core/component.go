@@ -530,7 +530,7 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 
 // InstallRoot installs the root component
 func (c Component) InstallRoot(startingPath string, environments []string) (root Component, err error){
-	log.Debugf("Install root component'%s'", c.Name)
+	logger.Debug(fmt.Sprintf("Install root component'%s'", c.Name))
 
 	if (c.Method != "git") {
 		return c, err
@@ -546,7 +546,7 @@ func (c Component) InstallRoot(startingPath string, environments []string) (root
 
 // UpdateComponentPath updates the component path if it required installing another component
 func (c Component) UpdateComponentPath(startingPath string, environments []string) (root Component, err error) {
-	log.Debugf("Update component path'%s'", c.Name)
+	logger.Debug(fmt.Sprintf("Update component path'%s'", c.Name))
 
 	if (c.Method != "git") {
 		return c, err
