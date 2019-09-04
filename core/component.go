@@ -213,17 +213,16 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 	return nil
 }
 
+// InstallSingleComponent installs the given component
 func (c *Component) InstallSingleComponent(componentPath string, generator Generator) (err error) {
 	if err := c.beforeInstall(); err != nil {
 		return err
 	}
 
-	//To-do remove:
 	c.applyDefaultsAndMigrations()
 	if err := c.InstallComponent(componentPath); err != nil {
 		return err
 	}
-	// end
 
 	if generator != nil {
 		if err := generator.Install(c); err != nil {
