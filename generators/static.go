@@ -17,7 +17,7 @@ type StaticGenerator struct{}
 func (sg *StaticGenerator) Generate(component *core.Component) (manifest string, err error) {
 	logger.Info(emoji.Sprintf(":truck: Generating component '%s' statically from path %s", component.Name, component.Path))
 
-	staticPath := path.Join(component.PhysicalPath, component.Path)
+	staticPath := component.GetStaticComponentPath()
 	staticFiles, err := ioutil.ReadDir(staticPath)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error reading from directory %s", staticPath))
