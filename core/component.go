@@ -538,13 +538,13 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 }
 
 // GetStaticComponentPath returns the static path if a component is of type 'static', if not, it returns an empty string
-func (c *Component) GetStaticComponentPath()(componentPath string){
+func (c *Component) GetStaticComponentPath(startPath string)(componentPath string){
 	if c.ComponentType != "static" {
 		return ""
 	}
 
 	if IsValidRemoteComponentConfig(*c) {
-		return path.Join("components", c.Name)
+		return path.Join(startPath, "components", c.Name)
 	}
 
 	return path.Join(c.PhysicalPath, c.Path)

@@ -63,7 +63,7 @@ func Generate(startPath string, environments []string, validate bool) (component
 		case "helm":
 			generator = &generators.HelmGenerator{}
 		case "static":
-			generator = &generators.StaticGenerator{}
+			generator = &generators.StaticGenerator{ StartPath: startPath}
 		}
 
 		return component.Generate(generator)
