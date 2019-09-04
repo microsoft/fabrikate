@@ -220,7 +220,12 @@ func (c *Component) InstallRemoteStaticComponent(componentPath string) (err erro
 	}
 
 	defer out.Close()
-	io.Copy(out, response.Body)
+	_, err = io.Copy(out, response.Body)
+
+	if (err != nil) {
+		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in writing manifest file for component '%s'\nError: %s", c.Name, err))
+		return err
+	}
 
 	return nil;
 }
