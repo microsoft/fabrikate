@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"net/http"
 	"path"
 	"path/filepath"
 	"sort"
@@ -190,6 +192,44 @@ func (c *Component) afterInstall() (err error) {
 	return c.ExecuteHook("after-install")
 }
 
+// InstallRemoteStaticComponent installs a component by downloading the remote resource manifest
+func (c *Component) InstallRemoteStaticComponent(componentPath string) (err error) {
+	if !IsValidRemoteComponentConfig(*c) {
+		return nil;
+	}
+
+	componentsPath := path.Join(componentPath, "components/", c.Name)
+
+	if err := os.MkdirAll(componentsPath, 0777); err != nil {
+		return err
+	}
+
+	response, err := http.Get(c.Source);
+
+	if err != nil {
+		return err
+	}
+
+	// Write the downloaded resource manifest file
+	defer response.Body.Close()
+	out, err := os.Create(path.Join(componentsPath, c.Name + ".yaml"))
+
+	if err != nil {
+		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in install for component '%s'\nError: %s", c.Name, err))
+		return err
+	}
+
+	defer out.Close()
+	_, err = io.Copy(out, response.Body)
+
+	if (err != nil) {
+		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in writing manifest file for component '%s'\nError: %s", c.Name, err))
+		return err
+	}
+
+	return nil;
+}
+
 // InstallComponent installs the component (if needed) utilizing its Method.
 func (c *Component) InstallComponent(componentPath string) (err error) {
 	if (c.ComponentType == "component" || len(c.ComponentType) == 0) && c.Method == "git" {
@@ -208,6 +248,8 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 		if err = CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
 			return err
 		}
+	} else if IsValidRemoteComponentConfig(*c) {
+		return c.InstallRemoteStaticComponent(componentPath)
 	}
 
 	return nil
@@ -493,4 +535,47 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		}
 	}
 	return tokens, err
+}
+
+// GetStaticComponentPath returns the static path if a component is of type 'static', if not, it returns an empty string
+func (c *Component) GetStaticComponentPath(startPath string)(componentPath string){
+	if c.ComponentType != "static" {
+		return ""
+	}
+
+	if IsValidRemoteComponentConfig(*c) {
+		return path.Join(startPath, "components", c.Name)
+	}
+
+	return path.Join(c.PhysicalPath, c.Path)
+}
+
+
+// CreateDirectory a directory in the given path and reports no error if the directory already exists
+func CreateDirectory(cmdDir string, dirPath string) (componentPath string, err error) {
+	
+	cmd := exec.Command("sh", "-c", "mkdir -p " + dirPath)
+	cmd.Dir = cmdDir
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in creating directory for component\n"))
+		return "", err
+	}
+	if len(output) > 0 {
+		outstring := emoji.Sprintf(":mag_right: Completed creating directory for component\n")
+		logger.Trace(strings.TrimSpace(outstring))
+	}
+
+	return path.Join(cmdDir, dirPath), nil
+}
+
+// IsValidRemoteComponentConfig checks if the given component configuration is valid for a remote component
+func IsValidRemoteComponentConfig(c Component) (bool){
+	return (
+		(c.ComponentType == "static" &&
+		 c.Method == "http")) &&
+		(strings.HasSuffix(c.Source, "yaml") ||
+		 strings.HasSuffix(c.Source, "yml"))
 }

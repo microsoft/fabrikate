@@ -11,13 +11,15 @@ import (
 )
 
 // StaticGenerator uses a static directory of resource manifests to create a rolled up multi-part manifest.
-type StaticGenerator struct{}
+type StaticGenerator struct{
+	StartPath string
+}
 
 // Generate iterates a static directory of resource manifests and creates a multi-part manifest.
 func (sg *StaticGenerator) Generate(component *core.Component) (manifest string, err error) {
 	logger.Info(emoji.Sprintf(":truck: Generating component '%s' statically from path %s", component.Name, component.Path))
 
-	staticPath := path.Join(component.PhysicalPath, component.Path)
+	staticPath := component.GetStaticComponentPath(sg.StartPath)
 	staticFiles, err := ioutil.ReadDir(staticPath)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error reading from directory %s", staticPath))
