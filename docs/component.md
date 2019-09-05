@@ -16,10 +16,11 @@ component with the following schema:
   - if `type: helm`: the component will use `helm template` to materialize the
     component using the specified config under `config` as the `values.yaml`
     file.
-  - if `type: static`:
-    Option 1: the component holds raw kubernetes manifest files in
-    `path`, these manifests will be copied to the generated output.
-    Option 2: when using `method: http` and `source: url`, the manifest file (.yaml) is downloaded and installed. Example: `source: https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml`
+  - if `type: static`: Option 1: the component holds raw kubernetes manifest
+    files in `path`, these manifests will be copied to the generated output.
+    Option 2: when using `method: http` and `source: url`, the manifest file
+    (.yaml) is downloaded and installed. Example:
+    `source: https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml`
 
 - `method`: The method by which this component is sourced. Currently, only
   `git`, `helm`, and `local` are supported values.
@@ -30,7 +31,8 @@ component with the following schema:
     `helm repo add foo <my_helm_repository> && helm fetch foo/<path>`
   - if `method: local`: Tells fabrikate to use the host filesystem as a means to
     find the component.
-  - if `method: http` and `type: static`: Tells fabrikate to download the manifest file (.yaml) from the `source`.
+  - if `method: http` and `type: static`: Tells fabrikate to download the
+    manifest file (.yaml) from the `source`.
 
 - `source`: The source for this component.
 

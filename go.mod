@@ -3,6 +3,7 @@ module github.com/microsoft/fabrikate
 go 1.12
 
 require (
+	github.com/google/go-github/v28 v28.0.1
 	github.com/google/uuid v1.1.1
 	github.com/kyokomi/emoji v2.1.0+incompatible
 	github.com/onsi/ginkgo v1.9.0 // indirect
