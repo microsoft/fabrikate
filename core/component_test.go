@@ -120,7 +120,7 @@ func TestWriteComponent(t *testing.T) {
 func TestValidRemoteComponentConfig(t *testing.T) {
 	component := Component{
 		ComponentType: "static",
-		Method: "remote-url",
+		Method: "http",
 		Source: "https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml",
 	}
 
@@ -131,7 +131,7 @@ func TestValidRemoteComponentConfig(t *testing.T) {
 func TestInvalidRemoteComponentSource(t *testing.T) {
 	component := Component{
 		ComponentType: "static",
-		Method: "remote-url",
+		Method: "http",
 		Source: "https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer",
 	}
 
@@ -142,7 +142,7 @@ func TestInvalidRemoteComponentSource(t *testing.T) {
 func TestValidRemoteComponentURL(t *testing.T) {
 	component := Component{
 		ComponentType: "static",
-		Method: "remote-url",
+		Method: "http",
 		Source: "https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml",
 	}
 
@@ -177,7 +177,7 @@ func TestGetStaticComponentPath(t *testing.T) {
 	component := Component{
 		Name: "kv-flexvol",
 		ComponentType: "static",
-		Method: "remote-url",
+		Method: "http",
 		Source: "https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml",
 	}
 

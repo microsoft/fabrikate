@@ -4,6 +4,6 @@ path: ./manifests
 subcomponents:
   - name: "keyvault-sub"
     source: https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
-    method: remote-url
+    method: http
     type: static
     path: "./tmp/keyvault-sub"

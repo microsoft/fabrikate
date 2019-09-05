@@ -575,7 +575,7 @@ func CreateDirectory(cmdDir string, dirPath string) (componentPath string, err e
 func IsValidRemoteComponentConfig(c Component) (bool){
 	return (
 		(c.ComponentType == "static" &&
-		 c.Method == "remote-url")) &&
+		 c.Method == "http")) &&
 		(strings.HasSuffix(c.Source, "yaml") ||
 		 strings.HasSuffix(c.Source, "yml"))
 }
