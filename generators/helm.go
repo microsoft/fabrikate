@@ -236,7 +236,7 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 		case "git":
 			// Clone whole repo into helm repo path
 			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart in path '%s' from git repository '%s'", c.Name, c.Source, c.PhysicalPath))
-			if err = core.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
+			if err = core.Git.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
 				return err
 			}
 			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart in the case of `method: helm`
@@ -314,6 +314,11 @@ func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err 
 		logger.Error(emoji.Sprintf(":no_entry_sign: Failed to `helm repo remove %s`\n%s: %s", randomName, err, output))
 	}
 	hd.mu.Unlock()
+
+	// Remove the into directory if it already exists
+	if err = os.RemoveAll(into); err != nil {
+		return err
+	}
 
 	// copy chart to target `into` dir
 	chartDirectoryInRandomDir := path.Join(randomDir, chart)

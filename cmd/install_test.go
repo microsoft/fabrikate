@@ -23,6 +23,9 @@ func TestInstallJSON(t *testing.T) {
 	// Change cwd to component directory
 	assert.Nil(t, os.Chdir(componentDir))
 	assert.Nil(t, Install("./"))
+
+	// Installing again should not cause errors
+	assert.Nil(t, Install("./"))
 }
 
 func TestInstallYAML(t *testing.T) {
@@ -37,6 +40,9 @@ func TestInstallYAML(t *testing.T) {
 	// Change cwd to component directory
 	assert.Nil(t, os.Chdir(componentDir))
 	assert.Nil(t, Install("./"))
+
+	// Installing again should not cause errors
+	assert.Nil(t, Install("./"))
 }
 
 func TestInstallWithHooks(t *testing.T) {
@@ -50,7 +56,6 @@ func TestInstallWithHooks(t *testing.T) {
 
 	// Change cwd to component directory
 	assert.Nil(t, os.Chdir(componentDir))
-
 	assert.Nil(t, Install("./"))
 }
 
@@ -89,6 +94,9 @@ func TestInstallHelmMethod(t *testing.T) {
 
 	// Change cwd to component directory
 	assert.Nil(t, os.Chdir(componentDir))
+	assert.Nil(t, Install("./"))
+
+	// Installing again should not cause errors
 	assert.Nil(t, Install("./"))
 
 	// Grafana chart should be version 3.7.0

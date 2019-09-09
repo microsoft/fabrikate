@@ -3,8 +3,8 @@ package cmd
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/google/go-github/v28/github"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetFabrikateComponents(t *testing.T) {
@@ -17,8 +17,8 @@ func TestGetFabrikateComponents(t *testing.T) {
 		"samples/kafka-strimzi-portworx/config/common.yaml",
 	}
 
-	for _, path := range paths{
-		var p string = path
+	for _, path := range paths {
+		var p = path
 		githubCodeResults = append(githubCodeResults, github.CodeResult{Path: &p})
 	}
 
