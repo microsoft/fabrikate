@@ -278,7 +278,7 @@ var hd = helmDownloader{}
 func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
 	repoName, err := getRepoName(repo)
 	if err != nil {
-		logger.Error("Error getting repo: %v", err)
+		logger.Error(emoji.Sprintf(":bomb: Error getting repo: %v", err))
 		// generate random name to store repo in helm in temporarily
 		randomUUID, err := uuid.NewRandom()
 		if err != nil {
