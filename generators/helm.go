@@ -272,13 +272,15 @@ var hd = helmDownloader{}
 // downloadChart downloads a target `chart` at version `version` from `repo` and
 // places it in `into`. If `version` is blank, latest is automatically fetched.
 // -- `into` will be the dir containing Chart.yaml
-// The function will add a temporary helm repo, fetch from it, and then remove
+// The function will first look to leverage an existing Helm repo from the
+// repository file at $HELM_HOME/repositories.yaml.  If it fails to find
+// a repo there, it will add a temporary helm repo, fetch from it, and then remove
 // the temporary repo. This is a to get around a limitation in Helm 2.
 // see: https://github.com/helm/helm/issues/4527
 func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
 	repoName, err := getRepoName(repo)
 	if err != nil {
-		logger.Error(emoji.Sprintf(":bomb: Error getting repo: %v", err))
+		logger.Info(emoji.Sprintf(":no_bell: %v", repo, err))
 		// generate random name to store repo in helm in temporarily
 		randomUUID, err := uuid.NewRandom()
 		if err != nil {
@@ -425,7 +427,11 @@ func updateHelmChartDep(chartPath string) (err error) {
 // getRepoName returns the repo name for the provided url
 func getRepoName(url string) (string, error) {
 	logger.Info(emoji.Sprintf(":eyes: Looking for repo %v", url))
-	a := helmpath.Home(environment.DefaultHelmHome)
+	helmHome := os.Getenv(environment.HomeEnvVar)
+	if helmHome == "" {
+		helmHome = environment.DefaultHelmHome
+	}
+	a := helmpath.Home(helmHome)
 	f, err := repo.LoadRepositoriesFile(a.RepositoryFile())
 	if err != nil {
 		return "", err
