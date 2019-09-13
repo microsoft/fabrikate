@@ -1,0 +1,6 @@
+name: cloud-native
+subcomponents:
+  - name: cloud-native-impl
+    source: "https://github.com/timfpark/fabrikate-definitions"
+    method: "git"
+    path: "definitions/fabrikate-cloud-native"
