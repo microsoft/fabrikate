@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/microsoft/fabrikate/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/timfpark/yaml"
@@ -111,4 +112,40 @@ func TestInstallHelmMethod(t *testing.T) {
 	assert.Nil(t, yaml.Unmarshal(grafanaChartBytes, &grafanaChart))
 	assert.EqualValues(t, "grafana", grafanaChart.Name)
 	assert.EqualValues(t, "3.7.0", grafanaChart.Version)
+}
+
+// Test to cover https://github.com/microsoft/fabrikate/issues/261
+// Tests the calling of Install when the helm client isn't initialized and
+// attempts to get updates from `http://127.0.0.1:8879/charts` which is fails
+// in most cases as people do not typically run helm servers locally.
+func TestInstallWithoutHelmInitialized(t *testing.T) {
+	homeDir, err := os.UserHomeDir()
+	assert.Nil(t, err)
+	helmDir := path.Join(homeDir, ".helm")
+
+	if _, err := os.Stat(helmDir); !os.IsNotExist(err) {
+		// Move helm dir to a temporary location to simulate uninitialized helm client
+		randomTmpName, err := uuid.NewRandom()
+		assert.Nil(t, err)
+		tmpDir := path.Join(homeDir, randomTmpName.String())
+		assert.Nil(t, os.Rename(helmDir, tmpDir))
+
+		// Ensure it is moved back to normal
+		defer func() {
+			assert.Nil(t, os.RemoveAll(helmDir))
+			assert.Nil(t, os.Rename(tmpDir, helmDir))
+		}()
+	}
+
+	componentDir := "../testdata/install-helm-fix-261-dep-update-bug"
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	defer func() {
+		assert.Nil(t, os.Chdir(cwd))
+		assert.Nil(t, util.UninstallComponents(componentDir))
+	}()
+
+	// Change cwd to component directory and install
+	assert.Nil(t, os.Chdir(componentDir))
+	assert.Nil(t, Install("./"))
 }
