@@ -402,11 +402,16 @@ func updateHelmChartDep(chartPath string) (err error) {
 		}
 	}
 
-	// Update dependencies
+	// Update dependencies -- Attempt twice; may fail the first time if running on
+	// a newly initialized ~/.helm directory because `helm serve` is typically
+	// not running and helm will attempt to fetch/cache all helm repositories
+	// during first run
 	logger.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
-	if output, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-		logger.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, output))
-		return err
+	if _, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
+		if attempt2, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
+			logger.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, attempt2))
+			return err
+		}
 	}
 
 	// Cleanup temp dependency repositories
