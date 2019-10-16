@@ -342,7 +342,7 @@ documentation items:
 
 ## Community
 
-[Please join us on Slack](https://join.slack.com/t/bedrockco/shared_invite/enQtNjIwNzg3NTU0MDgzLTdiZGY4ZTM5OTM4MWEyM2FlZDA5MmE0MmNhNTQ2MGMxYTY2NGYxMTVlZWFmODVmODJlOWU0Y2U2YmM1YTE0NGI)
+[Please join us on Slack](https://join.slack.com/t/bedrockco/shared_invite/enQtNjIwNzg3NTU0MDgzLWRiYzQxM2ZmZjQ2NGE2YjA2YTJmMjg3ZmJmOTQwOWY0MTU3NDVkNDJkZDUyMDExZjIxNTg5NWY3MTI3MzFiN2U)
 for discussion and/or questions.
 
 ## Bedrock
