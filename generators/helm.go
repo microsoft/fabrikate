@@ -20,8 +20,7 @@ import (
 )
 
 // HelmGenerator provides 'helm generate' generator functionality to Fabrikate
-type HelmGenerator struct {
-}
+type HelmGenerator struct{}
 
 type namespaceInjectionResponse struct {
 	namespacedManifest *[]byte
