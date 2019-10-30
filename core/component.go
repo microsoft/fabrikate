@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -43,6 +41,16 @@ type Component struct {
 	Manifest string `yaml:"-" json:"-"`
 }
 
+// supportedTypes returns a list of valid ComponentType for a Component
+func supportedTypes() []string {
+	return []string{"component", "helm", "static"}
+}
+
+// supportedMethods returns a list of valid Method for a Component
+func supportedMethods() []string {
+	return []string{"git", "helm", "http", "local", ""}
+}
+
 type unmarshalFunction func(in []byte, v interface{}) error
 
 // UnmarshalFile is an unmarshal wrapper which reads in any file from `path` and attempts to
@@ -77,7 +85,7 @@ func (c *Component) UnmarshalComponent(serializationType string, unmarshalFunc u
 	return err
 }
 
-func (c *Component) applyDefaultsAndMigrations() {
+func (c *Component) applyDefaultsAndMigrations() error {
 	if len(c.Generator) > 0 {
 		logger.Warn(emoji.Sprintf(":boom: DEPRECATION WARNING: Field 'generator' has been deprecated and will be removed in version v1.0.0; Update component '%s' to use 'type' in place of 'generator'", c.Name))
 		c.ComponentType = c.Generator
@@ -90,6 +98,28 @@ func (c *Component) applyDefaultsAndMigrations() {
 	if len(c.ComponentType) == 0 {
 		c.ComponentType = "component"
 	}
+
+	// Helper to see if string value is included in a list of strings
+	includes := func(haystack []string, needle string) bool {
+		for _, value := range haystack {
+			if value == needle {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Ensure component type is valid
+	if !includes(supportedTypes(), c.ComponentType) {
+		return fmt.Errorf("component '%s' specified invalid 'type' of '%s', must be one of: %v", c.Name, c.ComponentType, supportedTypes())
+	}
+
+	// ensure component method is valid
+	if !includes(supportedMethods(), c.Method) {
+		return fmt.Errorf("component '%s' specified invalid 'method' of '%s', must be one of: %v", c.Name, c.Method, supportedMethods())
+	}
+
+	return nil
 }
 
 // LoadComponent loads a component definition in either YAML or JSON formats.
@@ -112,7 +142,9 @@ func (c *Component) LoadComponent() (loadedComponent Component, err error) {
 		}
 	}
 
-	loadedComponent.applyDefaultsAndMigrations()
+	if err = loadedComponent.applyDefaultsAndMigrations(); err != nil {
+		return loadedComponent, err
+	}
 
 	loadedComponent.PhysicalPath = c.PhysicalPath
 	loadedComponent.LogicalPath = c.LogicalPath
@@ -192,59 +224,55 @@ func (c *Component) afterInstall() (err error) {
 	return c.ExecuteHook("after-install")
 }
 
-// InstallRemoteStaticComponent installs a component by downloading the remote resource manifest
-func (c *Component) InstallRemoteStaticComponent(componentPath string) (err error) {
-	if !IsValidRemoteComponentConfig(*c) {
-		return nil
-	}
-
-	response, err := http.Get(c.Source)
-	if err != nil {
-		return err
-	}
-
-	componentsPath := path.Join(componentPath, "components/", c.Name)
-	if err := os.MkdirAll(componentsPath, 0777); err != nil {
-		return err
-	}
-
-	// Write the downloaded resource manifest file
-	defer response.Body.Close()
-	out, err := os.Create(path.Join(componentsPath, c.Name+".yaml"))
-	if err != nil {
-		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in install for component '%s'\nError: %s", c.Name, err))
-		return err
-	}
-	defer out.Close()
-
-	if _, err = io.Copy(out, response.Body); err != nil {
-		logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in writing manifest file for component '%s'\nError: %s", c.Name, err))
-		return err
-	}
-
-	return nil
-}
-
 // InstallComponent installs the component (if needed) utilizing its Method.
+// This is only used to install 'components', Generators handle the installation
+// of 'non-components' (eg; helm/static)
 func (c *Component) InstallComponent(componentPath string) (err error) {
-	if (c.ComponentType == "component" || len(c.ComponentType) == 0) && c.Method == "git" {
-		componentsPath := path.Join(componentPath, "components")
-		if err := os.MkdirAll(componentsPath, 0777); err != nil {
-			return err
-		}
+	if strings.EqualFold(c.ComponentType, "component") {
+		switch method := strings.ToLower(c.Method); method {
+		case "git":
+			// ensure `components` dir exists
+			componentsPath := path.Join(componentPath, "components")
+			if err := os.MkdirAll(componentsPath, 0777); err != nil {
+				return err
+			}
 
-		subcomponentPath := path.Join(componentPath, c.RelativePathTo())
-		if err = os.RemoveAll(subcomponentPath); err != nil {
-			return err
-		}
+			// delete the subcomponent if previously installed
+			subcomponentPath := path.Join(componentPath, c.RelativePathTo())
+			if err = os.RemoveAll(subcomponentPath); err != nil {
+				return err
+			}
 
-		logger.Info(emoji.Sprintf(":helicopter: Installing component '%s' with git from '%s'", c.Name, c.Source))
-
-		if err = Git.CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
-			return err
+			logger.Info(emoji.Sprintf(":helicopter: Installing component '%s' with git from '%s'", c.Name, c.Source))
+			if err = Git.CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
+				return err
+			}
+			return nil
+		case "helm":
+			return nil
+		case "http":
+			return nil
+		case "":
+			// default to 'local' if left blank
+			fallthrough
+		case "local":
+			// should already exist in filesystem; ensure it exists
+			subcomponentPath := path.Join(c.PhysicalPath, c.Path)
+			potentialComponentPaths := []string{path.Join(subcomponentPath, "component.yaml"), path.Join(subcomponentPath, "component.json")}
+			componentExists := false
+			for _, componentPath := range potentialComponentPaths {
+				if _, err := os.Stat(componentPath); err == nil {
+					componentExists = true
+					break
+				}
+			}
+			if !componentExists {
+				return fmt.Errorf("unable to stat component.yaml for 'local' component '%s' in path '%s'", c.Name, subcomponentPath)
+			}
+			return nil
+		default:
+			return fmt.Errorf("unsupported method '%s' provided in component '%s'; must be one of %v", c.Method, c.Name, supportedMethods())
 		}
-	} else if IsValidRemoteComponentConfig(*c) {
-		return c.InstallRemoteStaticComponent(componentPath)
 	}
 
 	return nil
@@ -257,13 +285,17 @@ func (c *Component) Install(componentPath string, generator Generator) (err erro
 		return err
 	}
 
+	// Install subcomponents
 	for _, subcomponent := range c.Subcomponents {
-		subcomponent.applyDefaultsAndMigrations()
+		if err = subcomponent.applyDefaultsAndMigrations(); err != nil {
+			return err
+		}
 		if err := subcomponent.InstallComponent(componentPath); err != nil {
 			return err
 		}
 	}
 
+	// Install self
 	if generator != nil {
 		if err := generator.Install(c); err != nil {
 			return err
@@ -378,7 +410,9 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 					// Prep component config
 					subcomponent.Config = c.Config.Subcomponents[subcomponent.Name]
 
-					subcomponent.applyDefaultsAndMigrations()
+					if err = subcomponent.applyDefaultsAndMigrations(); err != nil {
+						results <- WalkResult{Error: err}
+					}
 
 					// Depending if the subcomponent is inlined or not; prepare the component to either load
 					// config/path info from filesystem (non-inlined) or inherit from parent (inlined)
@@ -530,25 +564,4 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		}
 	}
 	return tokens, err
-}
-
-// GetStaticComponentPath returns the static path if a component is of type 'static', if not, it returns an empty string
-func (c *Component) GetStaticComponentPath(startPath string) (componentPath string) {
-	if c.ComponentType != "static" {
-		return ""
-	}
-
-	if IsValidRemoteComponentConfig(*c) {
-		return path.Join(startPath, "components", c.Name)
-	}
-
-	return path.Join(c.PhysicalPath, c.Path)
-}
-
-// IsValidRemoteComponentConfig checks if the given component configuration is valid for a remote component
-func IsValidRemoteComponentConfig(c Component) bool {
-	return (c.ComponentType == "static" &&
-		c.Method == "http") &&
-		(strings.HasSuffix(c.Source, "yaml") ||
-			strings.HasSuffix(c.Source, "yml"))
 }
