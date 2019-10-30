@@ -17,6 +17,10 @@ import (
 	"github.com/microsoft/fabrikate/logger"
 	"github.com/otiai10/copy"
 	"github.com/timfpark/yaml"
+
+	"k8s.io/helm/pkg/helm/environment"
+	"k8s.io/helm/pkg/helm/helmpath"
+	"k8s.io/helm/pkg/repo"
 )
 
 // HelmGenerator provides 'helm generate' generator functionality to Fabrikate
@@ -267,28 +271,43 @@ var hd = helmDownloader{}
 // downloadChart downloads a target `chart` at version `version` from `repo` and
 // places it in `into`. If `version` is blank, latest is automatically fetched.
 // -- `into` will be the dir containing Chart.yaml
-// The function will add a temporary helm repo, fetch from it, and then remove
+// The function will first look to leverage an existing Helm repo from the
+// repository file at $HELM_HOME/repositories.yaml.  If it fails to find
+// a repo there, it will add a temporary helm repo, fetch from it, and then remove
 // the temporary repo. This is a to get around a limitation in Helm 2.
 // see: https://github.com/helm/helm/issues/4527
 func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
-	// generate random name to store repo in helm in temporarily
-	randomUUID, err := uuid.NewRandom()
+	repoName, err := getRepoName(repo)
 	if err != nil {
-		return err
-	}
-	randomName := randomUUID.String()
-	logger.Info(emoji.Sprintf(":pencil: Adding temporary helm repo %s => %s", repo, randomName))
-	hd.mu.Lock()
-	if output, err := exec.Command("helm", "repo", "add", randomName, repo).CombinedOutput(); err != nil {
+		logger.Info(emoji.Sprintf(":no_bell: %v", repo, err))
+		// generate random name to store repo in helm in temporarily
+		randomUUID, err := uuid.NewRandom()
+		if err != nil {
+			return err
+		}
+		repoName = randomUUID.String()
+		logger.Info(emoji.Sprintf(":pencil: Adding temporary helm repo %s => %s", repo, repoName))
+		hd.mu.Lock()
+		if output, err := exec.Command("helm", "repo", "add", repoName, repo).CombinedOutput(); err != nil {
+			hd.mu.Unlock()
+			logger.Error(emoji.Sprintf(":no_entry_sign: Failed adding helm repository '%s'\n%s: %s", repo, err, output))
+			return err
+		}
 		hd.mu.Unlock()
-		logger.Error(emoji.Sprintf(":no_entry_sign: Failed adding helm repository '%s'\n%s: %s", repo, err, output))
-		return err
+		defer func() {
+			// Remove repository once completed
+			logger.Info(emoji.Sprintf(":bomb: Removing temporary helm repo %s", repoName))
+			hd.mu.Lock()
+			if output, err := exec.Command("helm", "repo", "remove", repoName).CombinedOutput(); err != nil {
+				logger.Error(emoji.Sprintf(":no_entry_sign: Failed to `helm repo remove %s`\n%s: %s", repoName, err, output))
+			}
+			hd.mu.Unlock()
+		}()
 	}
-	hd.mu.Unlock()
 
 	// Fetch chart to random temp dir
-	chartName := fmt.Sprintf("%s/%s", randomName, chart)
-	randomDir := path.Join(os.TempDir(), randomName)
+	chartName := fmt.Sprintf("%s/%s", repoName, chart)
+	randomDir := path.Join(os.TempDir(), repoName)
 	downloadVersion := "latest"
 	if version != "" {
 		downloadVersion = version
@@ -304,15 +323,6 @@ func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err 
 		logger.Error(emoji.Sprintf(":no_entry_sign: Failed fetching helm chart '%s' from repo '%s'\n%s: %s", chart, repo, err, output))
 		return err
 	}
-
-	// Remove repository once completed
-	logger.Info(emoji.Sprintf(":bomb: Removing temporary helm repo %s", randomName))
-	hd.mu.Lock()
-	if output, err := exec.Command("helm", "repo", "remove", randomName).CombinedOutput(); err != nil {
-		hd.mu.Unlock()
-		logger.Error(emoji.Sprintf(":no_entry_sign: Failed to `helm repo remove %s`\n%s: %s", randomName, err, output))
-	}
-	hd.mu.Unlock()
 
 	// Remove the into directory if it already exists
 	if err = os.RemoveAll(into); err != nil {
@@ -369,6 +379,11 @@ func updateHelmChartDep(chartPath string) (err error) {
 
 		// Add each dependency repo with a temp name
 		for _, dep := range requirementsYaml.Dependencies {
+			currentRepo, err := getRepoName(dep.Repository)
+			if err == nil {
+				logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
+				continue
+			}
 			logger.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
 			randomUUID, err := uuid.NewRandom()
 			if err != nil {
@@ -411,4 +426,29 @@ func updateHelmChartDep(chartPath string) (err error) {
 	}
 
 	return err
+}
+
+// getRepoName returns the repo name for the provided url
+func getRepoName(url string) (string, error) {
+	logger.Info(emoji.Sprintf(":eyes: Looking for repo %v", url))
+	helmHome := os.Getenv(environment.HomeEnvVar)
+	if helmHome == "" {
+		helmHome = environment.DefaultHelmHome
+	}
+	a := helmpath.Home(helmHome)
+	f, err := repo.LoadRepositoriesFile(a.RepositoryFile())
+	if err != nil {
+		return "", err
+	}
+	if len(f.Repositories) == 0 {
+		return "", fmt.Errorf("no repositories to show")
+	}
+
+	for _, re := range f.Repositories {
+		if strings.EqualFold(re.URL, url) {
+			logger.Info(emoji.Sprintf(":green_heart: %v matches repo %v", url, re.Name))
+			return re.Name, nil
+		}
+	}
+	return "", fmt.Errorf("No repository found for %v", url)
 }
