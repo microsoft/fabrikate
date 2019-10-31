@@ -284,7 +284,10 @@ func (c *Component) InstallSingleComponent(componentPath string, generator Gener
 		return err
 	}
 
-	c.applyDefaultsAndMigrations()
+	if err := c.applyDefaultsAndMigrations(); err != nil {
+        return err
+	}
+
 	if err := c.InstallComponent(componentPath); err != nil {
 		return err
 	}
