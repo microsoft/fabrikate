@@ -1,0 +1,7 @@
+name: repo-alias
+subcomponents:
+- name: metricbeat
+  type: helm
+  source: https://helm.elastic.co
+  method: helm
+  path: metricbeat

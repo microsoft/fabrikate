@@ -55,7 +55,7 @@ func TestGenerateStaticRemoteYAML(t *testing.T) {
 
 	expectedLengths := map[string]int{
 		"keyvault-flexvolume": 5,
-		"keyvault-sub":  1372,
+		"keyvault-sub":        1372,
 	}
 
 	assert.Nil(t, err)
@@ -64,9 +64,14 @@ func TestGenerateStaticRemoteYAML(t *testing.T) {
 	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
 }
 
-
 func TestGenerateWithHooks(t *testing.T) {
 	_, err := Generate("../testdata/generate-hooks", []string{"prod"}, false)
+
+	assert.Nil(t, err)
+}
+
+func TestGenerateHelmRepo(t *testing.T) {
+	_, err := Generate("../testdata/repo-alias", []string{"prod"}, false)
 
 	assert.Nil(t, err)
 }
