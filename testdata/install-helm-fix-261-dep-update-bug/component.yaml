@@ -1,0 +1,10 @@
+# https://github.com/timfpark/fabrikate-dep-update-bug/blob/master/component.yaml
+name: repo-bug-repro
+subcomponents:
+  - name: cloud-native
+    source: "./cloud-native"
+  - name: kafka
+    type: "helm"
+    source: "https://kubernetes-charts-incubator.storage.googleapis.com/"
+    method: "helm"
+    path: "kafka"

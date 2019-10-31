@@ -199,14 +199,24 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 	return cloneResultChan
 }
 
+type git struct{}
+
+// Git is function wrapper to expose host git functionality
+var Git = git{}
+
 // CloneRepo is a helper func to centralize cloning a repository with the spec
 // provided by its arguments.
-func CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
+func (g git) CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
 	// Clone and get the location of where it was cloned to in tmp
 	result := <-cache.cloneRepo(repo, commit, branch)
 	clonePath := result.get()
 	if result.Error != nil {
 		return result.Error
+	}
+
+	// Remove the into directory if it already exists
+	if err = os.RemoveAll(intoPath); err != nil {
+		return err
 	}
 
 	// copy the repo from tmp cache to component path
@@ -224,7 +234,7 @@ func CloneRepo(repo string, commit string, intoPath string, branch string) (err 
 
 // CleanGitCache deletes all temporary folders created as temporary cache for
 // git clones.
-func CleanGitCache() (err error) {
+func (g git) CleanGitCache() (err error) {
 	logger.Info(emoji.Sprintf(":bomb: Cleaning up git cache..."))
 	cache.mu.Lock()
 	for key, value := range cache.cache {

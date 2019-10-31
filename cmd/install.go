@@ -42,6 +42,8 @@ func Install(path string) (err error) {
 		switch component.ComponentType {
 		case "helm":
 			generator = &generators.HelmGenerator{}
+		case "static":
+			generator = &generators.StaticGenerator{}
 		}
 
 		// Load access tokens and add them to the global token list. Do not overwrite if already present

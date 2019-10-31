@@ -7,18 +7,18 @@ fi
 
 # cleans test directories helm_repos
 function clean() {
-  echo "cleaning test files"
-  echo "cleaning test/fixtures/install/infra/components"
-  rm -rf test/fixtures/install/infra/components
+  echo "cleaning testdata files"
+  echo "cleaning testdata/fixtures/install/infra/components"
+  rm -rf testdata/fixtures/install/infra/components
 
-  echo "cleaning test/fixtures/install/infra/helm_repos"
-  rm -rf test/fixtures/install/infra/helm_repos
+  echo "cleaning testdata/fixtures/install/infra/helm_repos"
+  rm -rf testdata/fixtures/install/infra/helm_repos
 
-  echo "cleaning test/fixtures/install-yaml/components"
-  rm -rf test/fixtures/install-yaml/components
+  echo "cleaning testdata/fixtures/install-yaml/components"
+  rm -rf testdata/fixtures/install-yaml/components
 
-  echo "cleaning test/fixtures/install-yaml/helm_repos"
-  rm -rf test/fixtures/install-yaml/helm_repos
+  echo "cleaning testdata/fixtures/install-yaml/helm_repos"
+  rm -rf testdata/fixtures/install-yaml/helm_repos
 }
 
 # runs go get ./...
