@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 
@@ -27,6 +28,7 @@ import (
 type HelmGenerator struct{}
 
 type namespaceInjectionResponse struct {
+	index              int
 	namespacedManifest *[]byte
 	err                error
 	warn               *string
@@ -46,8 +48,8 @@ func addNamespaceToManifests(manifests, namespace string) chan namespaceInjectio
 	}()
 
 	// Iterate over all manifests, decrementing the wait group for every channel put
-	for _, manifest := range splitManifest {
-		go func(manifest string) {
+	for index, manifest := range splitManifest {
+		go func(index int, manifest string) {
 			parsedManifest := make(map[interface{}]interface{})
 
 			// Push a warning if unable to unmarshal
@@ -79,9 +81,9 @@ func addNamespaceToManifests(manifests, namespace string) chan namespaceInjectio
 				syncGroup.Done()
 				return
 			}
-			respChan <- namespaceInjectionResponse{namespacedManifest: &updatedManifest}
+			respChan <- namespaceInjectionResponse{index: index, namespacedManifest: &updatedManifest}
 			syncGroup.Done()
-		}(manifest)
+		}(index, manifest)
 	}
 
 	return respChan
@@ -199,7 +201,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	// templating really becomes a first class function in Helm.
 	if component.Config.InjectNamespace && component.Config.Namespace != "" {
 		logger.Info(emoji.Sprintf(":syringe: Injecting namespace '%s' into manifests for component '%s'", component.Config.Namespace, component.Name))
-		namespacedManifests := ""
+		var successes []namespaceInjectionResponse
 		for resp := range addNamespaceToManifests(stringManifests, component.Config.Namespace) {
 			// If error; return the error immediately
 			if resp.err != nil {
@@ -214,9 +216,19 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 
 			// Add the manifest if one was returned
 			if resp.namespacedManifest != nil {
-				namespacedManifests += fmt.Sprintf("---\n%s\n", *resp.namespacedManifest)
+				successes = append(successes, resp)
 			}
 		}
+
+		sort.Slice(successes, func(i, j int) bool {
+			return successes[i].index < successes[j].index
+		})
+
+		namespacedManifests := ""
+		for _, resp := range successes {
+			namespacedManifests += fmt.Sprintf("---\n%s\n", *resp.namespacedManifest)
+		}
+
 		stringManifests = namespacedManifests
 	}
 
