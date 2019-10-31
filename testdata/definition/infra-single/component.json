@@ -1,0 +1,7 @@
+{
+    "name": "infra-single",
+    "type": "component",
+    "method": "git",
+    "source": "https://github.com/microsoft",
+    "path": "fabrikate-elasticsearch-fluentd-kibana"
+}

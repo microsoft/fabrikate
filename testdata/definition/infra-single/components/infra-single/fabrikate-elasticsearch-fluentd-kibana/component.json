@@ -1,0 +1,35 @@
+{
+  "name": "elasticsearch-fluentd-kibana",
+  "type": "static",
+  "path": "./manifests",
+  "subcomponents": [
+    {
+      "name": "elasticsearch",
+      "type": "helm",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
+      "path": "stable/elasticsearch"
+    },
+    {
+      "name": "elasticsearch-curator",
+      "type": "helm",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
+      "path": "stable/elasticsearch-curator"
+    },
+    {
+      "name": "fluentd-elasticsearch",
+      "type": "helm",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
+      "path": "stable/fluentd-elasticsearch"
+    },
+    {
+      "name": "kibana",
+      "type": "helm",
+      "source": "https://github.com/helm/charts",
+      "method": "git",
+      "path": "stable/kibana"
+    }
+  ]
+}

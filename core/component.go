@@ -278,6 +278,29 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 	return nil
 }
 
+// InstallSingleComponent installs the given component
+func (c *Component) InstallSingleComponent(componentPath string, generator Generator) (err error) {
+	if err := c.beforeInstall(); err != nil {
+		return err
+	}
+
+	if err := c.applyDefaultsAndMigrations(); err != nil {
+        return err
+	}
+
+	if err := c.InstallComponent(componentPath); err != nil {
+		return err
+	}
+
+	if generator != nil {
+		if err := generator.Install(c); err != nil {
+			return err
+		}
+	}
+
+	return c.afterInstall()
+}
+
 // Install encapsulates the install lifecycle of a component including before-install,
 // installation, and after-install hooks.
 func (c *Component) Install(componentPath string, generator Generator) (err error) {
@@ -328,6 +351,8 @@ func (c *Component) Generate(generator Generator) (err error) {
 
 type componentIteration func(path string, component *Component) (err error)
 
+type rootComponentInit func(startingPath string, environments []string, c Component) (component Component, err error)
+
 // WalkResult is what WalkComponentTree returns.
 // Will contain either a Component OR an Error (Error is nillable; meaning both fields can be nil)
 type WalkResult struct {
@@ -342,7 +367,7 @@ type WalkResult struct {
 //
 // Same level ordering is not ensured; any nodes on the same tree level can be visited in any order.
 // Parent->Child ordering is ensured; A parent is always visited via `iterator` before the children are visited.
-func WalkComponentTree(startingPath string, environments []string, iterator componentIteration) <-chan WalkResult {
+func WalkComponentTree(startingPath string, environments []string, iterator componentIteration, rootInit rootComponentInit) <-chan WalkResult {
 	queue := make(chan Component)    // components enqueued to be 'visited' (ie; walked over)
 	results := make(chan WalkResult) // To pass WalkResults to
 	walking := sync.WaitGroup{}      // Keep track of all nodes being worked on
@@ -381,11 +406,21 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
 	go func() {
 		// Manually enqueue the first root component
-		enqueue(prepareComponent(Component{
+
+		rootComponent := prepareComponent(Component{
 			PhysicalPath: startingPath,
 			LogicalPath:  "./",
 			Config:       NewComponentConfig(startingPath),
-		}))
+		})
+
+		// Init rootComponent
+		rootComponent, err := rootInit(startingPath, environments, rootComponent)
+
+		if err != nil {
+			results <- WalkResult{Error: err}
+		} else {
+			enqueue(rootComponent)
+		}
 
 		// Close results channel once all nodes visited
 		walking.Wait()
@@ -564,4 +599,47 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 		}
 	}
 	return tokens, err
+}
+
+// InstallRoot installs the root component
+func (c Component) InstallRoot(startingPath string, environments []string) (root Component, err error){
+	logger.Debug(fmt.Sprintf("Install root component'%s'", c.Name))
+
+	if (c.Method != "git") {
+		return c, err
+	}
+
+	// Install the root
+	if err := c.InstallSingleComponent(startingPath, nil); err != nil {
+		return c, err
+	}
+
+	return c.UpdateComponentPath(startingPath, environments)
+}
+
+// UpdateComponentPath updates the component path if it required installing another component
+func (c Component) UpdateComponentPath(startingPath string, environments []string) (root Component, err error) {
+	logger.Debug(fmt.Sprintf("Update component path'%s'", c.Name))
+
+	if (c.Method != "git") {
+		return c, err
+	}
+	
+	if c.ComponentType == "component" || c.ComponentType == "" {
+		relativePath := c.RelativePathTo()
+		c.PhysicalPath = path.Join(relativePath, c.Path)
+		if !filepath.IsAbs(c.RelativePathTo()) {
+			c.PhysicalPath = path.Join(startingPath, c.PhysicalPath)
+		}
+
+		c, err = c.LoadComponent()
+		if err != nil {
+			return c, err
+		}
+	
+		if err = c.LoadConfig(environments); err != nil {
+			return c, err
+		}
+	}
+	return c, err
 }
