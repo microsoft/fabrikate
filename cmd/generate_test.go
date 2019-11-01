@@ -69,9 +69,3 @@ func TestGenerateWithHooks(t *testing.T) {
 
 	assert.Nil(t, err)
 }
-
-func TestGenerateHelmRepo(t *testing.T) {
-	_, err := Generate("../testdata/repo-alias", []string{"prod"}, false)
-
-	assert.Nil(t, err)
-}
