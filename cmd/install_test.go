@@ -162,4 +162,7 @@ func TestGenerateHelmRepoAlias(t *testing.T) {
 	// Change cwd to component directory
 	assert.Nil(t, os.Chdir(componentDir))
 	assert.Nil(t, Install("./"))
+	_, err := Generate("./", []string{"prod"}, false)
+
+	assert.Nil(t, err)
 }
