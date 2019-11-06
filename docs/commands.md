@@ -8,19 +8,23 @@ passed path).
 ### Usage
 
 ```sh
-$ fab add <component-name> --source <component-source> [--type component] [--method git] [--path .]
+$ fab add <component-name> --source <component-source> [--type <component|helm|static>] [--method <git|helm|local|http>] [--path <filepath>] [--version <SHA|tag|helm_chart_version>]
 ```
 
 Where:
 
-- `source` specifies where the component lives (either a local path or remote
-  http(s) endpoint)
+- `source` specifies where the component lives (either a local path, remote http
+  endpoint, or a helm repository url)
 - `type` specifies the type of component (`component` (default), `helm`, or
   `static`)
-- `method` specifies the method that should be used to fetch the component
-  (`git` (default))
-- `path` specifies the path to the component that this subcomponent should be
-  added to.
+- `method` specifies the method used to source the `source` (`git` (default))
+- `path` specifies:
+  - if `method == 'git'`: the relative path in the git repository where the
+    component exists
+  - if `method == 'helm'`: the name of the helm chart in the helm repository
+- `version` specifies:
+  - if `method == 'git'`: a specific SHA or tag to `git checkout`
+  - if `method == 'helm'`: the version of the helm chart to `helm fetch`
 
 ### Example
 

@@ -27,6 +27,7 @@ func TestAdd(t *testing.T) {
 		Source:        "https://github.com/timfpark/fabrikate-cloud-native",
 		Method:        "git",
 		ComponentType: "component",
+		Version:       "8ad79e73e0665e347e1553ad7ca32b6e590e007a",
 	}
 
 	err = Add(componentComponent)
@@ -42,6 +43,13 @@ func TestAdd(t *testing.T) {
 
 	err = Add(helmComponent)
 	assert.Nil(t, err)
+
+	// Ensure the correct values are being added to the added subcomponents
+	currentComponent := core.Component{}
+	currentComponent, err = currentComponent.LoadComponent()
+	assert.Nil(t, err)
+	assert.EqualValues(t, componentComponent, currentComponent.Subcomponents[0])
+	assert.EqualValues(t, helmComponent, currentComponent.Subcomponents[1])
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Test adding a subcomponent

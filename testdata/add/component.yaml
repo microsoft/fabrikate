@@ -5,6 +5,7 @@ subcomponents:
   type: component
   source: https://github.com/timfpark/fabrikate-cloud-native
   method: git
+  version: 8ad79e73e0665e347e1553ad7ca32b6e590e007a
 - name: elasticsearch
   type: helm
   source: https://github.com/helm/charts
