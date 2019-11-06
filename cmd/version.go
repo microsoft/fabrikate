@@ -30,7 +30,7 @@ var versionCmd = &cobra.Command{
 
 // PrintVersion prints the current version of Fabrikate being used.
 func PrintVersion() {
-	logger.Info("fab version 0.16.2")
+	logger.Info("fab version 0.17.0")
 }
 
 func init() {
