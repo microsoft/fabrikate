@@ -149,3 +149,19 @@ func TestInstallWithoutHelmInitialized(t *testing.T) {
 	assert.Nil(t, os.Chdir(componentDir))
 	assert.Nil(t, Install("./"))
 }
+
+func TestGenerateHelmRepoAlias(t *testing.T) {
+	componentDir := "../testdata/repo-alias"
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	defer func() {
+		assert.Nil(t, os.Chdir(cwd))
+		assert.Nil(t, util.UninstallComponents(componentDir))
+	}()
+
+	// Change cwd to component directory
+	assert.Nil(t, os.Chdir(componentDir))
+	assert.Nil(t, Install("./"))
+
+	assert.Nil(t, err)
+}

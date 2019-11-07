@@ -380,10 +380,12 @@ func updateHelmChartDep(chartPath string) (err error) {
 	addedDepRepoList := []string{}
 	if _, err := os.Stat(requirementsYamlPath); err == nil {
 		logger.Info(fmt.Sprintf("requirements.yaml found at '%s', ensuring repositories exist on helm client", requirementsYamlPath))
+
 		bytes, err := ioutil.ReadFile(requirementsYamlPath)
 		if err != nil {
 			return err
 		}
+
 		requirementsYaml := helmRequirements{}
 		if err = yaml.Unmarshal(bytes, &requirementsYaml); err != nil {
 			return err
@@ -396,11 +398,18 @@ func updateHelmChartDep(chartPath string) (err error) {
 				logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
 				continue
 			}
+
+			if !strings.HasPrefix(dep.Repository, "http") {
+				logger.Info(emoji.Sprintf(":pencil: Skipping non-http helm dependency repo. Found '%v'", dep.Repository))
+				continue
+			}
+
 			logger.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
 			randomUUID, err := uuid.NewRandom()
 			if err != nil {
 				return err
 			}
+
 			randomRepoName := randomUUID.String()
 			hd.mu.Lock()
 			if output, err := exec.Command("helm", "repo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
@@ -409,6 +418,7 @@ func updateHelmChartDep(chartPath string) (err error) {
 				return err
 			}
 			hd.mu.Unlock()
+
 			addedDepRepoList = append(addedDepRepoList, randomRepoName)
 		}
 	}
