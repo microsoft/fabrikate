@@ -43,7 +43,7 @@ func Add(subcomponent core.Component) (err error) {
 }
 
 var addCmd = &cobra.Command{
-	Use:   "add <component-name> --source <component-source> [--type component] [--method git] [--path .]",
+	Use:   "add <component-name> --source <component-source> [--type <component|helm|static>] [--method <git|helm|local|http>] [--path <filepath>] [--version <SHA|tag|helm_chart_version>]",
 	Short: "Adds a subcomponent to the current component (or the component specified by the passed path).",
 	Long: `Adds a subcomponent to the current component (or the component specified by the passed path).
 
@@ -54,7 +54,7 @@ path: the path to the component that this subcomponent should be added to.
 
 example:
 
-$ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native
+$ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native --branch master --version v1.0.0
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
@@ -77,6 +77,7 @@ $ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitio
 			Source:        cmd.Flag("source").Value.String(),
 			Method:        method,
 			Branch:        branch,
+			Version:       cmd.Flag("version").Value.String(),
 			Path:          cmd.Flag("path").Value.String(),
 			ComponentType: cmd.Flag("type").Value.String(),
 		}
@@ -88,9 +89,10 @@ $ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitio
 func init() {
 	addCmd.PersistentFlags().String("source", "", "Source for this component")
 	addCmd.PersistentFlags().String("method", "git", "Method to use to fetch this component")
-	addCmd.PersistentFlags().String("branch", "master", "Branch of git repo to use; noop when method != 'git'")
-	addCmd.PersistentFlags().String("path", "./", "Path of git repo to use")
+	addCmd.PersistentFlags().String("branch", "master", "Branch of git repo to use; noop when method is 'git'")
+	addCmd.PersistentFlags().String("path", "", "Path of git repo to use")
 	addCmd.PersistentFlags().String("type", "component", "Type of this component")
+	addCmd.PersistentFlags().String("version", "", "Commit SHA or Tag to checkout of the git repo when method is 'git' or the version of the helm chart to fetch when method is 'helm'")
 
 	rootCmd.AddCommand(addCmd)
 }
