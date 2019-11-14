@@ -41,16 +41,6 @@ type Component struct {
 	Manifest string `yaml:"-" json:"-"`
 }
 
-// supportedTypes returns a list of valid ComponentType for a Component
-func supportedTypes() []string {
-	return []string{"component", "helm", "static"}
-}
-
-// supportedMethods returns a list of valid Method for a Component
-func supportedMethods() []string {
-	return []string{"git", "helm", "http", "local", ""}
-}
-
 type unmarshalFunction func(in []byte, v interface{}) error
 
 // UnmarshalFile is an unmarshal wrapper which reads in any file from `path` and attempts to
@@ -97,26 +87,6 @@ func (c *Component) applyDefaultsAndMigrations() error {
 
 	if len(c.ComponentType) == 0 {
 		c.ComponentType = "component"
-	}
-
-	// Helper to see if string value is included in a list of strings
-	includes := func(haystack []string, needle string) bool {
-		for _, value := range haystack {
-			if value == needle {
-				return true
-			}
-		}
-		return false
-	}
-
-	// Ensure component type is valid
-	if !includes(supportedTypes(), c.ComponentType) {
-		return fmt.Errorf("component '%s' specified invalid 'type' of '%s', must be one of: %v", c.Name, c.ComponentType, supportedTypes())
-	}
-
-	// ensure component method is valid
-	if !includes(supportedMethods(), c.Method) {
-		return fmt.Errorf("component '%s' specified invalid 'method' of '%s', must be one of: %v", c.Name, c.Method, supportedMethods())
 	}
 
 	return nil
@@ -226,11 +196,12 @@ func (c *Component) afterInstall() (err error) {
 
 // InstallComponent installs the component (if needed) utilizing its Method.
 // This is only used to install 'components', Generators handle the installation
-// of 'non-components' (eg; helm/static)
+// of 'non-components' (eg; helm/static). Therefore the only installation needed
+// for any component is when ComponentType == "component"|""  and Method ==
+// "git"
 func (c *Component) InstallComponent(componentPath string) (err error) {
-	if strings.EqualFold(c.ComponentType, "component") {
-		switch method := strings.ToLower(c.Method); method {
-		case "git":
+	if c.ComponentType == "component" {
+		if c.Method == "git" {
 			// ensure `components` dir exists
 			componentsPath := path.Join(componentPath, "components")
 			if err := os.MkdirAll(componentsPath, 0777); err != nil {
@@ -248,30 +219,6 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 				return err
 			}
 			return nil
-		case "helm":
-			return nil
-		case "http":
-			return nil
-		case "":
-			// default to 'local' if left blank
-			fallthrough
-		case "local":
-			// should already exist in filesystem; ensure it exists
-			subcomponentPath := path.Join(c.PhysicalPath, c.Path)
-			potentialComponentPaths := []string{path.Join(subcomponentPath, "component.yaml"), path.Join(subcomponentPath, "component.json")}
-			componentExists := false
-			for _, componentPath := range potentialComponentPaths {
-				if _, err := os.Stat(componentPath); err == nil {
-					componentExists = true
-					break
-				}
-			}
-			if !componentExists {
-				return fmt.Errorf("unable to stat component.yaml for 'local' component '%s' in path '%s'", c.Name, subcomponentPath)
-			}
-			return nil
-		default:
-			return fmt.Errorf("unsupported method '%s' provided in component '%s'; must be one of %v", c.Method, c.Name, supportedMethods())
 		}
 	}
 
@@ -285,7 +232,7 @@ func (c *Component) InstallSingleComponent(componentPath string, generator Gener
 	}
 
 	if err := c.applyDefaultsAndMigrations(); err != nil {
-        return err
+		return err
 	}
 
 	if err := c.InstallComponent(componentPath); err != nil {
@@ -602,10 +549,10 @@ func (c *Component) GetAccessTokens() (tokens map[string]string, err error) {
 }
 
 // InstallRoot installs the root component
-func (c Component) InstallRoot(startingPath string, environments []string) (root Component, err error){
+func (c Component) InstallRoot(startingPath string, environments []string) (root Component, err error) {
 	logger.Debug(fmt.Sprintf("Install root component'%s'", c.Name))
 
-	if (c.Method != "git") {
+	if c.Method != "git" {
 		return c, err
 	}
 
@@ -621,10 +568,10 @@ func (c Component) InstallRoot(startingPath string, environments []string) (root
 func (c Component) UpdateComponentPath(startingPath string, environments []string) (root Component, err error) {
 	logger.Debug(fmt.Sprintf("Update component path'%s'", c.Name))
 
-	if (c.Method != "git") {
+	if c.Method != "git" {
 		return c, err
 	}
-	
+
 	if c.ComponentType == "component" || c.ComponentType == "" {
 		relativePath := c.RelativePathTo()
 		c.PhysicalPath = path.Join(relativePath, c.Path)
@@ -636,7 +583,7 @@ func (c Component) UpdateComponentPath(startingPath string, environments []strin
 		if err != nil {
 			return c, err
 		}
-	
+
 		if err = c.LoadConfig(environments); err != nil {
 			return c, err
 		}

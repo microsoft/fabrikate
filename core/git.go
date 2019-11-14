@@ -144,7 +144,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		// Add repo to clone args
 		cloneCommandArgs = append(cloneCommandArgs, repo)
 
-		// Only fetch latest commit if commit provided
+		// Only fetch latest commit if commit not provided
 		if len(commit) == 0 {
 			logger.Info(emoji.Sprintf(":helicopter: Component requested latest commit: fast cloning at --depth 1"))
 			cloneCommandArgs = append(cloneCommandArgs, "--depth", "1")
@@ -179,11 +179,11 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 
 		// If commit provided, checkout the commit
 		if len(commit) != 0 {
-			logger.Info(emoji.Sprintf(":helicopter: Performing checkout commit '%s' for repo '%s' on branch '%s'", commit, repo, branch))
+			logger.Info(emoji.Sprintf(":helicopter: Performing checkout commit '%s' for repo '%s'", commit, repo))
 			checkoutCommit := exec.Command("git", "checkout", commit)
 			checkoutCommit.Dir = clonePathOnFS
 			if output, err := checkoutCommit.CombinedOutput(); err != nil {
-				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred checking out commit '%s' from repo '%s' on branch '%s'\n%s: %s", commit, repo, branch, err, output))
+				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred checking out commit '%s' from repo '%s'\n%s: %s", commit, repo, err, output))
 				cloneResultChan <- &gitCloneResult{Error: err}
 				return
 			}
