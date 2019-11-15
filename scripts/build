@@ -1,9 +1,14 @@
 #!/bin/bash
 
+set -e
+
 if [ $# -lt 1 ]; then
   echo "$0: takes at least one argument: 'get-deps', 'clean', 'build fab' or 'build release <version_number>'"
   exit 1
 fi
+
+echo "Enabling Go modules through build script (GO111MODULE=on)"
+GO111MODULE=on
 
 # cleans test directories helm_repos
 function clean() {
@@ -24,10 +29,10 @@ function clean() {
 # runs go get ./...
 function get-deps() {
   clean
-  echo "go mod download"
+  echo "Running 'go mod download'"
   go mod download
 
-  echo "get-deps finished"
+  echo "  Competed 'go mod download'"
 }
 
 if [ $1 == "get-deps" ]; then
@@ -60,14 +65,23 @@ if [ $1 == "build" ]; then
     rm -rf releases/$3
     mkdir -p releases/$3
 
-    echo "Building for Mac"
+    echo "Building and zipping binaries"
+    echo "  Building for Mac"
     GOOS=darwin GOARCH=amd64 go build -o fab
-    zip releases/$3/fab-v$3-darwin-amd64.zip fab
+    echo "  Zipping:"
+    echo "    $(zip releases/$3/fab-v$3-darwin-amd64.zip fab)"
 
-    echo "Building for Linux"
+    echo "  Building for Linux"
+    echo "  Zipping:"
     GOOS=linux GOARCH=amd64 go build -o fab
-    zip releases/$3/fab-v$3-linux-amd64.zip fab
+    echo "    $(zip releases/$3/fab-v$3-linux-amd64.zip fab)"
 
     echo "Release zip files can be found in releases/$3"
+
+    GIT_TAG=v$3
+    echo "Tagging v-prefixed semver tag: $GIT_TAG"
+    git tag $GIT_TAG
+    echo "  Tag $GIT_TAG created. Push this tag to repository to allow 'go get github.com/microsoft/fabrikate@$GIT_TAG'"
+    echo "  Command 'go get github.com/microsoft/fabrikate' will now point to $GIT_TAG if it is the highest v-prefixed semver tag in repository"
   fi
 fi
