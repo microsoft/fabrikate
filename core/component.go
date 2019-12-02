@@ -577,7 +577,7 @@ func (c Component) InstallRoot(startingPath string, environments []string) (root
 func (c Component) UpdateComponentPath(startingPath string, environments []string) (root Component, err error) {
 	logger.Debug(fmt.Sprintf("Update component path'%s'", c.Name))
 
-	/*if c.Method != "git" {
+	if c.Method != "git" {
 		return c, err
 	}
 
@@ -596,6 +596,6 @@ func (c Component) UpdateComponentPath(startingPath string, environments []strin
 		if err = c.LoadConfig(environments); err != nil {
 			return c, err
 		}
-	}*/
+	}
 	return c, err
 }
