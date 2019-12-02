@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"regexp"
 	"testing"
 
 	"github.com/microsoft/fabrikate/core"
@@ -48,6 +50,17 @@ func TestGenerateYAML(t *testing.T) {
 	assert.Equal(t, 3, len(components))
 
 	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
+}
+
+func TestGenerateEnvYAML(t *testing.T) {
+	Generate("../testdata/generate-yaml", []string{"common"}, false)
+
+	dat, _ := ioutil.ReadFile("../testdata/generate-yaml/generated/common/grafana.yaml")
+
+	var re = regexp.MustCompile(`- access: proxy`)
+	matches := re.FindAllStringIndex(string(dat), -1)
+
+	assert.Equal(t, len(matches), 1);
 }
 
 func TestGenerateStaticRemoteYAML(t *testing.T) {
