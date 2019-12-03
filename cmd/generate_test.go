@@ -53,7 +53,9 @@ func TestGenerateYAML(t *testing.T) {
 }
 
 func TestGenerateEnvYAML(t *testing.T) {
-	Generate("../testdata/generate-yaml", []string{"common"}, false)
+	_, err := Generate("../testdata/generate-yaml", []string{"common"}, false)
+
+	assert.Nil(t, err)
 
 	dat, _ := ioutil.ReadFile("../testdata/generate-yaml/generated/common/grafana.yaml")
 
