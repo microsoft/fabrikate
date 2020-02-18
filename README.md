@@ -30,6 +30,8 @@ First, install the latest `fab` cli on your local machine from
 appropriate binary and placing `fab` in your path. The `fab` cli tool, `helm`,
 and `git` are the only tools you need to have installed.
 
+**NOTE** Currently fabrikate does not support Helm 3. Please use helm 2.16.1 (stable) instead when running fabrikate.
+
 Let's walk through building an example Fabrikate definition to see how it works
 in practice. First off, let's create a directory for our cluster definition:
 
