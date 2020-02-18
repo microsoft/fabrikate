@@ -1,0 +1,7 @@
+subcomponents:
+  cloud-native:
+    disabled: true
+  elasticsearch:
+    disabled: true
+    config:
+      fod: bar
