@@ -1,6 +1,7 @@
 package core
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -98,7 +99,7 @@ func TestUpdateRootComponentPath(t *testing.T) {
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
 
-	rootInit := func (startPath string, environments []string, c Component) (component Component, err error) {
+	rootInit := func(startPath string, environments []string, c Component) (component Component, err error) {
 		return c, nil
 	}
 
@@ -139,4 +140,66 @@ func TestWriteComponent(t *testing.T) {
 
 	err = component.Write()
 	assert.Nil(t, err)
+}
+
+func TestConditionalIteratingDefinition(t *testing.T) {
+	callbackCount := 0
+
+	rootInit := func(startPath string, environments []string, c Component) (component Component, err error) {
+		return c, nil
+	}
+
+	results := WalkComponentTree("../testdata/generate-conditional/subcomponent", []string{"staging"}, func(path string, component *Component) (err error) {
+		callbackCount++
+		return nil
+	}, rootInit)
+
+	var err error
+	components := make([]Component, 0)
+	for result := range results {
+		if result.Error != nil {
+			err = result.Error
+		} else if result.Component != nil {
+			components = append(components, *result.Component)
+		}
+	}
+
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(components))
+	assert.Equal(t, callbackCount, len(components))
+
+	sort.SliceStable(components, func(i, j int) bool {
+		return len(components[i].TargetConfigs) < len(components[j].TargetConfigs)
+	})
+
+	assert.ElementsMatch(t, []string{}, components[0].TargetConfigs)
+	assert.ElementsMatch(t, []string{"staging"}, components[1].TargetConfigs)
+	assert.ElementsMatch(t, []string{"staging", "test"}, components[2].TargetConfigs)
+}
+
+func TestConditionalRootDefinition(t *testing.T) {
+	callbackCount := 0
+
+	rootInit := func(startPath string, environments []string, c Component) (component Component, err error) {
+		return c, nil
+	}
+
+	results := WalkComponentTree("../testdata/generate-conditional/root", []string{"staging"}, func(path string, component *Component) (err error) {
+		callbackCount++
+		return nil
+	}, rootInit)
+
+	var err error
+	components := make([]Component, 0)
+	for result := range results {
+		if result.Error != nil {
+			err = result.Error
+		} else if result.Component != nil {
+			components = append(components, *result.Component)
+		}
+	}
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(components))
+	assert.Equal(t, callbackCount, len(components))
 }

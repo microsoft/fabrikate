@@ -1,0 +1,8 @@
+name: test
+type: component
+configs:
+  - production
+subcomponents:
+  - name: grafana
+    type: static
+    path: manifests/production
