@@ -358,7 +358,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 		containsEnv := func(s1 []string, s2 []string) bool {
 			for _, el1 := range s1 {
 				for _, el2 := range s2 {
-					if el1 == el2 {
+					if strings.EqualFold(el1, el2) {
 						return true
 					}
 				}
