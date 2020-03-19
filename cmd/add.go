@@ -42,8 +42,9 @@ func Add(subcomponent core.Component) (err error) {
 	return component.Write()
 }
 
+var targetConfigs []string
 var addCmd = &cobra.Command{
-	Use:   "add <component-name> --source <component-source> [--type <component|helm|static>] [--method <git|helm|local|http>] [--path <filepath>] [--version <SHA|tag|helm_chart_version>]",
+	Use:   "add <component-name> --source <component-source> [--type <component|helm|static>] [--method <git|helm|local|http>] [--path <filepath>] [--version <SHA|tag|helm_chart_version>] [--configs config1,config2,...,configN]",
 	Short: "Adds a subcomponent to the current component (or the component specified by the passed path).",
 	Long: `Adds a subcomponent to the current component (or the component specified by the passed path).
 
@@ -54,13 +55,13 @@ path: the path to the component that this subcomponent should be added to.
 
 example:
 
-$ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native --branch master --version v1.0.0
+$ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitions --path definitions/fabrikate-cloud-native --branch master --version v1.0.0 --configs prod,azure,east
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("'add' takes one or more key=value arguments")
 		}
-
+		
 		// If method not "git", set branch to zero value
 		method := cmd.Flag("method").Value.String()
 		branch := cmd.Flag("branch").Value.String()
@@ -80,6 +81,7 @@ $ fab add cloud-native --source https://github.com/microsoft/fabrikate-definitio
 			Version:       cmd.Flag("version").Value.String(),
 			Path:          cmd.Flag("path").Value.String(),
 			ComponentType: cmd.Flag("type").Value.String(),
+			TargetConfigs: targetConfigs,
 		}
 
 		return Add(component)
@@ -93,6 +95,7 @@ func init() {
 	addCmd.PersistentFlags().String("path", "", "Path of git repo to use")
 	addCmd.PersistentFlags().String("type", "component", "Type of this component")
 	addCmd.PersistentFlags().String("version", "", "Commit SHA or Tag to checkout of the git repo when method is 'git' or the version of the helm chart to fetch when method is 'helm'")
+	addCmd.PersistentFlags().StringSliceVar(&targetConfigs, "configs", []string{}, "List of configs that will be used to verify if the component is eligible for generation")
 
 	rootCmd.AddCommand(addCmd)
 }

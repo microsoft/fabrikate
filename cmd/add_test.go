@@ -28,6 +28,7 @@ func TestAdd(t *testing.T) {
 		Method:        "git",
 		ComponentType: "component",
 		Version:       "8ad79e73e0665e347e1553ad7ca32b6e590e007a",
+		TargetConfigs: []string{"test"},
 	}
 
 	err = Add(componentComponent)
@@ -49,36 +50,44 @@ func TestAdd(t *testing.T) {
 	currentComponent, err = currentComponent.LoadComponent()
 	assert.Nil(t, err)
 	assert.EqualValues(t, componentComponent, currentComponent.Subcomponents[0])
+	assert.ElementsMatch(t, componentComponent.TargetConfigs, currentComponent.Subcomponents[0].TargetConfigs)
 	assert.EqualValues(t, helmComponent, currentComponent.Subcomponents[1])
+	assert.ElementsMatch(t, helmComponent.TargetConfigs, currentComponent.Subcomponents[1].TargetConfigs)
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Test adding a subcomponent
 	////////////////////////////////////////////////////////////////////////////////
 	subcomponentName := "My subcomponent"
+	subComponentTargetConfigs := []string{"another-test"}
 	initialSource := "the initial URL; should not see this"
 	newSource := "this should be the final value"
+	newTargetConfigs := []string{"override-test"}
 	err = componentComponent.AddSubcomponent(core.Component{
 		Name:          subcomponentName,
 		Source:        initialSource,
 		Method:        "git",
 		ComponentType: "component",
+		TargetConfigs: subComponentTargetConfigs,
 	})
 
 	assert.Nil(t, err)
 	assert.True(t, componentComponent.Subcomponents[0].Name == subcomponentName)
 	assert.True(t, componentComponent.Subcomponents[0].Source == initialSource)
+	assert.ElementsMatch(t, componentComponent.Subcomponents[0].TargetConfigs, subComponentTargetConfigs)
 
 	err = componentComponent.AddSubcomponent(core.Component{
 		Name:          subcomponentName,
 		Source:        newSource,
 		Method:        "git",
 		ComponentType: "component",
+		TargetConfigs: newTargetConfigs,
 	})
 
 	// should still only have 1 subcomponent
 	assert.Nil(t, err)
 	assert.True(t, len(componentComponent.Subcomponents) == 1)
 	assert.True(t, componentComponent.Subcomponents[0].Source == newSource)
+	assert.ElementsMatch(t, componentComponent.Subcomponents[0].TargetConfigs, newTargetConfigs)
 
 	err = componentComponent.AddSubcomponent(core.Component{
 		Name:          "this is a new name, so it should add a new subcomponent entry",
