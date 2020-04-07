@@ -2,6 +2,7 @@ package core
 
 import (
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -144,13 +145,16 @@ func TestWriteComponent(t *testing.T) {
 
 func TestConditionalIteratingDefinition(t *testing.T) {
 	callbackCount := 0
+	mutex := &sync.Mutex{}
 
 	rootInit := func(startPath string, environments []string, c Component) (component Component, err error) {
 		return c, nil
 	}
 
 	results := WalkComponentTree("../testdata/generate-conditional/subcomponent", []string{"staging"}, func(path string, component *Component) (err error) {
+		mutex.Lock()
 		callbackCount++
+		mutex.Unlock()
 		return nil
 	}, rootInit)
 
@@ -179,13 +183,16 @@ func TestConditionalIteratingDefinition(t *testing.T) {
 
 func TestConditionalRootDefinition(t *testing.T) {
 	callbackCount := 0
+	mutex := &sync.Mutex{}
 
 	rootInit := func(startPath string, environments []string, c Component) (component Component, err error) {
 		return c, nil
 	}
 
 	results := WalkComponentTree("../testdata/generate-conditional/root", []string{"staging"}, func(path string, component *Component) (err error) {
+		mutex.Lock()
 		callbackCount++
+		mutex.Unlock()
 		return nil
 	}, rootInit)
 

@@ -366,7 +366,10 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 			return false
 		}
 
-		return len(c.TargetConfigs) == 0 || containsEnv(environments, c.TargetConfigs)
+		//commands that have no interest in environments need to walk the full tree, thus, no conditional traversal is needed. E.g: Install
+		ignoreConditionalTraversal := len(c.TargetConfigs) == 0 || len(environments) == 0
+
+		return ignoreConditionalTraversal || containsEnv(environments, c.TargetConfigs)
 	}
 
 	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
