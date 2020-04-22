@@ -19,9 +19,8 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/timfpark/yaml"
 
-	"k8s.io/helm/pkg/helm/environment"
-	"k8s.io/helm/pkg/helm/helmpath"
-	"k8s.io/helm/pkg/repo"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/repo"
 )
 
 // HelmGenerator provides 'helm generate' generator functionality to Fabrikate
@@ -167,7 +166,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	overriddenValuesFileName := fmt.Sprintf("%s.yaml", randomString.String())
 	absOverriddenPath := path.Join(os.TempDir(), overriddenValuesFileName)
 	defer os.Remove(absOverriddenPath)
-	
+
 	logger.Debug(emoji.Sprintf(":pencil: Writing config %s to %s\n", configYaml, absOverriddenPath))
 	if err = ioutil.WriteFile(absOverriddenPath, configYaml, 0777); err != nil {
 		return "", err
@@ -185,7 +184,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		return "", err
 	}
 	logger.Info(emoji.Sprintf(":memo: Running `helm template` on template '%s'", chartPath))
-	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", component.Name, "--namespace", namespace).CombinedOutput()
+	output, err := exec.Command("helm", "template", component.Name, chartPath, "--values", absOverriddenPath, "--namespace", namespace).CombinedOutput()
 	if err != nil {
 		logger.Error(fmt.Sprintf("helm template failed with:\n%s: %s", err, output))
 		return "", err
@@ -378,63 +377,58 @@ func updateHelmChartDep(chartPath string) (err error) {
 	}
 
 	// Parse chart dependency repositories and add them if not present
-	requirementsYamlPath := path.Join(absChartPath, "requirements.yaml")
+	requirementsYamlPaths := []string{path.Join(absChartPath, "requirements.yaml"), path.Join(absChartPath, "Chart.yaml")}
 	addedDepRepoList := []string{}
-	if _, err := os.Stat(requirementsYamlPath); err == nil {
-		logger.Info(fmt.Sprintf("requirements.yaml found at '%s', ensuring repositories exist on helm client", requirementsYamlPath))
+	for _, requirementsYamlPath := range requirementsYamlPaths {
+		if _, err := os.Stat(requirementsYamlPath); err == nil {
+			logger.Info(fmt.Sprintf("dependencies found in '%s', ensuring repositories exist on helm client", requirementsYamlPath))
 
-		bytes, err := ioutil.ReadFile(requirementsYamlPath)
-		if err != nil {
-			return err
-		}
-
-		requirementsYaml := helmRequirements{}
-		if err = yaml.Unmarshal(bytes, &requirementsYaml); err != nil {
-			return err
-		}
-
-		// Add each dependency repo with a temp name
-		for _, dep := range requirementsYaml.Dependencies {
-			currentRepo, err := getRepoName(dep.Repository)
-			if err == nil {
-				logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
-				continue
-			}
-
-			if !strings.HasPrefix(dep.Repository, "http") {
-				logger.Info(emoji.Sprintf(":pencil: Skipping non-http helm dependency repo. Found '%v'", dep.Repository))
-				continue
-			}
-
-			logger.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
-			randomUUID, err := uuid.NewRandom()
+			bytes, err := ioutil.ReadFile(requirementsYamlPath)
 			if err != nil {
 				return err
 			}
 
-			randomRepoName := randomUUID.String()
-			hd.mu.Lock()
-			if output, err := exec.Command("helm", "repo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
-				hd.mu.Unlock()
-				logger.Error(emoji.Sprintf(":no_entry_sign: Failed to add helm dependency repository '%s' for chart '%s':\n%s", dep.Repository, chartPath, output))
+			requirementsYaml := helmRequirements{}
+			if err = yaml.Unmarshal(bytes, &requirementsYaml); err != nil {
 				return err
 			}
-			hd.mu.Unlock()
 
-			addedDepRepoList = append(addedDepRepoList, randomRepoName)
+			// Add each dependency repo with a temp name
+			for _, dep := range requirementsYaml.Dependencies {
+				currentRepo, err := getRepoName(dep.Repository)
+				if err == nil {
+					logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
+					continue
+				}
+
+				if !strings.HasPrefix(dep.Repository, "http") {
+					logger.Info(emoji.Sprintf(":pencil: Skipping non-http helm dependency repo. Found '%v'", dep.Repository))
+					continue
+				}
+
+				logger.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
+				randomUUID, err := uuid.NewRandom()
+				if err != nil {
+					return err
+				}
+
+				randomRepoName := randomUUID.String()
+				hd.mu.Lock()
+				if output, err := exec.Command("helm", "repo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
+					hd.mu.Unlock()
+					logger.Error(emoji.Sprintf(":no_entry_sign: Failed to add helm dependency repository '%s' for chart '%s':\n%s", dep.Repository, chartPath, output))
+					return err
+				}
+				hd.mu.Unlock()
+
+				addedDepRepoList = append(addedDepRepoList, randomRepoName)
+			}
 		}
 	}
 
-	// Update dependencies -- Attempt twice; may fail the first time if running on
-	// a newly initialized ~/.helm directory because `helm serve` is typically
-	// not running and helm will attempt to fetch/cache all helm repositories
-	// during first run
 	logger.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
 	if _, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-		if attempt2, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-			logger.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, attempt2))
-			return err
-		}
+		return err
 	}
 
 	// Cleanup temp dependency repositories
@@ -455,19 +449,15 @@ func updateHelmChartDep(chartPath string) (err error) {
 // getRepoName returns the repo name for the provided url
 func getRepoName(url string) (string, error) {
 	logger.Info(emoji.Sprintf(":eyes: Looking for repo %v", url))
-	helmHome := os.Getenv(environment.HomeEnvVar)
-	if helmHome == "" {
-		helmHome = environment.DefaultHelmHome
-	}
-	a := helmpath.Home(helmHome)
-	f, err := repo.LoadRepositoriesFile(a.RepositoryFile())
+	helmEnvs := cli.New()
+	repoConfig := helmEnvs.RepositoryConfig
+	f, err := repo.LoadFile(repoConfig)
 	if err != nil {
 		return "", err
 	}
 	if len(f.Repositories) == 0 {
 		return "", fmt.Errorf("no repositories to show")
 	}
-
 	for _, re := range f.Repositories {
 		if strings.EqualFold(re.URL, url) {
 			logger.Info(emoji.Sprintf(":green_heart: %v matches repo %v", url, re.Name))

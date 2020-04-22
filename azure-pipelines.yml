@@ -22,12 +22,9 @@ steps:
     displayName: "Set up Go workspace"
 
   - script: |
-      HELM_URL=https://storage.googleapis.com/kubernetes-helm
-      HELM_TGZ=helm-v2.13.1-linux-amd64.tar.gz
-      wget -q ${HELM_URL}/${HELM_TGZ}
-      tar xzfv ${HELM_TGZ}
-      PATH=`pwd`/linux-amd64/:$PATH
-      helm init --client-only
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      chmod 700 get_helm.sh
+      ./get_helm.sh
     displayName: "Install helm"
 
   - script: |
