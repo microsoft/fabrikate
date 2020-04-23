@@ -285,10 +285,13 @@ var hd = helmDownloader{}
 // places it in `into`. If `version` is blank, latest is automatically fetched.
 // -- `into` will be the dir containing Chart.yaml
 // The function will first look to leverage an existing Helm repo from the
-// repository file at $HELM_HOME/repositories.yaml.  If it fails to find
+// repository file at $HELM_REPOSITORY_CONFIG. If it fails to find
 // a repo there, it will add a temporary helm repo, fetch from it, and then remove
-// the temporary repo. This is a to get around a limitation in Helm 2.
+// the temporary repo. This was originally designed to get around a limitation
+// in Helm 2.
 // see: https://github.com/helm/helm/issues/4527
+// Now that Fabrikate uses Helm 3, downloading the chart before running
+// "helm template" is not necessary, so this approach could be redesigned in the future.
 func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
 	repoName, err := getRepoName(repo)
 	if err != nil {
