@@ -22,9 +22,11 @@ steps:
     displayName: "Set up Go workspace"
 
   - script: |
-      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-      chmod 700 get_helm.sh
-      ./get_helm.sh
+      HELM_URL=https://get.helm.sh
+      HELM_TGZ=helm-v3.1.2-linux-amd64.tar.gz
+      wget -q ${HELM_URL}/${HELM_TGZ}
+      tar xzfv ${HELM_TGZ}
+      PATH=`pwd`/linux-amd64/:$PATH
     displayName: "Install helm"
 
   - script: |
