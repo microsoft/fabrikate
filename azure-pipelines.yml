@@ -7,6 +7,7 @@ variables:
   GOPATH: "$(system.defaultWorkingDirectory)/gopath" # Go workspace path
   modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)" # Path to the module's code
   GO111MODULE: "on"
+  linterTimeout: "5m"
 
 steps:
   - script: |
@@ -40,7 +41,7 @@ steps:
     displayName: "Get Go dependencies"
 
   - script: |
-      golangci-lint run --timeout 5m
+      golangci-lint run --timeout $(linterTimeout)
     workingDirectory: "$(modulePath)"
     displayName: "Lint"
 
