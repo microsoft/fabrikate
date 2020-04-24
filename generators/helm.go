@@ -323,7 +323,11 @@ func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err 
 
 	// Fetch chart to random temp dir
 	chartName := fmt.Sprintf("%s/%s", repoName, chart)
-	randomDir := path.Join(os.TempDir(), repoName)
+	randomDir, err := ioutil.TempDir("", repoName)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(randomDir)
 	downloadVersion := "latest"
 	if version != "" {
 		downloadVersion = version
