@@ -369,8 +369,8 @@ func updateHelmChartDep(chartPath string) (err error) {
 		Condition  string
 	}
 
-	// Contents of requirements.yaml for a helm chart
-	type helmRequirements struct {
+	// Contents of requirements.yaml or dependencies in Chart.yaml
+	type helmDependencies struct {
 		Dependencies []helmDependency
 	}
 
@@ -386,26 +386,26 @@ func updateHelmChartDep(chartPath string) (err error) {
 	// Parse chart dependency repositories and add them if not present.
 	// For both api versions v1 and v2, if requirements.yaml has dependencies
 	// Chart.yaml's dependencies will be ignored.
-	requirementsYamlPath := path.Join(absChartPath, "requirements.yaml")
-	if _, err := os.Stat(requirementsYamlPath); err != nil {
-		requirementsYamlPath = path.Join(absChartPath, "Chart.yaml")
+	dependenciesYamlPath := path.Join(absChartPath, "requirements.yaml")
+	if _, err := os.Stat(dependenciesYamlPath); err != nil {
+		dependenciesYamlPath = path.Join(absChartPath, "Chart.yaml")
 	}
 	addedDepRepoList := []string{}
-	if _, err := os.Stat(requirementsYamlPath); err == nil {
-		logger.Info(fmt.Sprintf("requirements.yaml found at '%s', ensuring repositories exist on helm client", requirementsYamlPath))
+	if _, err := os.Stat(dependenciesYamlPath); err == nil {
+		logger.Info(fmt.Sprintf("'%s' found at '%s', ensuring repositories exist on helm client", filepath.Base(dependenciesYamlPath), dependenciesYamlPath))
 
-		bytes, err := ioutil.ReadFile(requirementsYamlPath)
+		bytes, err := ioutil.ReadFile(dependenciesYamlPath)
 		if err != nil {
 			return err
 		}
 
-		requirementsYaml := helmRequirements{}
-		if err = yaml.Unmarshal(bytes, &requirementsYaml); err != nil {
+		dependenciesYaml := helmDependencies{}
+		if err = yaml.Unmarshal(bytes, &dependenciesYaml); err != nil {
 			return err
 		}
 
 		// Add each dependency repo with a temp name
-		for _, dep := range requirementsYaml.Dependencies {
+		for _, dep := range dependenciesYaml.Dependencies {
 			currentRepo, err := getRepoName(dep.Repository)
 			if err == nil {
 				logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
