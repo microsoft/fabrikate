@@ -10,4 +10,4 @@ subcomponents:
 - name: "prometheus"
   type: "helm"
   method: "local"
-  path: "../generate-yaml-helm-3/prometheus"
+  path: "../local-charts/prometheus"
