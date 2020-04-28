@@ -12,7 +12,7 @@ RUN apt-get update && \
     apt-get -y install vim curl wget gcc software-properties-common && \
     add-apt-repository ppa:git-core/ppa -y && \
     apt-get update && \
-	apt-get install git -y && \
+    apt-get install git -y && \
     curl -fsSL "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar -xz && \
     mv linux-amd64/helm /usr/local/bin && \
     rm -rf linux-amd64 && \
