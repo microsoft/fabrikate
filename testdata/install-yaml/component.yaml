@@ -10,7 +10,6 @@ subcomponents:
     repositories:
       incubator: "https://kubernetes-charts-incubator.storage.googleapis.com/"
   - name: "prometheus"
-    generator: "helm"
-    source: "https://github.com/helm/charts"
-    method: "git"
-    path: "stable/prometheus"
+    type: "helm"
+    method: "local"
+    path: "../local-charts/prometheus"
