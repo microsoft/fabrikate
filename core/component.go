@@ -31,6 +31,7 @@ type Component struct {
 	Path          string              `yaml:"path,omitempty" json:"path,omitempty"`
 	Version       string              `yaml:"version,omitempty" json:"version,omitempty"`
 	Branch        string              `yaml:"branch,omitempty" json:"branch,omitempty"`
+	TargetConfigs []string            `yaml:"configs,omitempty" json:"configs,omitempty"`
 
 	Repositories  map[string]string `yaml:"repositories,omitempty" json:"repositories,omitempty"`
 	Subcomponents []Component       `yaml:"subcomponents,omitempty" json:"subcomponents,omitempty"`
@@ -323,6 +324,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	// Note: this is only needed for non-inlined components
 	prepareComponent := func(c Component) Component {
 		logger.Debug(fmt.Sprintf("Preparing component '%s'", c.Name))
+
 		// 1. Parse the component at that path into a Component
 		c, err := c.LoadComponent()
 		if err != nil {
@@ -350,6 +352,26 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 		walking.Done()
 	}
 
+	// Check if the component should be traversed according to the configured environments
+
+	traversable := func(c Component, environments []string) bool {
+		containsEnv := func(s1 []string, s2 []string) bool {
+			for _, el1 := range s1 {
+				for _, el2 := range s2 {
+					if strings.EqualFold(el1, el2) {
+						return true
+					}
+				}
+			}
+			return false
+		}
+
+		//commands that have no interest in environments need to walk the full tree, thus, no conditional traversal is needed. E.g: Install
+		ignoreConditionalTraversal := len(c.TargetConfigs) == 0 || len(environments) == 0
+
+		return ignoreConditionalTraversal || containsEnv(environments, c.TargetConfigs)
+	}
+
 	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
 	go func() {
 		// Manually enqueue the first root component
@@ -360,13 +382,16 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 			Config:       NewComponentConfig(startingPath),
 		})
 
-		// Init rootComponent
-		rootComponent, err := rootInit(startingPath, environments, rootComponent)
+		if traversable(rootComponent, environments) {
+			// Init rootComponent
+			rootComponent, err := rootInit(startingPath, environments, rootComponent)
 
-		if err != nil {
-			results <- WalkResult{Error: err}
-		} else {
-			enqueue(rootComponent)
+			if err != nil {
+				results <- WalkResult{Error: err}
+			} else {
+				enqueue(rootComponent)
+			}
+
 		}
 
 		// Close results channel once all nodes visited
@@ -389,31 +414,35 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 
 				// Range over subcomponents; preparing and enqueuing
 				for _, subcomponent := range c.Subcomponents {
-					// Prep component config
-					subcomponent.Config = c.Config.Subcomponents[subcomponent.Name]
+					if traversable(subcomponent, environments) {
+						// Prep component config
+						subcomponent.Config = c.Config.Subcomponents[subcomponent.Name]
 
-					if err = subcomponent.applyDefaultsAndMigrations(); err != nil {
-						results <- WalkResult{Error: err}
-					}
-
-					// Depending if the subcomponent is inlined or not; prepare the component to either load
-					// config/path info from filesystem (non-inlined) or inherit from parent (inlined)
-					if subcomponent.ComponentType == "component" || subcomponent.ComponentType == "" {
-						// This subcomponent is not inlined, so set the paths to their relative positions and prepare the configs
-						subcomponent.PhysicalPath = path.Join(subcomponent.RelativePathTo(), subcomponent.Path)
-						if !filepath.IsAbs(subcomponent.RelativePathTo()) {
-							subcomponent.PhysicalPath = path.Join(c.PhysicalPath, subcomponent.PhysicalPath)
+						if err = subcomponent.applyDefaultsAndMigrations(); err != nil {
+							results <- WalkResult{Error: err}
 						}
-						subcomponent.LogicalPath = path.Join(c.LogicalPath, subcomponent.Name)
-						subcomponent = prepareComponent(subcomponent)
-					} else {
-						// This subcomponent is inlined, so it inherits paths from parent and no need to prepareComponent().
-						subcomponent.PhysicalPath = c.PhysicalPath
-						subcomponent.LogicalPath = c.LogicalPath
-					}
 
-					logger.Debug(fmt.Sprintf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath))
-					enqueue(subcomponent)
+						// Depending if the subcomponent is inlined or not; prepare the component to either load
+						// config/path info from filesystem (non-inlined) or inherit from parent (inlined)
+						if subcomponent.ComponentType == "component" || subcomponent.ComponentType == "" {
+							// This subcomponent is not inlined, so set the paths to their relative positions and prepare the configs
+							subcomponent.PhysicalPath = path.Join(subcomponent.RelativePathTo(), subcomponent.Path)
+							if !filepath.IsAbs(subcomponent.RelativePathTo()) {
+								subcomponent.PhysicalPath = path.Join(c.PhysicalPath, subcomponent.PhysicalPath)
+							}
+							subcomponent.LogicalPath = path.Join(c.LogicalPath, subcomponent.Name)
+							subcomponent = prepareComponent(subcomponent)
+						} else {
+							// This subcomponent is inlined, so it inherits paths from parent and no need to prepareComponent().
+							subcomponent.PhysicalPath = c.PhysicalPath
+							subcomponent.LogicalPath = c.LogicalPath
+						}
+
+						logger.Debug(fmt.Sprintf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", subcomponent.Name, subcomponent.PhysicalPath, subcomponent.LogicalPath))
+						enqueue(subcomponent)
+					} else {
+						logger.Debug(fmt.Sprintf("Not adding subcomponent '%s' to queue because it's not traversable (environments: %s, subcomponent environments: %s)\n", subcomponent.Name, environments, subcomponent.TargetConfigs))
+					}
 				}
 			}(queuedComponent)
 		}

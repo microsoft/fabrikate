@@ -69,3 +69,33 @@ func TestGenerateWithHooks(t *testing.T) {
 
 	assert.Nil(t, err)
 }
+
+func TestGenerateConditionalSubcomponents(t *testing.T) {
+	components, err := Generate("../testdata/generate-conditional/subcomponent", []string{"staging"}, false)
+
+	expectedLengths := map[string]int{
+		"test":    0,
+		"grafana": 84,
+		"random":  86,
+	}
+
+	assert.Nil(t, err)
+
+	assert.Equal(t, 3, len(components))
+
+	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
+}
+
+func TestGenerateConditionalRoot(t *testing.T) {
+	components, err := Generate("../testdata/generate-conditional/root", []string{"staging"}, false)
+
+	expectedLengths := map[string]int{
+		"test": 0,
+	}
+
+	assert.Nil(t, err)
+
+	assert.Equal(t, 0, len(components))
+
+	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
+}

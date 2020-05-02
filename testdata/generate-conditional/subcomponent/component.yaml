@@ -1,0 +1,19 @@
+name: test
+type: component
+subcomponents:
+  - name: grafana
+    type: static
+    path: ./manifests/staging
+    configs: 
+    - staging
+  - name: grafana
+    type: static
+    path: ./manifests/production
+    configs: 
+    - production
+  - name: random
+    type: static
+    path: ./manifests/test
+    configs: 
+    - test
+    - staging
