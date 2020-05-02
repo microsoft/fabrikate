@@ -69,3 +69,17 @@ func TestGenerateWithHooks(t *testing.T) {
 
 	assert.Nil(t, err)
 }
+
+func TestGenerateDisabledSubcomponent(t *testing.T) {
+	components, err := Generate("../testdata/generate-disabled", []string{"disabled"}, false)
+
+	expectedLengths := map[string]int{
+		"my-stack": 0,
+		"pod-info": 4795,
+	}
+
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(components))
+
+	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
+}
