@@ -19,9 +19,8 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/timfpark/yaml"
 
-	"k8s.io/helm/pkg/helm/environment"
-	"k8s.io/helm/pkg/helm/helmpath"
-	"k8s.io/helm/pkg/repo"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/repo"
 )
 
 // HelmGenerator provides 'helm generate' generator functionality to Fabrikate
@@ -185,7 +184,7 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 		return "", err
 	}
 	logger.Info(emoji.Sprintf(":memo: Running `helm template` on template '%s'", chartPath))
-	output, err := exec.Command("helm", "template", chartPath, "--values", absOverriddenPath, "--name", component.Name, "--namespace", namespace).CombinedOutput()
+	output, err := exec.Command("helm", "template", component.Name, chartPath, "--values", absOverriddenPath, "--namespace", namespace).CombinedOutput()
 	if err != nil {
 		logger.Error(fmt.Sprintf("helm template failed with:\n%s: %s", err, output))
 		return "", err
@@ -286,10 +285,13 @@ var hd = helmDownloader{}
 // places it in `into`. If `version` is blank, latest is automatically fetched.
 // -- `into` will be the dir containing Chart.yaml
 // The function will first look to leverage an existing Helm repo from the
-// repository file at $HELM_HOME/repositories.yaml.  If it fails to find
+// repository file at $HELM_REPOSITORY_CONFIG. If it fails to find
 // a repo there, it will add a temporary helm repo, fetch from it, and then remove
-// the temporary repo. This is a to get around a limitation in Helm 2.
+// the temporary repo. This was originally designed to get around a limitation
+// in Helm 2.
 // see: https://github.com/helm/helm/issues/4527
+// Now that Fabrikate uses Helm 3, downloading the chart before running
+// "helm template" is not necessary, so this approach could be redesigned in the future.
 func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
 	repoName, err := getRepoName(repo)
 	if err != nil {
@@ -321,7 +323,11 @@ func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err 
 
 	// Fetch chart to random temp dir
 	chartName := fmt.Sprintf("%s/%s", repoName, chart)
-	randomDir := path.Join(os.TempDir(), repoName)
+	randomDir, err := ioutil.TempDir("", repoName)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(randomDir)
 	downloadVersion := "latest"
 	if version != "" {
 		downloadVersion = version
@@ -363,8 +369,8 @@ func updateHelmChartDep(chartPath string) (err error) {
 		Condition  string
 	}
 
-	// Contents of requirements.yaml for a helm chart
-	type helmRequirements struct {
+	// Contents of requirements.yaml or dependencies in Chart.yaml
+	type helmDependencies struct {
 		Dependencies []helmDependency
 	}
 
@@ -377,24 +383,29 @@ func updateHelmChartDep(chartPath string) (err error) {
 		absChartPath = asAbs
 	}
 
-	// Parse chart dependency repositories and add them if not present
-	requirementsYamlPath := path.Join(absChartPath, "requirements.yaml")
+	// Parse chart dependency repositories and add them if not present.
+	// For both api versions v1 and v2, if requirements.yaml has dependencies
+	// Chart.yaml's dependencies will be ignored.
+	dependenciesYamlPath := path.Join(absChartPath, "requirements.yaml")
+	if _, err := os.Stat(dependenciesYamlPath); err != nil {
+		dependenciesYamlPath = path.Join(absChartPath, "Chart.yaml")
+	}
 	addedDepRepoList := []string{}
-	if _, err := os.Stat(requirementsYamlPath); err == nil {
-		logger.Info(fmt.Sprintf("requirements.yaml found at '%s', ensuring repositories exist on helm client", requirementsYamlPath))
+	if _, err := os.Stat(dependenciesYamlPath); err == nil {
+		logger.Info(fmt.Sprintf("'%s' found at '%s', ensuring repositories exist on helm client", filepath.Base(dependenciesYamlPath), dependenciesYamlPath))
 
-		bytes, err := ioutil.ReadFile(requirementsYamlPath)
+		bytes, err := ioutil.ReadFile(dependenciesYamlPath)
 		if err != nil {
 			return err
 		}
 
-		requirementsYaml := helmRequirements{}
-		if err = yaml.Unmarshal(bytes, &requirementsYaml); err != nil {
+		dependenciesYaml := helmDependencies{}
+		if err = yaml.Unmarshal(bytes, &dependenciesYaml); err != nil {
 			return err
 		}
 
 		// Add each dependency repo with a temp name
-		for _, dep := range requirementsYaml.Dependencies {
+		for _, dep := range dependenciesYaml.Dependencies {
 			currentRepo, err := getRepoName(dep.Repository)
 			if err == nil {
 				logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
@@ -425,16 +436,9 @@ func updateHelmChartDep(chartPath string) (err error) {
 		}
 	}
 
-	// Update dependencies -- Attempt twice; may fail the first time if running on
-	// a newly initialized ~/.helm directory because `helm serve` is typically
-	// not running and helm will attempt to fetch/cache all helm repositories
-	// during first run
 	logger.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
 	if _, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-		if attempt2, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-			logger.Warn(emoji.Sprintf(":no_entry_sign: Updating chart dependencies failed for chart in '%s'; run `helm dependency update %s` for more error details.\n%s: %s", absChartPath, absChartPath, err, attempt2))
-			return err
-		}
+		return err
 	}
 
 	// Cleanup temp dependency repositories
@@ -455,19 +459,15 @@ func updateHelmChartDep(chartPath string) (err error) {
 // getRepoName returns the repo name for the provided url
 func getRepoName(url string) (string, error) {
 	logger.Info(emoji.Sprintf(":eyes: Looking for repo %v", url))
-	helmHome := os.Getenv(environment.HomeEnvVar)
-	if helmHome == "" {
-		helmHome = environment.DefaultHelmHome
-	}
-	a := helmpath.Home(helmHome)
-	f, err := repo.LoadRepositoriesFile(a.RepositoryFile())
+	helmEnvs := cli.New()
+	repoConfig := helmEnvs.RepositoryConfig
+	f, err := repo.LoadFile(repoConfig)
 	if err != nil {
 		return "", err
 	}
 	if len(f.Repositories) == 0 {
 		return "", fmt.Errorf("no repositories to show")
 	}
-
 	for _, re := range f.Repositories {
 		if strings.EqualFold(re.URL, url) {
 			logger.Info(emoji.Sprintf(":green_heart: %v matches repo %v", url, re.Name))
