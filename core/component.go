@@ -338,12 +338,6 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 
 	// Enqueue the given component
 	enqueue := func(c Component) {
-		// Do not add to the queue if component or subcomponent is Disabled.
-		if c.Config.Disabled {
-			logger.Info(emoji.Sprintf(":prohibited: Component '%s' is disabled", c.Name))
-			return
-		}
-
 		// Increment working counter; MUST happen BEFORE sending to queue or race condition can occur
 		walking.Add(1)
 		logger.Debug(fmt.Sprintf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", c.Name, c.PhysicalPath, c.LogicalPath))
@@ -400,6 +394,12 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 
 					if err = subcomponent.applyDefaultsAndMigrations(); err != nil {
 						results <- WalkResult{Error: err}
+					}
+
+					// Do not add to the queue if component or subcomponent is Disabled.
+					if subcomponent.Config.Disabled {
+						logger.Info(emoji.Sprintf(":prohibited: Subcomponent '%s' is disabled", subcomponent.Name))
+						continue
 					}
 
 					// Depending if the subcomponent is inlined or not; prepare the component to either load
