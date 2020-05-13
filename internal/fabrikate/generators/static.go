@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/core"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/fabrikate/core"
+	"github.com/microsoft/fabrikate/pkg/logger"
 )
 
 // StaticGenerator uses a static directory of resource manifests to create a rolled up multi-part manifest.

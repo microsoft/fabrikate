@@ -1,10 +1,10 @@
-package cmd
+package commands
 
 import (
 	"os"
 	"testing"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/fabrikate/core"
 	"github.com/stretchr/testify/assert"
 )
 

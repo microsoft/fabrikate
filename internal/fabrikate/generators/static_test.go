@@ -3,7 +3,7 @@ package generators
 import (
 	"testing"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/fabrikate/core"
 	"github.com/stretchr/testify/assert"
 )
 

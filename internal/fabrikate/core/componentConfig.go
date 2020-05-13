@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/pkg/encoding/yaml"
+	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/timfpark/conjungo"
-	yaml "github.com/timfpark/yaml"
 )
 
 // ComponentConfig documentation: https://github.com/microsoft/fabrikate/blob/master/docs/config.md

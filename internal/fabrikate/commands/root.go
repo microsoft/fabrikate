@@ -1,10 +1,10 @@
-package cmd
+package commands
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

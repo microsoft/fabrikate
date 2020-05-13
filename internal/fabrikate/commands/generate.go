@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"fmt"
@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/core"
-	"github.com/microsoft/fabrikate/generators"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/fabrikate/generators"
+	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/spf13/cobra"
 )
 

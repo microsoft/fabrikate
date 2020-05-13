@@ -1,4 +1,4 @@
-package core
+package git
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/otiai10/copy"
 )
 

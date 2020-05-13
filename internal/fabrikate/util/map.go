@@ -23,37 +23,37 @@ func CopyMap(m map[string]interface{}) map[string]interface{} {
 // This is done immutably; Neither input maps are modified and a deep copy of the original is created, modified, and returned.
 func MergeMap(originalMap map[string]interface{}, newValues map[string]interface{}) map[string]interface{} {
 	// Deep copy the original input map
-	copy := CopyMap(originalMap)
+	copyMap := CopyMap(originalMap)
 
 	for k, v := range newValues {
 		// If the original and new values are maps, recursively set the original to a setMap of both values
-		originalNestedMap, originalValueIsMap := copy[k].(map[string]interface{})
+		originalNestedMap, originalValueIsMap := copyMap[k].(map[string]interface{})
 		newNestedMap, newValueIsMap := v.(map[string]interface{})
 
 		if originalValueIsMap && newValueIsMap {
-			copy[k] = MergeMap(originalNestedMap, newNestedMap)
+			copyMap[k] = MergeMap(originalNestedMap, newNestedMap)
 		} else {
-			copy[k] = v
+			copyMap[k] = v
 		}
 	}
 
-	return copy
+	return copyMap
 }
 
-// FlattenMap will flatten a map of maps to a flat map with keys being seperated by `keySeperator`
+// FlattenMap will flatten a map of maps to a flat map with keys being separated by `keySeparator`
 // This is an immutable function, the original map is not modified and a new map is returned
-func FlattenMap(nestedMap map[string]interface{}, keySeperator string, parentKeys []string) map[string]interface{} {
+func FlattenMap(nestedMap map[string]interface{}, keySeparator string, parentKeys []string) map[string]interface{} {
 	flattened := make(map[string]interface{})
 
 	for k, v := range nestedMap {
 		nestedMap, valueIsMap := v.(map[string]interface{})
 		if valueIsMap {
-			flattenedNestedMap := FlattenMap(nestedMap, keySeperator, append(parentKeys, k))
+			flattenedNestedMap := FlattenMap(nestedMap, keySeparator, append(parentKeys, k))
 			for nk, nv := range flattenedNestedMap {
 				flattened[nk] = nv
 			}
 		} else {
-			flattenedKey := strings.Join(append(parentKeys, k), keySeperator)
+			flattenedKey := strings.Join(append(parentKeys, k), keySeparator)
 			flattened[flattenedKey] = v
 		}
 	}

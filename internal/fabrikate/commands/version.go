@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package commands
 
 import (
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/spf13/cobra"
 )
 

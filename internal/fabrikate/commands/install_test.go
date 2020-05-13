@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"io/ioutil"
@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/microsoft/fabrikate/util"
+	"github.com/microsoft/fabrikate/internal/fabrikate/util"
+	"github.com/microsoft/fabrikate/pkg/encoding/yaml"
 	"github.com/stretchr/testify/assert"
-	"github.com/timfpark/yaml"
 )
 
 func TestInstallJSON(t *testing.T) {

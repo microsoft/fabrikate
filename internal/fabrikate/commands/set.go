@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"encoding/csv"
@@ -7,10 +7,10 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/microsoft/fabrikate/core"
-	"github.com/microsoft/fabrikate/util"
+	"github.com/microsoft/fabrikate/internal/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/fabrikate/util"
+	"github.com/microsoft/fabrikate/pkg/encoding/yaml"
 	"github.com/spf13/cobra"
-	"github.com/timfpark/yaml"
 )
 
 // SplitPathValuePairs splits array of key/value pairs and returns array of path value pairs ([] PathValuePair) //
@@ -18,7 +18,7 @@ func SplitPathValuePairs(pathValuePairStrings []string) (pathValuePairs []core.P
 	for _, pathValuePairString := range pathValuePairStrings {
 		pathValuePairParts := strings.Split(pathValuePairString, "=")
 
-		errMessage := "%s is not a properly formated configuration key/value pair"
+		errMessage := "%s is not a properly formatted configuration key/value pair"
 
 		if len(pathValuePairParts) != 2 {
 			return pathValuePairs, fmt.Errorf(errMessage, pathValuePairString)
@@ -44,22 +44,22 @@ func SplitPathValuePairs(pathValuePairStrings []string) (pathValuePairs []core.P
 // SplitPathParts splits path string at . while ignoring string literals enclosed in quotes (".") and returns an array //
 func SplitPathParts(path string) (pathParts []string, err error) {
 
-	csv := csv.NewReader(strings.NewReader(path))
+	reader := csv.NewReader(strings.NewReader(path))
 
 	// Comma is the field delimiter. Dot (.) will be the value for config key
-	csv.Comma = '.'
+	reader.Comma = '.'
 
 	// setting it to true, a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field.
-	csv.LazyQuotes = true
+	reader.LazyQuotes = true
 
 	// FieldsPerRecord is the number of expected fields per record.
 	// > 0: Read requires each record to have the given number of fields.
 	// == 0, Read sets it to the number of fields in the first record, so that future records must have the same field count.
 	// < 0, no check is made and config key may have a variable number of fields.
-	csv.FieldsPerRecord = -1
+	reader.FieldsPerRecord = -1
 
 	// Read parts and the error
-	parts, err := csv.Read()
+	parts, err := reader.Read()
 
 	// return err and empty parts
 	if err != nil {

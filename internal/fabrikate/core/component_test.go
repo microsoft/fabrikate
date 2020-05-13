@@ -98,7 +98,7 @@ func TestUpdateRootComponentPath(t *testing.T) {
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
 
-	rootInit := func (startPath string, environments []string, c Component) (component Component, err error) {
+	rootInit := func(startPath string, environments []string, c Component) (component Component, err error) {
 		return c, nil
 	}
 

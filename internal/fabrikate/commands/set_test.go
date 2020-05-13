@@ -1,12 +1,12 @@
-package cmd
+package commands
 
 import (
 	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/microsoft/fabrikate/pkg/encoding/yaml"
 	"github.com/stretchr/testify/assert"
-	"github.com/timfpark/yaml"
 )
 
 func TestSetValue(t *testing.T) {

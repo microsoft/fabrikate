@@ -1,11 +1,11 @@
-package cmd
+package commands
 
 import (
 	"errors"
 	"os"
 	"strings"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/fabrikate/core"
 	"github.com/spf13/cobra"
 )
 
