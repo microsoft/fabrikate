@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/microsoft/fabrikate/internal/fabrikate/util"
+	"github.com/microsoft/fabrikate/internal/util"
 	"github.com/microsoft/fabrikate/pkg/encoding/yaml"
 	"github.com/stretchr/testify/assert"
 )

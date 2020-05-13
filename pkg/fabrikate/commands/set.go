@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/microsoft/fabrikate/internal/fabrikate/core"
-	"github.com/microsoft/fabrikate/internal/fabrikate/util"
+	"github.com/microsoft/fabrikate/internal/util"
 	"github.com/microsoft/fabrikate/pkg/encoding/yaml"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/core"
 	"github.com/spf13/cobra"
 )
 
@@ -75,7 +75,7 @@ func SplitPathParts(path string) (pathParts []string, err error) {
 // writing the result out to disk at the end.
 func Set(environment string, subcomponent string, pathValuePairStrings []string, noNewConfigKeys bool, inputFile string) (err error) {
 
-	subcomponentPath := []string{}
+	var subcomponentPath []string
 	if len(subcomponent) > 0 {
 		subcomponentPath = strings.Split(subcomponent, ".")
 	}
@@ -83,7 +83,7 @@ func Set(environment string, subcomponent string, pathValuePairStrings []string,
 	componentConfig := core.NewComponentConfig(".")
 
 	// Load input file if provided
-	inputFileValuePairList := []string{}
+	var inputFileValuePairList []string
 	if inputFile != "" {
 		bytes, err := ioutil.ReadFile(inputFile)
 		if err != nil {

@@ -9,15 +9,18 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/internal/fabrikate/core"
-	"github.com/microsoft/fabrikate/internal/fabrikate/generators"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/core"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/generators"
 	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
 func writeGeneratedManifests(generationPath string, components []core.Component) (err error) {
 	// Delete the old version, so we don't end up with a mishmash of two builds.
-	os.RemoveAll(generationPath)
+	if err := os.RemoveAll(generationPath); err != nil {
+		logger.Error(err)
+		return fmt.Errorf("error removing previous generation files at '%s'", generationPath)
+	}
 
 	for _, component := range components {
 		componentGenerationPath := path.Join(generationPath, component.LogicalPath)
@@ -97,10 +100,7 @@ func Generate(startPath string, environments []string, validate bool) (component
 		}
 	}
 
-	if err == nil {
-		logger.Info(emoji.Sprintf(":raised_hands: Finished generate"))
-	}
-
+	logger.Info(emoji.Sprintf(":raised_hands: Finished generate"))
 	return components, err
 }
 

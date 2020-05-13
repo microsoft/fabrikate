@@ -16,57 +16,57 @@ import (
 )
 
 // A future like struct to hold the result of git clone
-type gitCloneResult struct {
+type cloneResult struct {
 	ClonePath string // The abs path in os.TempDir() where the the item was cloned to
 	Error     error  // An error which occurred during the clone
 	mu        sync.RWMutex
 }
 
 // Mutex safe getter
-func (result *gitCloneResult) get() string {
+func (result *cloneResult) get() string {
 	result.mu.RLock()
 	clonePath := result.ClonePath
 	result.mu.RUnlock()
 	return clonePath
 }
 
-// R/W safe map of {[cacheToken]: gitCloneResult}
-type gitCache struct {
+// R/W safe map of {[cacheToken]: cloneResult}
+type cacheMap struct {
 	mu    sync.RWMutex
-	cache map[string]*gitCloneResult
+	cache map[string]*cloneResult
 }
 
 // Mutex safe getter
-func (cache *gitCache) get(cacheToken string) (*gitCloneResult, bool) {
-	cache.mu.RLock()
-	value, ok := cache.cache[cacheToken]
-	cache.mu.RUnlock()
+func (c *cacheMap) get(cacheToken string) (*cloneResult, bool) {
+	c.mu.RLock()
+	value, ok := c.cache[cacheToken]
+	c.mu.RUnlock()
 	return value, ok
 }
 
 // Mutex safe setter
-func (cache *gitCache) set(cacheToken string, cloneResult *gitCloneResult) {
-	cache.mu.Lock()
-	cache.cache[cacheToken] = cloneResult
-	cache.mu.Unlock()
+func (c *cacheMap) set(token string, result *cloneResult) {
+	c.mu.Lock()
+	c.cache[token] = result
+	c.mu.Unlock()
 }
 
 // Thread safe store of {[gitRepo]: token}
-type gitAccessTokenMap struct {
+type accessTokenMap struct {
 	mu     sync.RWMutex
 	tokens map[string]string
 }
 
 // Get is a thread safe getter to do a map lookup in a getAccessTokens
-func (t *gitAccessTokenMap) Get(repo string) (string, bool) {
+func (t *accessTokenMap) Get(repo string) (string, bool) {
 	t.mu.RLock()
 	token, exists := t.tokens[repo]
 	t.mu.RUnlock()
 	return token, exists
 }
 
-// Set is a thread safe setter method to modify a gitAccessTokenMap
-func (t *gitAccessTokenMap) Set(repo, token string) {
+// Set is a thread safe setter method to modify a accessTokenMap
+func (t *accessTokenMap) Set(repo, token string) {
 	t.mu.Lock()
 	t.tokens[repo] = token
 	t.mu.Unlock()
@@ -84,52 +84,52 @@ func cacheKey(repo, branch, commit string) string {
 	return fmt.Sprintf("%v@%v:%v", repo, branch, commit)
 }
 
-// cache is a global git map cache of {[cacheKey]: gitCloneResult}
-var cache = gitCache{
-	cache: map[string]*gitCloneResult{},
+// cache is a global git map cache of {[cacheKey]: cloneResult}
+var cache = cacheMap{
+	cache: map[string]*cloneResult{},
 }
 
 // GitAccessTokens is a thread-safe global store of Personal Access Tokens which
 // is used to store PATs as they are discovered throughout the Install lifecycle
-var GitAccessTokens = gitAccessTokenMap{
+var AccessTokens = accessTokenMap{
 	tokens: map[string]string{},
 }
 
 // cloneRepo clones a target git repository into the hosts temporary directory
-// and returns a gitCloneResult pointing to that location on filesystem
-func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan *gitCloneResult {
-	cloneResultChan := make(chan *gitCloneResult)
+// and returns a cloneResult pointing to that location on filesystem
+func (c *cacheMap) cloneRepo(repo string, commit string, branch string) chan *cloneResult {
+	cloneResultChan := make(chan *cloneResult)
 
 	go func() {
 		cacheToken := cacheKey(repo, branch, commit)
 
 		// Check if the repo is cloned/being-cloned
-		if cloneResult, ok := cache.get(cacheToken); ok {
+		if cloneResult, ok := c.get(cacheToken); ok {
 			logger.Info(emoji.Sprintf(":atm: Previously cloned '%s' this install; reusing cached result", cacheToken))
 			cloneResultChan <- cloneResult
 			close(cloneResultChan)
 			return
 		}
 
-		// Add the clone future to cache
-		cloneResult := gitCloneResult{}
-		cloneResult.mu.Lock() // lock the future
+		// Add the clone future to c
+		result := cloneResult{}
+		result.mu.Lock() // lock the future
 		defer func() {
-			cloneResult.mu.Unlock() // ensure the lock is released
+			result.mu.Unlock() // ensure the lock is released
 			close(cloneResultChan)
 		}()
-		cache.set(cacheToken, &cloneResult) // store future in cache
+		c.set(cacheToken, &result) // store future in c
 
 		// Default options for a clone
-		cloneCommandArgs := []string{"clone"}
+		cloneCmdArgs := []string{"clone"}
 
 		// check for access token and append to repo if present
-		if token, exists := GitAccessTokens.Get(repo); exists {
+		if token, exists := AccessTokens.Get(repo); exists {
 			// Only match when the repo string does not contain a an access token already
 			// "(https?)://(?!(.+:)?.+@)(.+)" would be preferred but go does not support negative lookahead
 			pattern, err := regexp.Compile("^(https?)://([^@]+@)?(.+)$")
 			if err != nil {
-				cloneResultChan <- &gitCloneResult{Error: err}
+				cloneResultChan <- &cloneResult{Error: err}
 				return
 			}
 			// If match is found, inject the access token into the repo string
@@ -142,12 +142,12 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		}
 
 		// Add repo to clone args
-		cloneCommandArgs = append(cloneCommandArgs, repo)
+		cloneCmdArgs = append(cloneCmdArgs, repo)
 
 		// Only fetch latest commit if commit not provided
 		if len(commit) == 0 {
 			logger.Info(emoji.Sprintf(":helicopter: Component requested latest commit: fast cloning at --depth 1"))
-			cloneCommandArgs = append(cloneCommandArgs, "--depth", "1")
+			cloneCmdArgs = append(cloneCmdArgs, "--depth", "1")
 		} else {
 			logger.Info(emoji.Sprintf(":helicopter: Component requested commit '%s': need full clone", commit))
 		}
@@ -155,25 +155,25 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		// Add branch reference option if provided
 		if len(branch) != 0 {
 			logger.Info(emoji.Sprintf(":helicopter: Component requested branch '%s'", branch))
-			cloneCommandArgs = append(cloneCommandArgs, "--branch", branch)
+			cloneCmdArgs = append(cloneCmdArgs, "--branch", branch)
 		}
 
 		// Clone into a random path in the host temp dir
 		randomFolderName, err := uuid.NewRandom()
 		if err != nil {
-			cloneResultChan <- &gitCloneResult{Error: err}
+			cloneResultChan <- &cloneResult{Error: err}
 			return
 		}
 		clonePathOnFS := path.Join(os.TempDir(), randomFolderName.String())
 		logger.Info(emoji.Sprintf(":helicopter: Cloning %s => %s", cacheToken, clonePathOnFS))
-		cloneCommandArgs = append(cloneCommandArgs, clonePathOnFS)
-		cloneCommand := exec.Command("git", cloneCommandArgs...)
-		cloneCommand.Env = append(cloneCommand.Env, os.Environ()...)         // pass all env variables to git command so proper SSH config is passed if needed
-		cloneCommand.Env = append(cloneCommand.Env, "GIT_TERMINAL_PROMPT=0") // tell git to fail if it asks for credentials
+		cloneCmdArgs = append(cloneCmdArgs, clonePathOnFS)
+		cloneCmd := exec.Command("git", cloneCmdArgs...)
+		cloneCmd.Env = append(cloneCmd.Env, os.Environ()...)         // pass all env variables to git command so proper SSH config is passed if needed
+		cloneCmd.Env = append(cloneCmd.Env, "GIT_TERMINAL_PROMPT=0") // tell git to fail if it asks for credentials
 
-		if output, err := cloneCommand.CombinedOutput(); err != nil {
+		if output, err := cloneCmd.CombinedOutput(); err != nil {
 			logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred while cloning: '%s'\n%s: %s", cacheToken, err, output))
-			cloneResultChan <- &gitCloneResult{Error: err}
+			cloneResultChan <- &cloneResult{Error: err}
 			return
 		}
 
@@ -184,29 +184,24 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 			checkoutCommit.Dir = clonePathOnFS
 			if output, err := checkoutCommit.CombinedOutput(); err != nil {
 				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred checking out commit '%s' from repo '%s'\n%s: %s", commit, repo, err, output))
-				cloneResultChan <- &gitCloneResult{Error: err}
+				cloneResultChan <- &cloneResult{Error: err}
 				return
 			}
 		}
 
-		// Save the gitCloneResult into cache
-		cloneResult.ClonePath = clonePathOnFS
+		// Save the cloneResult into c
+		result.ClonePath = clonePathOnFS
 
 		// Push the cached result to the channel
-		cloneResultChan <- &cloneResult
+		cloneResultChan <- &result
 	}()
 
 	return cloneResultChan
 }
 
-type git struct{}
-
-// Git is function wrapper to expose host git functionality
-var Git = git{}
-
-// CloneRepo is a helper func to centralize cloning a repository with the spec
+// Clone is a helper func to centralize cloning a repository with the spec
 // provided by its arguments.
-func (g git) CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
+func Clone(repo string, commit string, intoPath string, branch string) (err error) {
 	// Clone and get the location of where it was cloned to in tmp
 	result := <-cache.cloneRepo(repo, commit, branch)
 	clonePath := result.get()
@@ -232,9 +227,9 @@ func (g git) CloneRepo(repo string, commit string, intoPath string, branch strin
 	return err
 }
 
-// CleanGitCache deletes all temporary folders created as temporary cache for
+// CleanCache deletes all temporary folders created as temporary cache for
 // git clones.
-func (g git) CleanGitCache() (err error) {
+func CleanCache() (err error) {
 	logger.Info(emoji.Sprintf(":bomb: Cleaning up git cache..."))
 	cache.mu.Lock()
 	for key, value := range cache.cache {

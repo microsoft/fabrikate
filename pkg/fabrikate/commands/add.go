@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/internal/fabrikate/core"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/core"
 	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/spf13/cobra"
 )

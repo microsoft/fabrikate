@@ -27,7 +27,7 @@ func TestGetFabrikateComponents(t *testing.T) {
 }
 
 func TestGetFabrikateComponentsEmpty(t *testing.T) {
-	githubCodeResults := []github.CodeResult{}
+	var githubCodeResults []github.CodeResult
 
 	components := GetFabrikateComponents(githubCodeResults)
 	assert.Equal(t, 0, len(components))

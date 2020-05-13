@@ -6,8 +6,8 @@ import (
 	"os/exec"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/internal/fabrikate/core"
-	"github.com/microsoft/fabrikate/internal/fabrikate/generators"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/core"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/generators"
 	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/spf13/cobra"
 )
@@ -55,8 +55,8 @@ func Install(path string) (err error) {
 			return err
 		} else if len(accessTokens) > 0 {
 			for repo, token := range accessTokens {
-				if _, exists := git.GitAccessTokens.Get(repo); !exists {
-					git.GitAccessTokens.Set(repo, token)
+				if _, exists := git.AccessTokens.Get(repo); !exists {
+					git.AccessTokens.Set(repo, token)
 				}
 			}
 		}

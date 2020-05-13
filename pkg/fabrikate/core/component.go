@@ -216,7 +216,7 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 			}
 
 			logger.Info(emoji.Sprintf(":helicopter: Installing component '%s' with git from '%s'", c.Name, c.Source))
-			if err = git.Git.CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
+			if err = git.Clone(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
 				return err
 			}
 			return nil

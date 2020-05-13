@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/internal/fabrikate/core"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/core"
 	"github.com/microsoft/fabrikate/pkg/logger"
 )
 
@@ -78,7 +78,12 @@ func (sg *StaticGenerator) Install(c *core.Component) (err error) {
 		if err != nil {
 			return err
 		}
-		defer response.Body.Close()
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				logger.Error(err)
+				logger.Error("error closing HTTP body after fetching '%s' for component '%s'", c.Source, c.Name)
+			}
+		}()
 
 		componentsPath := path.Join(c.PhysicalPath, "components", c.Name)
 		if err := os.MkdirAll(componentsPath, 0777); err != nil {
@@ -86,12 +91,18 @@ func (sg *StaticGenerator) Install(c *core.Component) (err error) {
 		}
 
 		// Write the downloaded resource manifest file
-		out, err := os.Create(path.Join(componentsPath, c.Name+".yaml"))
+		staticPath := path.Join(componentsPath, c.Name+".yaml")
+		out, err := os.Create(staticPath)
 		if err != nil {
 			logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in install for component '%s'\nError: %s", c.Name, err))
 			return err
 		}
-		defer out.Close()
+		defer func() {
+			if err := out.Close(); err != nil {
+				logger.Error(err)
+				logger.Error("error closing file '%s' after installing static component '%s'", staticPath, c.Name)
+			}
+		}()
 
 		if _, err = io.Copy(out, response.Body); err != nil {
 			logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in writing manifest file for component '%s'\nError: %s", c.Name, err))

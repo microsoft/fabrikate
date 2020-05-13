@@ -45,7 +45,7 @@ func GetFabrikateComponents(codeResults []github.CodeResult) []string {
 		return []string{}
 	}
 
-	components := []string{}
+	var components []string
 	uniqueComponents := map[string]bool{}
 
 	for _, result := range codeResults {

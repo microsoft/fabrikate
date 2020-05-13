@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/microsoft/fabrikate/internal/fabrikate/commands"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/commands"
 )
 
 func main() {

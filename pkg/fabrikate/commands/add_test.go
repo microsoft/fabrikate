@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/microsoft/fabrikate/internal/fabrikate/core"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/core"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -15,8 +15,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/internal/fabrikate/core"
 	"github.com/microsoft/fabrikate/pkg/encoding/yaml"
+	"github.com/microsoft/fabrikate/pkg/fabrikate/core"
 	"github.com/microsoft/fabrikate/pkg/logger"
 	"github.com/otiai10/copy"
 
@@ -166,7 +166,12 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 	overriddenValuesFileName := fmt.Sprintf("%s.yaml", randomString.String())
 	absOverriddenPath := path.Join(os.TempDir(), overriddenValuesFileName)
-	defer os.Remove(absOverriddenPath)
+	defer func() {
+		if err := os.Remove(absOverriddenPath); err != nil {
+			logger.Error(err)
+			logger.Error(fmt.Errorf("error cleaning tempory helm directory '%s'", absOverriddenPath))
+		}
+	}()
 
 	logger.Debug(emoji.Sprintf(":pencil: Writing config %s to %s\n", configYaml, absOverriddenPath))
 	if err = ioutil.WriteFile(absOverriddenPath, configYaml, 0777); err != nil {
@@ -253,7 +258,7 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 		case "git":
 			// Clone whole repo into helm repo path
 			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart in path '%s' from git repository '%s'", c.Name, c.Source, c.PhysicalPath))
-			if err = git.Git.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
+			if err = git.Clone(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
 				return err
 			}
 			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart in the case of `method: helm`
@@ -328,7 +333,12 @@ func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err 
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(randomDir)
+	defer func() {
+		if err := os.RemoveAll(randomDir); err != nil {
+			logger.Error(err)
+			logger.Error(fmt.Errorf("error cleaning tmp helm chart download dir '%s'", randomDir))
+		}
+	}()
 	downloadVersion := "latest"
 	if version != "" {
 		downloadVersion = version
@@ -391,7 +401,7 @@ func updateHelmChartDep(chartPath string) (err error) {
 	if _, err := os.Stat(dependenciesYamlPath); err != nil {
 		dependenciesYamlPath = path.Join(absChartPath, "Chart.yaml")
 	}
-	addedDepRepoList := []string{}
+	var addedDepRepoList []string
 	if _, err := os.Stat(dependenciesYamlPath); err == nil {
 		logger.Info(fmt.Sprintf("'%s' found at '%s', ensuring repositories exist on helm client", filepath.Base(dependenciesYamlPath), dependenciesYamlPath))
 
@@ -405,16 +415,16 @@ func updateHelmChartDep(chartPath string) (err error) {
 			return err
 		}
 
-		// Add each dependency repo with a temp name
+		// Add each dependency helmRepo with a temp name
 		for _, dep := range dependenciesYaml.Dependencies {
 			currentRepo, err := getRepoName(dep.Repository)
 			if err == nil {
-				logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
+				logger.Info(emoji.Sprintf(":pencil: Helm dependency helmRepo already present: %v", currentRepo))
 				continue
 			}
 
 			if !strings.HasPrefix(dep.Repository, "http") {
-				logger.Info(emoji.Sprintf(":pencil: Skipping non-http helm dependency repo. Found '%v'", dep.Repository))
+				logger.Info(emoji.Sprintf(":pencil: Skipping non-http helm dependency helmRepo. Found '%v'", dep.Repository))
 				continue
 			}
 
@@ -426,7 +436,7 @@ func updateHelmChartDep(chartPath string) (err error) {
 
 			randomRepoName := randomUUID.String()
 			hd.mu.Lock()
-			if output, err := exec.Command("helm", "repo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
+			if output, err := exec.Command("helm", "helmRepo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
 				hd.mu.Unlock()
 				logger.Error(emoji.Sprintf(":no_entry_sign: Failed to add helm dependency repository '%s' for chart '%s':\n%s", dep.Repository, chartPath, output))
 				return err
@@ -443,10 +453,10 @@ func updateHelmChartDep(chartPath string) (err error) {
 	}
 
 	// Cleanup temp dependency repositories
-	for _, repo := range addedDepRepoList {
-		logger.Info(emoji.Sprintf(":bomb: Removing dependency repository '%s'", repo))
+	for _, helmRepo := range addedDepRepoList {
+		logger.Info(emoji.Sprintf(":bomb: Removing dependency repository '%s'", helmRepo))
 		hd.mu.Lock()
-		if output, err := exec.Command("helm", "repo", "remove", repo).CombinedOutput(); err != nil {
+		if output, err := exec.Command("helm", "helmRepo", "remove", helmRepo).CombinedOutput(); err != nil {
 			hd.mu.Unlock()
 			logger.Error(output)
 			return err
@@ -475,5 +485,5 @@ func getRepoName(url string) (string, error) {
 			return re.Name, nil
 		}
 	}
-	return "", fmt.Errorf("No repository found for %v", url)
+	return "", fmt.Errorf("no repository found for %v", url)
 }
