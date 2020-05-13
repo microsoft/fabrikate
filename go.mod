@@ -1,6 +1,6 @@
 module github.com/microsoft/fabrikate
 
-go 1.12
+go 1.14
 
 require (
 	github.com/google/go-github/v28 v28.0.1
