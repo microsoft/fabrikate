@@ -81,7 +81,7 @@ func (sg *StaticGenerator) Install(c *core.Component) (err error) {
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				logger.Error(err)
-				logger.Error("error closing HTTP body after fetching '%s' for component '%s'", c.Source, c.Name)
+				logger.Error(fmt.Errorf("error closing HTTP body after fetching '%s' for component '%s'", c.Source, c.Name))
 			}
 		}()
 
@@ -100,7 +100,7 @@ func (sg *StaticGenerator) Install(c *core.Component) (err error) {
 		defer func() {
 			if err := out.Close(); err != nil {
 				logger.Error(err)
-				logger.Error("error closing file '%s' after installing static component '%s'", staticPath, c.Name)
+				logger.Error(fmt.Errorf("error closing file '%s' after installing static component '%s'", staticPath, c.Name))
 			}
 		}()
 
