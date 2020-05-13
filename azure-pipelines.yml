@@ -11,10 +11,9 @@ pool:
 
 variables:
   GOBIN: "$(GOPATH)/bin" # Go binaries path
-  GOROOT: "/usr/local/go1.13" # Go installation path
+  GOROOT: "/usr/local/go1.14" # Go installation path
   GOPATH: "$(system.defaultWorkingDirectory)/gopath" # Go workspace path
   modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)" # Path to the module's code
-  GO111MODULE: "on"
   linterTimeout: "5m"
 
 steps:
@@ -43,15 +42,14 @@ steps:
     displayName: Install linter
 
   - script: |
-      scripts/build clean
-      go mod download
-    workingDirectory: "$(modulePath)"
-    displayName: "Get Go dependencies"
-
-  - script: |
       golangci-lint run --timeout $(linterTimeout)
     workingDirectory: "$(modulePath)"
     displayName: "Lint"
+
+  - script: |
+      go build -o fab cmd/fabrikate/main.go
+    workingDirectory: "$(modulePath)"
+    displayName: "Build"
 
   - script: |
       go test -v -race ./...
