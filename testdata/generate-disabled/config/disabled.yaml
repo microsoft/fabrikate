@@ -1,0 +1,11 @@
+subcomponents:
+  pod-info:
+    disabled: true
+    config:
+      env: local
+  mysql:
+    disabled: true
+    config:
+      env: local
+  bookinfo:
+    disabled: true

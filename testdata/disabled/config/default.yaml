@@ -1,0 +1,6 @@
+subcomponents:
+  elasticsearch:
+    config:
+      fod: rad
+      foo: rad
+      zoo: zaa

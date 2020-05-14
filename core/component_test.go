@@ -140,3 +140,36 @@ func TestWriteComponent(t *testing.T) {
 	err = component.Write()
 	assert.Nil(t, err)
 }
+
+func TestLoadDisabledComponentDefaultValue(t *testing.T) {
+	component := Component{
+		PhysicalPath: "../testdata/disabled",
+		LogicalPath:  "",
+	}
+
+	component, err := component.LoadComponent()
+	assert.Nil(t, err)
+
+	err = component.LoadConfig([]string{"default"})
+	assert.Nil(t, err)
+
+	assert.Equal(t, false, component.Config.Subcomponents["cloud-native"].Disabled)
+	assert.Equal(t, false, component.Config.Subcomponents["elasticsearch"].Disabled)
+
+}
+
+func TestLoadDisabledComponent(t *testing.T) {
+	component := Component{
+		PhysicalPath: "../testdata/disabled",
+		LogicalPath:  "",
+	}
+
+	component, err := component.LoadComponent()
+	assert.Nil(t, err)
+
+	err = component.LoadConfig([]string{"disabled"})
+	assert.Nil(t, err)
+
+	assert.Equal(t, true, component.Config.Subcomponents["cloud-native"].Disabled)
+	assert.Equal(t, true, component.Config.Subcomponents["elasticsearch"].Disabled)
+}
