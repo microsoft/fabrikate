@@ -9,6 +9,5 @@ subcomponents:
   path: "stable/grafana"
 - name: "prometheus"
   type: "helm"
-  source: "https://github.com/helm/charts"
-  method: "git"
-  path: "stable/prometheus"
+  method: "local"
+  path: "../local-charts/prometheus"

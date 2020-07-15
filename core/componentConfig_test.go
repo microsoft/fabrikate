@@ -142,3 +142,35 @@ func TestWriteJSON(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 132, len(configContents))
 }
+
+func TestDisabledDefault(t *testing.T) {
+	config := NewComponentConfig("../testdata/disabled")
+
+	err := config.Load("default")
+	assert.Nil(t, err)
+
+	cloudNativeSubcomponent := config.Subcomponents["cloud-native"]
+	elasticsearchSubcomponent := config.Subcomponents["elasticsearch"]
+
+	cloudNativeDisabled := cloudNativeSubcomponent.Disabled
+	assert.Equal(t, false, cloudNativeDisabled)
+
+	elasticsearchDisabled := elasticsearchSubcomponent.Disabled
+	assert.Equal(t, false, elasticsearchDisabled)
+}
+
+func TestDisabledTrue(t *testing.T) {
+	config := NewComponentConfig("../testdata/disabled")
+
+	err := config.Load("disabled")
+	assert.Nil(t, err)
+
+	cloudNativeSubcomponent := config.Subcomponents["cloud-native"]
+	elasticsearchSubcomponent := config.Subcomponents["elasticsearch"]
+
+	cloudNativeDisabled := cloudNativeSubcomponent.Disabled
+	assert.Equal(t, true, cloudNativeDisabled)
+
+	elasticsearchDisabled := elasticsearchSubcomponent.Disabled
+	assert.Equal(t, true, elasticsearchDisabled)
+}

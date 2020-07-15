@@ -86,3 +86,14 @@ subcomponents:
   istio-crd:
     namespace: istio-system
 ```
+
+### Disable subcomponents per environment
+
+It is possible to disable subcomponent per environment with a simple `disabled: true` in the
+environment config file
+
+```yaml
+subcomponents:
+  redis:
+    disabled: true
+```
