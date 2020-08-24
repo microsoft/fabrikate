@@ -18,17 +18,15 @@ variables:
   linterTimeout: "5m"
 
 steps:
-  - script: |
-      mkdir -p '$(GOBIN)'
-      mkdir -p '$(GOPATH)/pkg'
-      mkdir -p '$(modulePath)'
-      shopt -s extglob
-      shopt -s dotglob
-      mv !(gopath) '$(modulePath)'
-      echo '##vso[task.prependpath]$(GOBIN)'
-      echo '##vso[task.prependpath]$(GOROOT)/bin'
-      go version
-    displayName: "Set up Go workspace"
+  - task: GoTool@0
+    inputs:
+      version: '1.14.2'
+
+  - task: Go@0
+    inputs:
+      command: 'get'
+      arguments: '-d'
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
 
   - script: |
       HELM_URL=https://get.helm.sh
@@ -43,17 +41,25 @@ steps:
     displayName: Install linter
 
   - script: |
-      scripts/build clean
-      go mod download
-    workingDirectory: "$(modulePath)"
-    displayName: "Get Go dependencies"
-
-  - script: |
       golangci-lint run --timeout $(linterTimeout)
     workingDirectory: "$(modulePath)"
     displayName: "Lint"
-
-  - script: |
-      go test -v -race ./...
-    workingDirectory: "$(modulePath)"
-    displayName: "Test"
+ 
+ - task: Go@0
+    inputs:
+      command: 'build'
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
+      
+ - task: Go@0
+    inputs:
+    command: 'test'
+    arguments: '-v', '-race'
+    workingDirectory: '$(modulePath)'
+      
+  - task: CopyFiles@2
+    inputs:
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      
+  - task: PublishBuildArtifacts@1
+    inputs:
+      artifactName: drop
