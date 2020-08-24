@@ -17,7 +17,7 @@ func checkComponentLengthsAgainstExpected(t *testing.T, components []core.Compon
 }
 
 func TestGenerateJSON(t *testing.T) {
-	components, err := Generate("../testdata/generate", []string{"prod-east", "prod"}, false)
+	components, err := Generate("../testdata/generate", []string{"prod-east", "prod"}, false, false)
 
 	assert.Nil(t, err)
 
@@ -35,7 +35,7 @@ func TestGenerateJSON(t *testing.T) {
 }
 
 func TestGenerateYAML(t *testing.T) {
-	components, err := Generate("../testdata/generate-yaml", []string{"prod"}, false)
+	components, err := Generate("../testdata/generate-yaml", []string{"prod"}, false, false)
 
 	expectedLengths := map[string]int{
 		"prometheus-grafana": 125,
@@ -51,7 +51,7 @@ func TestGenerateYAML(t *testing.T) {
 }
 
 func TestGenerateStaticRemoteYAML(t *testing.T) {
-	components, err := Generate("../testdata/generate-remote-static", []string{"common"}, false)
+	components, err := Generate("../testdata/generate-remote-static", []string{"common"}, false, false)
 
 	expectedLengths := map[string]int{
 		"keyvault-flexvolume": 5,
@@ -65,13 +65,13 @@ func TestGenerateStaticRemoteYAML(t *testing.T) {
 }
 
 func TestGenerateWithHooks(t *testing.T) {
-	_, err := Generate("../testdata/generate-hooks", []string{"prod"}, false)
+	_, err := Generate("../testdata/generate-hooks", []string{"prod"}, false, false)
 
 	assert.Nil(t, err)
 }
 
 func TestGenerateDisabledSubcomponent(t *testing.T) {
-	components, err := Generate("../testdata/generate-disabled", []string{"disabled"}, false)
+	components, err := Generate("../testdata/generate-disabled", []string{"disabled"}, false, false)
 
 	expectedLengths := map[string]int{
 		"disabled-stack": 0,
