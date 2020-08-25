@@ -5,27 +5,28 @@ schedules:
       include:
         - master
     always: true
+
 pool:
   vmImage: "Ubuntu-16.04"
+
 variables:
-  # GOROOT: "/usr/local/go1.15" # Go installation path
-  # GOPATH: "$(system.defaultWorkingDirectory)/gopath" # Go workspace path
-  # modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)" # Path to the module's code
   linterTimeout: "5m"
+
 steps:
   # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/tool/go-tool
   - task: GoTool@0
     inputs:
       version: "1.15"
+
   - script: |
       curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.30.0
-    displayName: Install linter
-  - script: |
       ./bin/golangci-lint run --timeout $(linterTimeout)
     displayName: "Lint"
+
   - script: |
       scripts/build clean
     displayName: "Clean"
+
   - script: |
       HELM_URL=https://get.helm.sh
       HELM_TGZ=helm-v3.1.2-linux-amd64.tar.gz
@@ -33,6 +34,7 @@ steps:
       tar xzfv ${HELM_TGZ}
       PATH=`pwd`/linux-amd64/:$PATH
     displayName: "Install helm"
+
   - task: Go@0
     displayName: Test
     inputs:
