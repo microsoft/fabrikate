@@ -30,6 +30,7 @@ func Add(subcomponent core.Component) (err error) {
 
 		component = core.Component{
 			Name:          pathParts[len(pathParts)-1],
+			ComponentType: "component",
 			Serialization: "yaml",
 		}
 	}
