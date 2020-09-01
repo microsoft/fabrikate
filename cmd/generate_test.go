@@ -22,14 +22,11 @@ func TestGenerateJSON(t *testing.T) {
 	assert.Nil(t, err)
 
 	expectedLengths := map[string]int{
-		"elasticsearch":         14477,
-		"elasticsearch-curator": 2390,
-		"fluentd-elasticsearch": 20230,
-		"kibana":                1590,
+		"jaeger": 				26916,
 		"static":                188,
 	}
 
-	assert.Equal(t, 8, len(components))
+	assert.Equal(t, 4, len(components))
 
 	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
 }
