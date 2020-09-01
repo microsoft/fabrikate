@@ -60,11 +60,5 @@ func createKustomizationFile(generationPath string, components []core.Component)
 		return err
 	}
 
-	err = writeKustomizationFile(generationPath, kustomizationBytes)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return writeKustomizationFile(generationPath, kustomizationBytes)
 }
