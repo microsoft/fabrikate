@@ -21,6 +21,8 @@ const kustomizationFileName = "kustomization.yaml"
 const defaultKind = "Kustomization"
 const defaultAPIVersion = "kustomize.config.k8s.io/v1beta1"
 
+// setDefaultEmptyKustomization sets kustomization attributes to their default values
+// and k.Resources to an empty string slice
 func (k *kustomization) setDefaultEmptyKustomization() {
 	if k.Kind == "" {
 		k.Kind = defaultKind
@@ -33,6 +35,7 @@ func (k *kustomization) setDefaultEmptyKustomization() {
 	}
 }
 
+// addKustomizationResource appends a component to k.Resources
 func (k *kustomization) addKustomizationResource(component core.Component) {
 	componentYAMLFilename := fmt.Sprintf("%s.yaml", component.Name)
 	componentYAMLFilepath := path.Join(component.LogicalPath, componentYAMLFilename)
@@ -40,12 +43,15 @@ func (k *kustomization) addKustomizationResource(component core.Component) {
 	k.Resources = append(k.Resources, componentYAMLFilepath)
 }
 
+// writeKustomizationFile writes yaml kustomizationBytes to a file in the generationPath
 func writeKustomizationFile(generationPath string, kustomizationBytes []byte) (err error) {
 	kustomizationFile := path.Join(generationPath, kustomizationFileName)
 	logger.Info(emoji.Sprintf(":floppy_disk: Writing %s", kustomizationFile))
 	return ioutil.WriteFile(kustomizationFile, kustomizationBytes, 0644)
 }
 
+// createKustomizationFile is composed of the other functions in this file.
+// This is the only function that ought to be called outside this file.
 func createKustomizationFile(generationPath string, components []core.Component) (err error) {
 	kustomization := kustomization{}
 	kustomization.setDefaultEmptyKustomization()
