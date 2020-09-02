@@ -1,0 +1,9 @@
+config:
+subcomponents:
+  jaeger:
+    namespace: "jaeger"
+    injectNamespace: true
+    config:
+      collector:
+        annotations:
+          sidecar.istio.io/inject: "false"
