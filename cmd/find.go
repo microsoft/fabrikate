@@ -5,31 +5,32 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"github.com/spf13/cobra"
+
 	"github.com/google/go-github/v28/github"
+	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // FindComponent finds fabrikate components in the fabrikate-definitions repository that are related to the given keyword.
-func FindComponent(keyword string)(error){
+func FindComponent(keyword string) error {
 
 	client := github.NewClient(nil)
 	ctx := context.Background()
 	query := keyword + "+repo:microsoft/fabrikate-definitions"
 
 	results, _, err := client.Search.Code(ctx, query, nil)
-	
-	if (err != nil || results.CodeResults == nil){
+
+	if err != nil || results.CodeResults == nil {
 		return err
 	}
 
 	components := GetFabrikateComponents(results.CodeResults)
 
-	fmt.Println(fmt.Sprintf("Search results for '%s':", keyword))
-	if (len(components) == 0){
+	fmt.Printf("Search results for '%s':\n", keyword)
+	if len(components) == 0 {
 		log.Info(fmt.Sprintf("No components were found for '%s'", keyword))
-	} else{
+	} else {
 		for _, component := range components {
 			fmt.Println(component)
 		}
@@ -39,19 +40,19 @@ func FindComponent(keyword string)(error){
 }
 
 // GetFabrikateComponents returns a unique list of fabrikate components from a github search result
-func GetFabrikateComponents(codeResults []github.CodeResult) ([]string){
-	
-	if (codeResults == nil){
+func GetFabrikateComponents(codeResults []github.CodeResult) []string {
+
+	if codeResults == nil {
 		return []string{}
 	}
 
 	components := []string{}
-	uniqueComponents :=  map[string]bool{}
+	uniqueComponents := map[string]bool{}
 
-	for _, result := range codeResults{
+	for _, result := range codeResults {
 
 		path := *result.Path
-		if(!strings.HasPrefix(path, "definitions")){
+		if !strings.HasPrefix(path, "definitions") {
 			continue
 		}
 
@@ -64,7 +65,7 @@ func GetFabrikateComponents(codeResults []github.CodeResult) ([]string){
 		}
 	}
 
-	return components;
+	return components
 }
 
 var findCmd = &cobra.Command{
@@ -75,8 +76,8 @@ Eg.
 $ fab find prometheus
 Finds fabrikate components that are related to 'prometheus'.
 `,
-	RunE: func(cmd *cobra.Command, args []string) (err error){
-		
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+
 		if len(args) != 1 {
 			return errors.New("'find' takes one argument")
 		}
