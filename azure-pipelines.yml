@@ -10,25 +10,22 @@ pool:
   vmImage: "Ubuntu-16.04"
 
 variables:
-  GOBIN: "$(GOPATH)/bin" # Go binaries path
-  GOROOT: "/usr/local/go1.13" # Go installation path
-  GOPATH: "$(system.defaultWorkingDirectory)/gopath" # Go workspace path
-  modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)" # Path to the module's code
-  GO111MODULE: "on"
   linterTimeout: "5m"
 
 steps:
+  # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/tool/go-tool
+  - task: GoTool@0
+    inputs:
+      version: "1.15"
+
   - script: |
-      mkdir -p '$(GOBIN)'
-      mkdir -p '$(GOPATH)/pkg'
-      mkdir -p '$(modulePath)'
-      shopt -s extglob
-      shopt -s dotglob
-      mv !(gopath) '$(modulePath)'
-      echo '##vso[task.prependpath]$(GOBIN)'
-      echo '##vso[task.prependpath]$(GOROOT)/bin'
-      go version
-    displayName: "Set up Go workspace"
+      curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.30.0
+      ./bin/golangci-lint run --timeout $(linterTimeout)
+    displayName: "Lint"
+
+  - script: |
+      scripts/build clean
+    displayName: "Clean"
 
   - script: |
       HELM_URL=https://get.helm.sh
@@ -38,22 +35,8 @@ steps:
       PATH=`pwd`/linux-amd64/:$PATH
     displayName: "Install helm"
 
-  - script: |
-      curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.25.0
-    displayName: Install linter
-
-  - script: |
-      scripts/build clean
-      go mod download
-    workingDirectory: "$(modulePath)"
-    displayName: "Get Go dependencies"
-
-  - script: |
-      golangci-lint run --timeout $(linterTimeout)
-    workingDirectory: "$(modulePath)"
-    displayName: "Lint"
-
-  - script: |
-      go test -v -race ./...
-    workingDirectory: "$(modulePath)"
-    displayName: "Test"
+  - task: Go@0
+    displayName: Test
+    inputs:
+      command: test
+      arguments: -v -race ./...
