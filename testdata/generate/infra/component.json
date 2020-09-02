@@ -2,13 +2,9 @@
     "name": "infra",
     "subcomponents": [
         {
-            "name": "efk",
-            "method": "git",
-            "source": "https://github.com/timfpark/fabrikate-elasticsearch-fluentd-kibana"
-        },
-        {
-            "name": "static",
-            "source": "./static"
+            "name": "fabrikate-jaeger",
+            "type": "component",
+            "source": "./fabrikate-jaeger"
         }
     ]
 }
