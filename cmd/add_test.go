@@ -123,11 +123,14 @@ func TestAddIdempotency(t *testing.T) {
 	// This test changes the cwd. Must change back so any tests following don't break
 	cwd, err := os.Getwd()
 	assert.Nil(t, err)
-	defer func() {
+	temp_dir, err := ioutil.TempDir("../testdata", "idempotency")
+	assert.Nil(t, err)
+	defer func() { // cleanup
 		_ = os.Chdir(cwd)
+		_ = os.RemoveAll(temp_dir)
 	}()
 
-	err = os.Chdir("../testdata/idempotency")
+	err = os.Chdir(temp_dir)
 	assert.Nil(t, err)
 
 	simpleComponent := core.Component{
@@ -151,7 +154,4 @@ func TestAddIdempotency(t *testing.T) {
 
 	// Assert that the files are the same
 	assert.Equal(t, true, bytes.Equal(f1, f2))
-
-	// Cleanup
-	_ = os.Remove("./component.yaml")
 }
