@@ -40,7 +40,7 @@ current subtree.
 ### Usage
 
 ```sh
-$ fab generate <config1> <config2> ... <configN>
+$ fab generate [--validate] [--kustomize|-k] <config1> <config2> ... <configN>
 ```
 
 Where the generate command takes a list of the configurations that should be
@@ -50,6 +50,12 @@ specified `prod azure east`, `prod`'s config would be applied first, and
 `azure`'s config would only be applied if they did not conflict with `prod`.
 Likewise, `east`'s config would only be applied if it did not conflict with
 `prod` or `azure`.
+
+Using the `--validate` flag will validate generated resource manifest YAML 
+as a last step.
+
+Using the `--kustomize` or `-k` flag will generate a `kustomization.yaml` file
+that references the other generated resource manifest yaml files as resources.
 
 ### Example
 
