@@ -166,6 +166,8 @@ func (hg *HelmGenerator) Generate(component *core.Component) (manifest string, e
 	}
 	overriddenValuesFileName := fmt.Sprintf("%s.yaml", randomString.String())
 	absOverriddenPath := path.Join(os.TempDir(), overriddenValuesFileName)
+	defer os.Remove(absOverriddenPath)
+	
 	logger.Debug(emoji.Sprintf(":pencil: Writing config %s to %s\n", configYaml, absOverriddenPath))
 	if err = ioutil.WriteFile(absOverriddenPath, configYaml, 0777); err != nil {
 		return "", err
