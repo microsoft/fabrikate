@@ -405,6 +405,12 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 						results <- WalkResult{Error: err}
 					}
 
+					// Do not add to the queue if component or subcomponent is Disabled.
+					if subcomponent.Config.Disabled {
+						logger.Info(emoji.Sprintf(":prohibited: Subcomponent '%s' is disabled", subcomponent.Name))
+						continue
+					}
+
 					// Depending if the subcomponent is inlined or not; prepare the component to either load
 					// config/path info from filesystem (non-inlined) or inherit from parent (inlined)
 					if subcomponent.ComponentType == "component" || subcomponent.ComponentType == "" {

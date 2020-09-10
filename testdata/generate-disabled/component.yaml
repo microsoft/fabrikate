@@ -1,0 +1,18 @@
+name: disabled-stack
+type: component
+subcomponents:
+ - name: pod-info
+   type: helm
+   method: git
+   source: https://github.com/stefanprodan/podinfo
+   path: charts/podinfo
+ - name: mysql
+   type: helm
+   method: git
+   source: https://github.com/helm/charts
+   path: stable/mysql
+ - name: bookinfo # Istio BookInfo application - wrapped in Fabrikate component
+   source: https://github.com/microsoft/fabrikate-definitions.git
+   path: definitions/fabrikate-bookinfo
+   method: git
+

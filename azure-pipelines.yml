@@ -10,50 +10,33 @@ pool:
   vmImage: "Ubuntu-16.04"
 
 variables:
-  GOBIN: "$(GOPATH)/bin" # Go binaries path
-  GOROOT: "/usr/local/go1.13" # Go installation path
-  GOPATH: "$(system.defaultWorkingDirectory)/gopath" # Go workspace path
-  modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)" # Path to the module's code
-  GO111MODULE: "on"
+  linterTimeout: "5m"
 
 steps:
-  - script: |
-      mkdir -p '$(GOBIN)'
-      mkdir -p '$(GOPATH)/pkg'
-      mkdir -p '$(modulePath)'
-      shopt -s extglob
-      shopt -s dotglob
-      mv !(gopath) '$(modulePath)'
-      echo '##vso[task.prependpath]$(GOBIN)'
-      echo '##vso[task.prependpath]$(GOROOT)/bin'
-      go version
-    displayName: "Set up Go workspace"
+  # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/tool/go-tool
+  - task: GoTool@0
+    inputs:
+      version: "1.15"
 
   - script: |
-      HELM_URL=https://storage.googleapis.com/kubernetes-helm
-      HELM_TGZ=helm-v2.13.1-linux-amd64.tar.gz
-      wget -q ${HELM_URL}/${HELM_TGZ}
-      tar xzfv ${HELM_TGZ}
-      PATH=`pwd`/linux-amd64/:$PATH
-      helm init --client-only
-    displayName: "Install helm"
-
-  - script: |
-      curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.21.0
-    displayName: Install linter
-
-  - script: |
-      scripts/build clean
-      go mod download
-    workingDirectory: "$(modulePath)"
-    displayName: "Get Go dependencies"
-
-  - script: |
-      golangci-lint run
-    workingDirectory: "$(modulePath)"
+      curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.30.0
+      ./bin/golangci-lint run --timeout $(linterTimeout)
     displayName: "Lint"
 
   - script: |
-      go test -v -race ./...
-    workingDirectory: "$(modulePath)"
-    displayName: "Test"
+      scripts/build clean
+    displayName: "Clean"
+
+  - script: |
+      HELM_URL=https://get.helm.sh
+      HELM_TGZ=helm-v3.1.2-linux-amd64.tar.gz
+      wget -q ${HELM_URL}/${HELM_TGZ}
+      tar xzfv ${HELM_TGZ}
+      PATH=`pwd`/linux-amd64/:$PATH
+    displayName: "Install helm"
+
+  - task: Go@0
+    displayName: Test
+    inputs:
+      command: test
+      arguments: -v -race ./...

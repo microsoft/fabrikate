@@ -1,0 +1,30 @@
+{
+  "config": {},
+  "subcomponents": {
+    "jaeger": {
+      "config": {
+        "provisionDataStore": {
+          "cassandra": false,
+          "elasticsearch": true
+        },
+        "storage": {
+          "type": "elasticsearch"
+        },
+        "elasticsearch": {
+          "rbac": {
+            "create": true
+          }
+        },
+        "spark": {
+          "enabled": true
+        },
+        "collector": {
+          "replicaCount": 5
+        },
+        "query": {
+          "replicaCount": 2
+        }
+      }
+    }
+  }
+}

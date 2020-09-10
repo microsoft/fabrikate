@@ -32,47 +32,29 @@ intended to solve via "Closes #xyz" where is the issue number that is addressed.
 
 ## Cloning Fabrikate
 
-Fabrikate is written in [golang](https://golang.org/) so the first step is to
-make sure you have a fully functioning go development enviroment.
-
 If you intend to make contributions to Fabrikate (versus just build it), the
 first step is to
 [fork Fabrikate on Github](https://github.com/microsoft/fabrikate) into your own
 account.
 
-Next, clone Fabrikate into your GOPATH (which defaults to \$HOME/go) with
-`go get` (substitute your GitHub username for `microsoft` below if you forked
-the repo):
+Fabrikate comes with a development container for 
+[Visual Studio Code](https://code.visualstudio.com/docs/remote/containers).
 
-```sh
-$ go get github.com/microsoft/fabrikate
-```
+> Note: If you do not want to use the development container, ensure you have 
+go version >= 1.12. Fabrikate uses 
+[go modules](https://github.com/golang/go/wiki/Modules), so either git clone
+your fork outside of the `GOPATH` or set `GO111MODULE=on` if you want to work 
+within the `GOPATH`.
 
-If you forked Fabrikate, this will clone your fork into
-`$GOPATH/<github username>/fabrikate`. You will want to move to
-\$GOPATH/microsoft/fabrikate such that the imports in the project work
-correctly.
-
-### Configuring git
-
-Under `$GOPATH/microsoft/fabrikate` set up git so that you can push changes to
-the fork:
-
-```sh
-$ git remote add <name> <github_url_of_fork>
-```
-
-For example:
-
-```sh
-$ git remote add myremote https://github.com/octocat/Spoon-Knife
-```
-
-To push changes to the fork:
-
-```sh
-$ git push myremote mycurrentbranch
-```
+To use the development container:
+1. Install Microsoft's 
+[Remote - Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+2. Git clone your fork of the repo.
+3. Open the project in VSCode.
+4. In the command palette (`ctrl+shift+p` on Windows/Linux, `command+shift+p` on Mac), 
+select "Reopen in Container".
+5. In the command palette type: "Go: Install/Update Tools" and select all.
+6. When all tools are finished installing, in the command palette type: "Developer: Reload Window".
 
 ## Building Fabrikate
 
