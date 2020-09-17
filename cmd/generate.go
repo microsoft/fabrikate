@@ -54,7 +54,7 @@ func validateGeneratedManifests(generationPath string) (err error) {
 // Generate implements the 'generate' command. It takes a set of environments and a validation flag
 // and iterates through the component tree, generating components as it reaches them, and writing all
 // of the generated manifests at the very end.
-func Generate(startPath string, environments []string, validate bool) (components []core.Component, err error) {
+func Generate(startPath string, environments []string, validate bool, generateKustomization bool) (components []core.Component, err error) {
 	// Iterate through component tree and generate
 
 	rootInit := func(startPath string, environments []string, c core.Component) (component core.Component, err error) {
@@ -91,6 +91,12 @@ func Generate(startPath string, environments []string, validate bool) (component
 		return nil, err
 	}
 
+	if generateKustomization {
+		if err = createKustomizationFile(generationPath, components); err != nil {
+			return nil, err
+		}
+	}
+
 	if validate {
 		if err = validateGeneratedManifests(generationPath); err != nil {
 			return nil, err
@@ -118,7 +124,8 @@ if it did not conflict with prod or azure.`,
 		PrintVersion()
 
 		validation := cmd.Flag("validate").Value.String()
-		_, err := Generate("./", args, validation == "true")
+		generateKustomization := cmd.Flag("kustomize").Value.String()
+		_, err := Generate("./", args, validation == "true", generateKustomization == "true")
 
 		return err
 	},
@@ -126,5 +133,6 @@ if it did not conflict with prod or azure.`,
 
 func init() {
 	generateCmd.PersistentFlags().Bool("validate", false, "Validate generated resource manifest YAML")
+	generateCmd.PersistentFlags().BoolP("kustomize", "k", false, fmt.Sprintf("Generate a %s file", kustomizationFileName))
 	rootCmd.AddCommand(generateCmd)
 }
