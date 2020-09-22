@@ -10,7 +10,7 @@ This project tracks issues exclusively via our project on Github: please
 [file issues](https://github.com/microsoft/fabrikate/issues/new/choose) there.
 
 Please do not ask questions via Github issues. Instead, please
-[join us on Slack](https://publicslack.com/slacks/https-bedrockco-slack-com/invites/new)
+[join us on Slack](https://join.slack.com/t/bedrockco/shared_invite/enQtNjIwNzg3NTU0MDgzLWRiYzQxM2ZmZjQ2NGE2YjA2YTJmMjg3ZmJmOTQwOWY0MTU3NDVkNDJkZDUyMDExZjIxNTg5NWY3MTI3MzFiN2U)
 and ask there.
 
 For issues and feature requests, please follow the general format suggested by
