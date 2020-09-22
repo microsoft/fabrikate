@@ -125,12 +125,21 @@ func (c *Component) LoadComponent() (loadedComponent Component, err error) {
 
 // LoadConfig loads and merges the config specified by the passed set of environments.
 func (c *Component) LoadConfig(environments []string) (err error) {
+	isCommonEnv := false
+
 	for _, environment := range environments {
+		if (environment == "common"){
+			isCommonEnv = true
+		}
 		if err := c.Config.MergeConfigFile(c.PhysicalPath, environment); err != nil {
 			return err
 		}
 	}
 
+	if (isCommonEnv) {
+		return err;
+	}
+	
 	return c.Config.MergeConfigFile(c.PhysicalPath, "common")
 }
 
