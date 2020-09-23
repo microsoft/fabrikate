@@ -344,6 +344,7 @@ documentation items:
 - [Command Reference](./docs/commands.md)
 - [Authentication / Personal Access Tokens (PAT) / `access.yaml`](./docs/auth.md)
 - [Contributing](./docs/contributing.md)
+- [Comparisons against other release management tools](./docs/comparisons.md)
 
 ## Community
 
