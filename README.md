@@ -17,7 +17,7 @@ In particular, Fabrikate simplifies the frontend of the GitOps workflow: it
 takes a high level description of your deployment, a target environment
 configuration (eg. `qa` or `prod`), and renders the Kubernetes resource
 manifests for that deployment utilizing templating tools like
-[Helm](https://helm.sh). It is intended to run as part of a CI/CD pipeline such
+[Helm](https://helm.sh), and supports template-free, Kubernetes native [Kustomize](https://kustomize.io/). It is intended to run as part of a CI/CD pipeline such
 that with every commit to your Fabrikate deployment definition triggers the
 generation of Kubernetes resource manifests that an in-cluster GitOps pod like
 [Weaveworks' Flux](https://github.com/weaveworks/flux) watches and reconciles
