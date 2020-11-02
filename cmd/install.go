@@ -24,15 +24,6 @@ func Install(path string) (err error) {
 		logger.Info(emoji.Sprintf(":mag: Using %s: %s", tool, path))
 	}
 
-	// By default, Helm 2 used to have the "stable" repo. This is assumed
-	// to exist in Fabrikate as a non-http repo.
-	// See timeline/deprecation schedule: https://github.com/helm/charts
-	logger.Info(emoji.Sprintf(":point_right: Adding stable repository"))
-	if output, err := exec.Command("helm", "repo", "add", "stable", "https://charts.helm.sh/stable").CombinedOutput(); err != nil {
-		logger.Error(emoji.Sprintf(":no_entry_sign: %s: %s", err, output))
-		return err
-	}
-
 	rootInit := func(startingPath string, environments []string, c core.Component) (component core.Component, err error) {
 		return c.InstallRoot(startingPath, environments)
 	}
