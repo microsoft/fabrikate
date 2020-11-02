@@ -315,9 +315,6 @@ manifests as it descends breadth first. You can see the generated manifests in
 `./generated/prod-azure`, which has the same logical directory structure as your
 deployment definition.
 
-**NOTE** If planning to use [Kustomize](https://kustomize.io/), use the flag
-`-kustomize` or `-k` to generate a `kustomization.yaml` containing the components as resources. 
-
 Fabrikate is meant to used as part of a CI / CD pipeline that commits the
 generated manifests checked into a repo so that they can be applied from a pod
 within the cluster like [Flux](https://github.com/weaveworks/flux), but if you
