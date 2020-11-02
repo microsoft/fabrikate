@@ -4,78 +4,112 @@ import (
 	"testing"
 
 	"github.com/microsoft/fabrikate/core"
-	"github.com/stretchr/testify/assert"
 )
 
-func checkComponentLengthsAgainstExpected(t *testing.T, components []core.Component, expectedLengths map[string]int) {
-	for _, component := range components {
-		if expectedLength, ok := expectedLengths[component.Name]; ok {
-			assert.True(t, ok)
-			assert.Equal(t, expectedLength, len(component.Manifest))
+func TestGenerate(t *testing.T) {
+	type args struct {
+		startPath    string
+		environments []string
+		validate     bool
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantLengths map[string]int
+		wantErr     bool
+	}{
+		{
+			"json",
+			args{
+				"../testdata/generate",
+				[]string{"prod-east", "prod"},
+				false,
+			},
+			map[string]int{
+				"microservices-workload": 0,
+				"infra":                  0,
+				"fabrikate-jaeger":       409,
+				"jaeger":                 26877,
+			},
+			false,
+		},
+
+		{
+			"yaml",
+			args{
+				"../testdata/generate-yaml",
+				[]string{"prod"},
+				false,
+			},
+			map[string]int{
+				"prometheus-grafana": 125,
+				"grafana":            8552,
+				"prometheus":         28363,
+			},
+			false,
+		},
+
+		{
+			"remote static",
+			args{
+				"../testdata/generate-remote-static",
+				[]string{"common"},
+				false,
+			},
+			map[string]int{
+				"keyvault-flexvolume": 5,
+				"keyvault-sub":        1372,
+			},
+			false,
+		},
+
+		{
+			"hooks",
+			args{
+				"../testdata/generate-hooks",
+				[]string{"prod"},
+				false,
+			},
+			map[string]int{
+				"generate-hooks": 103,
+			},
+			false,
+		},
+
+		{
+			"disabled subcomponent",
+			args{
+				"../testdata/generate-disabled",
+				[]string{"disabled"},
+				false,
+			},
+			map[string]int{
+				"disabled-stack": 0,
+			},
+			false,
+		},
+	}
+
+	checkComponentLengthsAgainstExpected := func(t *testing.T, components []core.Component, expectedLengths map[string]int) {
+		for _, component := range components {
+			if expectedLength, ok := expectedLengths[component.Name]; ok {
+				actualLength := len(component.Manifest)
+				if actualLength != expectedLength {
+					t.Errorf("Generate() manifest length %v, want %v", actualLength, expectedLength)
+				}
+			}
 		}
 	}
-}
 
-func TestGenerateJSON(t *testing.T) {
-	components, err := Generate("../testdata/generate", []string{"prod-east", "prod"}, false)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotComponents, err := Generate(tt.args.startPath, tt.args.environments, tt.args.validate)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 
-	assert.Nil(t, err)
-
-	expectedLengths := map[string]int{
-		"jaeger": 				26916,
-		"static":                188,
+			checkComponentLengthsAgainstExpected(t, gotComponents, tt.wantLengths)
+		})
 	}
-
-	assert.Equal(t, 4, len(components))
-
-	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
-}
-
-func TestGenerateYAML(t *testing.T) {
-	components, err := Generate("../testdata/generate-yaml", []string{"prod"}, false)
-
-	expectedLengths := map[string]int{
-		"prometheus-grafana": 125,
-		"grafana":            8552,
-		"prometheus":         28363,
-	}
-
-	assert.Nil(t, err)
-
-	assert.Equal(t, 3, len(components))
-
-	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
-}
-
-func TestGenerateStaticRemoteYAML(t *testing.T) {
-	components, err := Generate("../testdata/generate-remote-static", []string{"common"}, false)
-
-	expectedLengths := map[string]int{
-		"keyvault-flexvolume": 5,
-		"keyvault-sub":        1372,
-	}
-
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(components))
-
-	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
-}
-
-func TestGenerateWithHooks(t *testing.T) {
-	_, err := Generate("../testdata/generate-hooks", []string{"prod"}, false)
-
-	assert.Nil(t, err)
-}
-
-func TestGenerateDisabledSubcomponent(t *testing.T) {
-	components, err := Generate("../testdata/generate-disabled", []string{"disabled"}, false)
-
-	expectedLengths := map[string]int{
-		"disabled-stack": 0,
-	}
-
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(components))
-
-	checkComponentLengthsAgainstExpected(t, components, expectedLengths)
 }
