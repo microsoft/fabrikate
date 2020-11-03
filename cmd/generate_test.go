@@ -44,7 +44,7 @@ func TestGenerate(t *testing.T) {
 			map[string]int{
 				"prometheus-grafana": 125,
 				"grafana":            8552,
-				"prometheus":         28363,
+				"prometheus":         29370,
 			},
 			false,
 		},

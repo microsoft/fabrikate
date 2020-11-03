@@ -192,6 +192,16 @@ Return the appropriate apiVersion for podsecuritypolicy.
 {{- print "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+{{/*
+Return the appropriate apiVersion for rbac.
+*/}}
+{{- define "rbac.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
+{{- print "rbac.authorization.k8s.io/v1" -}}
+{{- else -}}
+{{- print "rbac.authorization.k8s.io/v1beta1" -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Create the name of the service account to use for the alertmanager component
@@ -234,5 +244,16 @@ Create the name of the service account to use for the server component
     {{ default (include "prometheus.server.fullname" .) .Values.serviceAccounts.server.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccounts.server.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Define the prometheus.namespace template if set with forceNamespace or .Release.Namespace is set
+*/}}
+{{- define "prometheus.namespace" -}}
+{{- if .Values.forceNamespace -}}
+{{ printf "namespace: %s" .Values.forceNamespace }}
+{{- else -}}
+{{ printf "namespace: %s" .Release.Namespace }}
 {{- end -}}
 {{- end -}}

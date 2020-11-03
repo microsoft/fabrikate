@@ -1,13 +1,13 @@
 name: prometheus
 type: helm
 method: helm
-source: https://kubernetes-charts.storage.googleapis.com
+source: https://prometheus-community.github.io/helm-charts
 path: prometheus
 subcomponents:
   - name: grafana
     type: helm
     method: helm
-    source: https://kubernetes-charts.storage.googleapis.com
+    source: https://grafana.github.io/helm-charts
     path: grafana
     version: 3.7.0
     subcomponents:
@@ -21,3 +21,4 @@ subcomponents:
         method: helm
         source: https://strimzi.io/charts/
         path: strimzi-kafka-operator
+
