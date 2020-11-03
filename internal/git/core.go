@@ -1,6 +1,7 @@
-package core
+package git
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/otiai10/copy"
 )
 
@@ -20,56 +21,6 @@ type gitCloneResult struct {
 	ClonePath string // The abs path in os.TempDir() where the the item was cloned to
 	Error     error  // An error which occurred during the clone
 	mu        sync.RWMutex
-}
-
-// Mutex safe getter
-func (result *gitCloneResult) get() string {
-	result.mu.RLock()
-	clonePath := result.ClonePath
-	result.mu.RUnlock()
-	return clonePath
-}
-
-// R/W safe map of {[cacheToken]: gitCloneResult}
-type gitCache struct {
-	mu    sync.RWMutex
-	cache map[string]*gitCloneResult
-}
-
-// Mutex safe getter
-func (cache *gitCache) get(cacheToken string) (*gitCloneResult, bool) {
-	cache.mu.RLock()
-	value, ok := cache.cache[cacheToken]
-	cache.mu.RUnlock()
-	return value, ok
-}
-
-// Mutex safe setter
-func (cache *gitCache) set(cacheToken string, cloneResult *gitCloneResult) {
-	cache.mu.Lock()
-	cache.cache[cacheToken] = cloneResult
-	cache.mu.Unlock()
-}
-
-// Thread safe store of {[gitRepo]: token}
-type gitAccessTokenMap struct {
-	mu     sync.RWMutex
-	tokens map[string]string
-}
-
-// Get is a thread safe getter to do a map lookup in a getAccessTokens
-func (t *gitAccessTokenMap) Get(repo string) (string, bool) {
-	t.mu.RLock()
-	token, exists := t.tokens[repo]
-	t.mu.RUnlock()
-	return token, exists
-}
-
-// Set is a thread safe setter method to modify a gitAccessTokenMap
-func (t *gitAccessTokenMap) Set(repo, token string) {
-	t.mu.Lock()
-	t.tokens[repo] = token
-	t.mu.Unlock()
 }
 
 // cacheKey combines a git-repo, branch, and commit into a unique key used for
@@ -82,17 +33,6 @@ func cacheKey(repo, branch, commit string) string {
 		commit = "head"
 	}
 	return fmt.Sprintf("%v@%v:%v", repo, branch, commit)
-}
-
-// cache is a global git map cache of {[cacheKey]: gitCloneResult}
-var cache = gitCache{
-	cache: map[string]*gitCloneResult{},
-}
-
-// GitAccessTokens is a thread-safe global store of Personal Access Tokens which
-// is used to store PATs as they are discovered throughout the Install lifecycle
-var GitAccessTokens = gitAccessTokenMap{
-	tokens: map[string]string{},
 }
 
 // cloneRepo clones a target git repository into the hosts temporary directory
@@ -171,9 +111,11 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		cloneCommand.Env = append(cloneCommand.Env, os.Environ()...)         // pass all env variables to git command so proper SSH config is passed if needed
 		cloneCommand.Env = append(cloneCommand.Env, "GIT_TERMINAL_PROMPT=0") // tell git to fail if it asks for credentials
 
-		if output, err := cloneCommand.CombinedOutput(); err != nil {
-			logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred while cloning: '%s'\n%s: %s", cacheToken, err, output))
-			cloneResultChan <- &gitCloneResult{Error: err}
+		var stdout, stderr bytes.Buffer
+		cloneCommand.Stdout = &stdout
+		cloneCommand.Stderr = &stderr
+		if err := cloneCommand.Run(); err != nil {
+			cloneResultChan <- &gitCloneResult{Error: fmt.Errorf("%v: %v", err, stderr.String())}
 			return
 		}
 
@@ -181,10 +123,12 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		if len(commit) != 0 {
 			logger.Info(emoji.Sprintf(":helicopter: Performing checkout commit '%s' for repo '%s'", commit, repo))
 			checkoutCommit := exec.Command("git", "checkout", commit)
+			var stdout, stderr bytes.Buffer
+			checkoutCommit.Stdout = &stdout
+			checkoutCommit.Stderr = &stderr
 			checkoutCommit.Dir = clonePathOnFS
-			if output, err := checkoutCommit.CombinedOutput(); err != nil {
-				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred checking out commit '%s' from repo '%s'\n%s: %s", commit, repo, err, output))
-				cloneResultChan <- &gitCloneResult{Error: err}
+			if err := checkoutCommit.Run(); err != nil {
+				cloneResultChan <- &gitCloneResult{Error: fmt.Errorf("%v: %v", err, stderr.String())}
 				return
 			}
 		}
@@ -199,14 +143,9 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 	return cloneResultChan
 }
 
-type git struct{}
-
-// Git is function wrapper to expose host git functionality
-var Git = git{}
-
 // CloneRepo is a helper func to centralize cloning a repository with the spec
 // provided by its arguments.
-func (g git) CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
+func CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
 	// Clone and get the location of where it was cloned to in tmp
 	result := <-cache.cloneRepo(repo, commit, branch)
 	clonePath := result.get()
@@ -232,9 +171,9 @@ func (g git) CloneRepo(repo string, commit string, intoPath string, branch strin
 	return err
 }
 
-// CleanGitCache deletes all temporary folders created as temporary cache for
+// ClearCache deletes all temporary folders created as temporary cache for
 // git clones.
-func (g git) CleanGitCache() (err error) {
+func ClearCache() (err error) {
 	logger.Info(emoji.Sprintf(":bomb: Cleaning up git cache..."))
 	cache.mu.Lock()
 	for key, value := range cache.cache {

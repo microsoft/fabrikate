@@ -15,7 +15,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/core"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/git"
+	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/otiai10/copy"
 	"github.com/timfpark/yaml"
 
@@ -252,7 +253,7 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 		case "git":
 			// Clone whole repo into helm repo path
 			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart in path '%s' from git repository '%s'", c.Name, c.Source, c.PhysicalPath))
-			if err = core.Git.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
+			if err = git.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
 				return err
 			}
 			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart in the case of `method: helm`
