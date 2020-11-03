@@ -29,7 +29,7 @@ func TestGenerate(t *testing.T) {
 				"microservices-workload": 0,
 				"infra":                  0,
 				"fabrikate-jaeger":       409,
-				"jaeger":                 26877,
+				"jaeger":                 26916,
 			},
 			false,
 		},
