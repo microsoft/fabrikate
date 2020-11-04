@@ -25,14 +25,33 @@ with the current set of applied resource manifests in your Kubernetes cluster.
 
 ## Installation
 
-You can grab the latest releases from the
-[releases page](https://github.com/microsoft/fabrikate/releases) or build the
-bleeding edge from source with:
+You have a couple options:
+
+### Official Release
+
+Grab the latest releases from the
+[releases page](https://github.com/microsoft/fabrikate/releases) and place it
+drop it into your `$PATH`.
+
+### Building From Source
+
+You have a couple options to build from source:
+
+**Using `go get`:**
+
+Use `go get` to build and install the bleeding edge (i.e `develop`) version into
+`$GOPATH/bin`:
+
+```bash
+(cd && GO111MODULE=on go get github.com/microsoft/fabrikate/cmd/fab@develop)
+```
+
+**Cloning locally:**
 
 ```bash
 git clone https://github.com/microsoft/fabrikate
 cd fabrikate
-go build -o fab cmd/cli/main.go
+go build -o fab cmd/fab/main.go
 ```
 
 ## Getting Started
