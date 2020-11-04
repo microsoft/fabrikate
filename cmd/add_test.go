@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -114,4 +116,42 @@ func TestAdd(t *testing.T) {
 	////////////////////////////////////////////////////////////////////////////////
 	//End adding a subcomponent
 	////////////////////////////////////////////////////////////////////////////////
+}
+
+func TestAddIdempotency(t *testing.T) {
+	// Setup
+	// This test changes the cwd. Must change back so any tests following don't break
+	cwd, err := os.Getwd()
+	assert.Nil(t, err)
+	temp_dir, err := ioutil.TempDir("../testdata", "idempotency")
+	assert.Nil(t, err)
+	defer func() { // cleanup
+		_ = os.Chdir(cwd)
+		_ = os.RemoveAll(temp_dir)
+	}()
+
+	err = os.Chdir(temp_dir)
+	assert.Nil(t, err)
+
+	simpleComponent := core.Component{
+		Name:   "some-service",
+		Method: "local",
+	}
+
+	// Add to empty dir
+	err = Add(simpleComponent)
+	assert.Nil(t, err)
+	// Loads entire file into memory, ok in this case because its small
+	f1, err := ioutil.ReadFile("component.yaml")
+	assert.Nil(t, err)
+
+	// Add again
+	err = Add(simpleComponent)
+	assert.Nil(t, err)
+	// Loads entire file into memory, ok in this case because its small
+	f2, err := ioutil.ReadFile("component.yaml")
+	assert.Nil(t, err)
+
+	// Assert that the files are the same
+	assert.Equal(t, true, bytes.Equal(f1, f2))
 }
