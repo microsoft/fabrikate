@@ -149,6 +149,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		cloneCommand.Stdout = &stdout
 		cloneCommand.Stderr = &stderr
 		if err := cloneCommand.Run(); err != nil {
+			logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred while cloning: '%s'\n%s: %s", cacheToken, err, stderr.String()))
 			cloneResultChan <- &gitCloneResult{Error: fmt.Errorf("%v: %v", err, stderr.String())}
 			return
 		}
@@ -162,6 +163,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 			checkoutCommit.Stderr = &stderr
 			checkoutCommit.Dir = clonePathOnFS
 			if err := checkoutCommit.Run(); err != nil {
+				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred checking out commit '%s' from repo '%s'\n%s: %s", commit, repo, err, stderr.String()))
 				cloneResultChan <- &gitCloneResult{Error: fmt.Errorf("%v: %v", err, stderr.String())}
 				return
 			}
