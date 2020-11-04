@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"testing"
-
-	"github.com/microsoft/fabrikate/util"
 )
 
 func TestInstall(t *testing.T) {
@@ -17,44 +15,44 @@ func TestInstall(t *testing.T) {
 	}{
 		{
 			"json",
-			args{"../testdata/install"},
+			args{"../../testdata/install"},
 			false,
 		},
 
 		{
 			"yaml",
-			args{"../testdata/install-yaml"},
+			args{"../../testdata/install-yaml"},
 			false,
 		},
 
 		{
 			"hooks",
-			args{"../testdata/install-hooks"},
+			args{"../../testdata/install-hooks"},
 			false,
 		},
 
 		{
 			"private git",
-			args{"../testdata/install-private"},
+			args{"../../testdata/install-private"},
 			true,
 		},
 
 		{
 			"helm",
-			args{"../testdata/install-helm"},
+			args{"../../testdata/install-helm"},
 			false,
 		},
 
 		{
 			"repo-alias",
-			args{"../testdata/repo-alias"},
+			args{"../../testdata/repo-alias"},
 			false,
 		},
 	}
 
 	for _, tt := range tests {
 		defer func() {
-			_ = util.UninstallComponents(tt.args.path)
+			// 	_ = util.UninstallComponents(tt.args.path)
 		}()
 
 		t.Run(tt.name, func(t *testing.T) {

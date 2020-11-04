@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

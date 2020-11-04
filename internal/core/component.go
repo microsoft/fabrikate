@@ -14,7 +14,8 @@ import (
 	"sync"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/git"
+	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/timfpark/yaml"
 )
 
@@ -215,7 +216,12 @@ func (c *Component) InstallComponent(componentPath string) (err error) {
 			}
 
 			logger.Info(emoji.Sprintf(":helicopter: Installing component '%s' with git from '%s'", c.Name, c.Source))
-			if err = Git.CloneRepo(c.Source, c.Version, subcomponentPath, c.Branch); err != nil {
+			cloneOpts := &git.CloneOpts{
+				URL:    c.Source,
+				SHA:    c.Version,
+				Branch: c.Branch,
+				Into:   subcomponentPath}
+			if err = git.Clone(cloneOpts); err != nil {
 				return err
 			}
 			return nil

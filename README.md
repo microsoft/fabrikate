@@ -23,6 +23,18 @@ generation of Kubernetes resource manifests that an in-cluster GitOps pod like
 [Weaveworks' Flux](https://github.com/weaveworks/flux) watches and reconciles
 with the current set of applied resource manifests in your Kubernetes cluster.
 
+## Installation
+
+You can grab the latest releases from the
+[releases page](https://github.com/microsoft/fabrikate/releases) or build the
+bleeding edge from source with:
+
+```bash
+git clone https://github.com/microsoft/fabrikate
+cd fabrikate
+go build -o fab cmd/cli/main.go
+```
+
 ## Getting Started
 
 First, install the latest `fab` cli on your local machine from

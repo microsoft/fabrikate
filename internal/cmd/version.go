@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/spf13/cobra"
 )
 

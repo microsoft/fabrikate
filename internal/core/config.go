@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/logger"
+	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/timfpark/conjungo"
 	yaml "github.com/timfpark/yaml"
 )

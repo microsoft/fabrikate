@@ -14,13 +14,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
-	"github.com/microsoft/fabrikate/core"
-	"github.com/microsoft/fabrikate/logger"
-	"github.com/otiai10/copy"
+	"github.com/microsoft/fabrikate/internal/core"
+	"github.com/microsoft/fabrikate/internal/git"
+	"github.com/microsoft/fabrikate/internal/helm"
+	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/timfpark/yaml"
-
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/repo"
 )
 
 // HelmGenerator provides 'helm generate' generator functionality to Fabrikate
@@ -246,13 +244,44 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 		switch c.Method {
 		case "helm":
 			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart '%s' from helm repository '%s'", c.Name, c.Path, c.Source))
-			if err = hd.downloadChart(c.Source, c.Path, c.Version, helmRepoPath); err != nil {
+			// Pull to a temporary directory
+			tmpHelmDir, err := ioutil.TempDir("", "fabrikate")
+			defer os.RemoveAll(tmpHelmDir)
+			if err != nil {
+				return err
+			}
+			if err = helm.Pull(c.Source, c.Path, c.Version, tmpHelmDir); err != nil {
+				return err
+			}
+
+			// Create the component directory -- deleting if it already exists
+			if err != nil {
+				return err
+			}
+			if err := os.RemoveAll(helmRepoPath); err != nil {
+				return err
+			}
+
+			// ensure the parent directory exists
+			if err := os.MkdirAll(filepath.Dir(helmRepoPath), 0755); err != nil {
+				return err
+			}
+
+			// Move the extracted chart from tmp to the helm_repos
+			extractedChartPath := path.Join(tmpHelmDir, c.Path)
+			if err := os.Rename(extractedChartPath, helmRepoPath); err != nil {
 				return err
 			}
 		case "git":
 			// Clone whole repo into helm repo path
 			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart in path '%s' from git repository '%s'", c.Name, c.Source, c.PhysicalPath))
-			if err = core.Git.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
+			cloneOpts := &git.CloneOpts{
+				URL:    c.Source,
+				SHA:    c.Version,
+				Branch: c.Branch,
+				Into:   helmRepoPath,
+			}
+			if err = git.Clone(cloneOpts); err != nil {
 				return err
 			}
 			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart in the case of `method: helm`
@@ -260,219 +289,11 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 			if err != nil {
 				return err
 			}
-			if err = updateHelmChartDep(chartPath); err != nil {
+			if err = helm.DependencyUpdate(chartPath); err != nil {
 				return err
 			}
 		}
 	}
 
 	return err
-}
-
-// helmDownloader is a thread safe chart downloader which can add/remove
-// helm repositories in a thread safe way.
-// Shelling `helm repo add` is not thread safe. If 2 callers do it at the same
-// time, only one will go through as they will both read in existing helm repo
-// list at the same time, modify, and the write out new ones; Making one get
-// overwritten.
-type helmDownloader struct {
-	mu sync.RWMutex
-}
-
-var hd = helmDownloader{}
-
-// downloadChart downloads a target `chart` at version `version` from `repo` and
-// places it in `into`. If `version` is blank, latest is automatically fetched.
-// -- `into` will be the dir containing Chart.yaml
-// The function will first look to leverage an existing Helm repo from the
-// repository file at $HELM_REPOSITORY_CONFIG. If it fails to find
-// a repo there, it will add a temporary helm repo, fetch from it, and then remove
-// the temporary repo. This was originally designed to get around a limitation
-// in Helm 2.
-// see: https://github.com/helm/helm/issues/4527
-// Now that Fabrikate uses Helm 3, downloading the chart before running
-// "helm template" is not necessary, so this approach could be redesigned in the future.
-func (hd *helmDownloader) downloadChart(repo, chart, version, into string) (err error) {
-	repoName, err := getRepoName(repo)
-	if err != nil {
-		logger.Info(emoji.Sprintf(":no_bell: %v", repo, err))
-		// generate random name to store repo in helm in temporarily
-		randomUUID, err := uuid.NewRandom()
-		if err != nil {
-			return err
-		}
-		repoName = randomUUID.String()
-		logger.Info(emoji.Sprintf(":pencil: Adding temporary helm repo %s => %s", repo, repoName))
-		hd.mu.Lock()
-		if output, err := exec.Command("helm", "repo", "add", repoName, repo).CombinedOutput(); err != nil {
-			hd.mu.Unlock()
-			logger.Error(emoji.Sprintf(":no_entry_sign: Failed adding helm repository '%s'\n%s: %s", repo, err, output))
-			return err
-		}
-		hd.mu.Unlock()
-		defer func() {
-			// Remove repository once completed
-			logger.Info(emoji.Sprintf(":bomb: Removing temporary helm repo %s", repoName))
-			hd.mu.Lock()
-			if output, err := exec.Command("helm", "repo", "remove", repoName).CombinedOutput(); err != nil {
-				logger.Error(emoji.Sprintf(":no_entry_sign: Failed to `helm repo remove %s`\n%s: %s", repoName, err, output))
-			}
-			hd.mu.Unlock()
-		}()
-	}
-
-	// Fetch chart to random temp dir
-	chartName := fmt.Sprintf("%s/%s", repoName, chart)
-	randomDir, err := ioutil.TempDir("", repoName)
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(randomDir)
-	downloadVersion := "latest"
-	if version != "" {
-		downloadVersion = version
-	}
-	logger.Info(emoji.Sprintf(":helicopter: Fetching helm chart '%s' version '%s' into '%s'", chart, downloadVersion, randomDir))
-	helmFetchCommandArgs := []string{"fetch", "--untar", "--untardir", randomDir}
-	// Append version if provided
-	if version != "" {
-		helmFetchCommandArgs = append(helmFetchCommandArgs, "--version", version)
-	}
-	helmFetchCommandArgs = append(helmFetchCommandArgs, chartName)
-	if output, err := exec.Command("helm", helmFetchCommandArgs...).CombinedOutput(); err != nil {
-		logger.Error(emoji.Sprintf(":no_entry_sign: Failed fetching helm chart '%s' from repo '%s'\n%s: %s", chart, repo, err, output))
-		return err
-	}
-
-	// Remove the into directory if it already exists
-	if err = os.RemoveAll(into); err != nil {
-		return err
-	}
-
-	// copy chart to target `into` dir
-	chartDirectoryInRandomDir := path.Join(randomDir, chart)
-	if err = copy.Copy(chartDirectoryInRandomDir, into); err != nil {
-		return err
-	}
-
-	// update/fetch dependencies for the chart
-	return updateHelmChartDep(into)
-}
-
-// updateHelmChartDep attempts to run `helm dependency update` on chartPath
-func updateHelmChartDep(chartPath string) (err error) {
-	// A single helm dependency entry
-	type helmDependency struct {
-		Name       string
-		Version    string
-		Repository string
-		Condition  string
-	}
-
-	// Contents of requirements.yaml or dependencies in Chart.yaml
-	type helmDependencies struct {
-		Dependencies []helmDependency
-	}
-
-	absChartPath := chartPath
-	if isAbs := filepath.IsAbs(absChartPath); !isAbs {
-		asAbs, err := filepath.Abs(chartPath)
-		if err != nil {
-			return err
-		}
-		absChartPath = asAbs
-	}
-
-	// Parse chart dependency repositories and add them if not present.
-	// For both api versions v1 and v2, if requirements.yaml has dependencies
-	// Chart.yaml's dependencies will be ignored.
-	dependenciesYamlPath := path.Join(absChartPath, "requirements.yaml")
-	if _, err := os.Stat(dependenciesYamlPath); err != nil {
-		dependenciesYamlPath = path.Join(absChartPath, "Chart.yaml")
-	}
-	addedDepRepoList := []string{}
-	if _, err := os.Stat(dependenciesYamlPath); err == nil {
-		logger.Info(fmt.Sprintf("'%s' found at '%s', ensuring repositories exist on helm client", filepath.Base(dependenciesYamlPath), dependenciesYamlPath))
-
-		bytes, err := ioutil.ReadFile(dependenciesYamlPath)
-		if err != nil {
-			return err
-		}
-
-		dependenciesYaml := helmDependencies{}
-		if err = yaml.Unmarshal(bytes, &dependenciesYaml); err != nil {
-			return err
-		}
-
-		// Add each dependency repo with a temp name
-		for _, dep := range dependenciesYaml.Dependencies {
-			currentRepo, err := getRepoName(dep.Repository)
-			if err == nil {
-				logger.Info(emoji.Sprintf(":pencil: Helm dependency repo already present: %v", currentRepo))
-				continue
-			}
-
-			if !strings.HasPrefix(dep.Repository, "http") {
-				logger.Info(emoji.Sprintf(":pencil: Skipping non-http helm dependency repo. Found '%v'", dep.Repository))
-				continue
-			}
-
-			logger.Info(emoji.Sprintf(":pencil: Adding helm dependency repository '%s'", dep.Repository))
-			randomUUID, err := uuid.NewRandom()
-			if err != nil {
-				return err
-			}
-
-			randomRepoName := randomUUID.String()
-			hd.mu.Lock()
-			if output, err := exec.Command("helm", "repo", "add", randomRepoName, dep.Repository).CombinedOutput(); err != nil {
-				hd.mu.Unlock()
-				logger.Error(emoji.Sprintf(":no_entry_sign: Failed to add helm dependency repository '%s' for chart '%s':\n%s", dep.Repository, chartPath, output))
-				return err
-			}
-			hd.mu.Unlock()
-
-			addedDepRepoList = append(addedDepRepoList, randomRepoName)
-		}
-	}
-
-	logger.Info(emoji.Sprintf(":helicopter: Updating helm chart's dependencies for chart in '%s'", absChartPath))
-	if _, err := exec.Command("helm", "dependency", "update", chartPath).CombinedOutput(); err != nil {
-		return err
-	}
-
-	// Cleanup temp dependency repositories
-	for _, repo := range addedDepRepoList {
-		logger.Info(emoji.Sprintf(":bomb: Removing dependency repository '%s'", repo))
-		hd.mu.Lock()
-		if output, err := exec.Command("helm", "repo", "remove", repo).CombinedOutput(); err != nil {
-			hd.mu.Unlock()
-			logger.Error(output)
-			return err
-		}
-		hd.mu.Unlock()
-	}
-
-	return err
-}
-
-// getRepoName returns the repo name for the provided url
-func getRepoName(url string) (string, error) {
-	logger.Info(emoji.Sprintf(":eyes: Looking for repo %v", url))
-	helmEnvs := cli.New()
-	repoConfig := helmEnvs.RepositoryConfig
-	f, err := repo.LoadFile(repoConfig)
-	if err != nil {
-		return "", err
-	}
-	if len(f.Repositories) == 0 {
-		return "", fmt.Errorf("no repositories to show")
-	}
-	for _, re := range f.Repositories {
-		if strings.EqualFold(re.URL, url) {
-			logger.Info(emoji.Sprintf(":green_heart: %v matches repo %v", url, re.Name))
-			return re.Name, nil
-		}
-	}
-	return "", fmt.Errorf("No repository found for %v", url)
 }

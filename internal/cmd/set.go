@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/core"
 	"github.com/microsoft/fabrikate/util"
 	"github.com/spf13/cobra"
 	"github.com/timfpark/yaml"
@@ -152,11 +152,11 @@ $ fab set --environment prod data.replicas=4 username="ops"
 
 Sets the value of 'data.replicas' equal to 4 and 'username' equal to 'ops' in the 'prod' config for the current component.
 
-$ fab set --subcomponent "myapp" endpoint="east-db" 
+$ fab set --subcomponent "myapp" endpoint="east-db"
 
 Sets the value of 'endpoint' equal to 'east-db' in the 'common' config (the default) for subcomponent 'myapp'.
 
-$ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5 
+$ fab set --subcomponent "myapp.mysubcomponent" data.replicas=5
 
 Sets the subkey "replicas" in the key 'data' equal to 5 in the 'common' config (the default) for the subcomponent 'mysubcomponent' of the subcomponent 'myapp'.
 
