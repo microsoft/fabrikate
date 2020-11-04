@@ -27,7 +27,7 @@ func TestRelativePathToDirectoryComponent(t *testing.T) {
 
 func TestLoadComponent(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/definition/infra",
+		PhysicalPath: "../../testdata/definition/infra",
 		LogicalPath:  "infra",
 	}
 
@@ -44,7 +44,7 @@ func TestLoadComponent(t *testing.T) {
 
 func TestLoadBadYAMLComponent(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/badyamldefinition",
+		PhysicalPath: "../../testdata/badyamldefinition",
 		LogicalPath:  "",
 	}
 
@@ -54,7 +54,7 @@ func TestLoadBadYAMLComponent(t *testing.T) {
 
 func TestLoadBadJSONComponent(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/badjsondefinition",
+		PhysicalPath: "../../testdata/badjsondefinition",
 		LogicalPath:  "",
 	}
 
@@ -64,7 +64,7 @@ func TestLoadBadJSONComponent(t *testing.T) {
 
 func TestLoadConfig(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/generate/infra",
+		PhysicalPath: "../../testdata/generate/infra",
 		LogicalPath:  "infra",
 	}
 
@@ -78,7 +78,7 @@ func TestLoadConfig(t *testing.T) {
 
 func TestUpdateRootComponentPath(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/definition/infra-single",
+		PhysicalPath: "../../testdata/definition/infra-single",
 		LogicalPath:  "infra-single",
 	}
 
@@ -90,7 +90,7 @@ func TestUpdateRootComponentPath(t *testing.T) {
 
 	assert.Equal(t, 0, len(component.Subcomponents))
 
-	component, err = component.UpdateComponentPath("../testdata/definition/infra-single", []string{})
+	component, err = component.UpdateComponentPath("../../testdata/definition/infra-single", []string{})
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(component.Subcomponents))
 }
@@ -98,11 +98,11 @@ func TestUpdateRootComponentPath(t *testing.T) {
 func TestIteratingDefinition(t *testing.T) {
 	callbackCount := 0
 
-	rootInit := func (startPath string, environments []string, c Component) (component Component, err error) {
+	rootInit := func(startPath string, environments []string, c Component) (component Component, err error) {
 		return c, nil
 	}
 
-	results := WalkComponentTree("../testdata/iterator", []string{""}, func(path string, component *Component) (err error) {
+	results := WalkComponentTree("../../testdata/iterator", []string{""}, func(path string, component *Component) (err error) {
 		callbackCount++
 		return nil
 	}, rootInit)
@@ -121,16 +121,16 @@ func TestIteratingDefinition(t *testing.T) {
 	assert.Equal(t, 3, len(components))
 	assert.Equal(t, callbackCount, len(components))
 
-	assert.Equal(t, components[1].PhysicalPath, "../testdata/iterator/infra")
+	assert.Equal(t, components[1].PhysicalPath, "../../testdata/iterator/infra")
 	assert.Equal(t, components[1].LogicalPath, "infra")
 
-	assert.Equal(t, components[2].PhysicalPath, "../testdata/iterator/infra/components/efk")
+	assert.Equal(t, components[2].PhysicalPath, "../../testdata/iterator/infra/components/efk")
 	assert.Equal(t, components[2].LogicalPath, "infra/efk")
 }
 
 func TestWriteComponent(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/install",
+		PhysicalPath: "../../testdata/install",
 		LogicalPath:  "",
 	}
 
@@ -143,7 +143,7 @@ func TestWriteComponent(t *testing.T) {
 
 func TestLoadDisabledComponentDefaultValue(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/disabled",
+		PhysicalPath: "../../testdata/disabled",
 		LogicalPath:  "",
 	}
 
@@ -160,7 +160,7 @@ func TestLoadDisabledComponentDefaultValue(t *testing.T) {
 
 func TestLoadDisabledComponent(t *testing.T) {
 	component := Component{
-		PhysicalPath: "../testdata/disabled",
+		PhysicalPath: "../../testdata/disabled",
 		LogicalPath:  "",
 	}
 

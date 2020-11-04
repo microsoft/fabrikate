@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/core"
 	"github.com/spf13/cobra"
 )
 

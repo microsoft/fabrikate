@@ -3,7 +3,7 @@ package main
 import (
 	"reflect"
 
-	"github.com/microsoft/fabrikate/cmd"
+	"github.com/microsoft/fabrikate/internal/cmd"
 	"github.com/timfpark/yaml"
 )
 

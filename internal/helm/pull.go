@@ -8,6 +8,7 @@ import (
 
 // Pull will do a `helm pull` for the target chart and extract the chart to
 // `into`.
+// Note that the directory structure will look like: <into>/<chart>/Chart.yaml
 func Pull(repoURL string, chart string, version string, into string) error {
 	// check if existing repo with same URL in host client
 	existingRepo, _ := FindRepoNameByURL(repoURL)
@@ -31,7 +32,7 @@ func Pull(repoURL string, chart string, version string, into string) error {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("%v: %v", err, stderr.String())
+		return fmt.Errorf("%w: %v", err, stderr.String())
 	}
 
 	return nil

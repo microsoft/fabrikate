@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/core"
 	"github.com/stretchr/testify/assert"
 )
 

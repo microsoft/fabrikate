@@ -3,7 +3,7 @@ package generators
 import (
 	"testing"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,7 +11,7 @@ func TestStaticGenerator_Generate(t *testing.T) {
 	component := core.Component{
 		Name:         "foo",
 		Path:         "",
-		PhysicalPath: "../testdata/invaliddir",
+		PhysicalPath: "../../testdata/invaliddir",
 	}
 
 	generator := &StaticGenerator{}

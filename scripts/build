@@ -43,8 +43,8 @@ if [ $1 == "build" ]; then
   # build fabrikate
   if [ $2 == "fab" ]; then
     get-deps
-    echo "go build -o fab"
-    go build -o fab
+    echo "go build -o fab cmd/cli/main.go"
+    go build -o fab cmd/cli/main.go
     echo "finished building fab"
   fi
 

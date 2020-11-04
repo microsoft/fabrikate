@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/core"
 )
 
 func TestGenerate(t *testing.T) {
@@ -21,7 +21,7 @@ func TestGenerate(t *testing.T) {
 		{
 			"json",
 			args{
-				"../testdata/generate",
+				"../../testdata/generate",
 				[]string{"prod-east", "prod"},
 				false,
 			},
@@ -37,7 +37,7 @@ func TestGenerate(t *testing.T) {
 		{
 			"yaml",
 			args{
-				"../testdata/generate-yaml",
+				"../../testdata/generate-yaml",
 				[]string{"prod"},
 				false,
 			},
@@ -52,7 +52,7 @@ func TestGenerate(t *testing.T) {
 		{
 			"remote static",
 			args{
-				"../testdata/generate-remote-static",
+				"../../testdata/generate-remote-static",
 				[]string{"common"},
 				false,
 			},
@@ -66,7 +66,7 @@ func TestGenerate(t *testing.T) {
 		{
 			"hooks",
 			args{
-				"../testdata/generate-hooks",
+				"../../testdata/generate-hooks",
 				[]string{"prod"},
 				false,
 			},
@@ -79,7 +79,7 @@ func TestGenerate(t *testing.T) {
 		{
 			"disabled subcomponent",
 			args{
-				"../testdata/generate-disabled",
+				"../../testdata/generate-disabled",
 				[]string{"disabled"},
 				false,
 			},

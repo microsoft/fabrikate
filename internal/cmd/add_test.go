@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/microsoft/fabrikate/core"
+	"github.com/microsoft/fabrikate/internal/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ func TestAdd(t *testing.T) {
 		_ = os.Chdir(cwd)
 	}()
 
-	err = os.Chdir("../testdata/add")
+	err = os.Chdir("../../testdata/add")
 	assert.Nil(t, err)
 
 	_ = os.Remove("./component.yaml")

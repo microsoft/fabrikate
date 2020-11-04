@@ -16,11 +16,45 @@ import (
 	"github.com/otiai10/copy"
 )
 
+// Mutex safe getter
+func (result *gitCloneResult) get() string {
+	result.mu.RLock()
+	clonePath := result.ClonePath
+	result.mu.RUnlock()
+	return clonePath
+}
+
+// R/W safe map of {[cacheToken]: gitCloneResult}
+type gitCache struct {
+	mu    sync.RWMutex
+	cache map[string]*gitCloneResult
+}
+
+// Mutex safe getter
+func (cache *gitCache) get(cacheToken string) (*gitCloneResult, bool) {
+	cache.mu.RLock()
+	value, ok := cache.cache[cacheToken]
+	cache.mu.RUnlock()
+	return value, ok
+}
+
+// Mutex safe setter
+func (cache *gitCache) set(cacheToken string, cloneResult *gitCloneResult) {
+	cache.mu.Lock()
+	cache.cache[cacheToken] = cloneResult
+	cache.mu.Unlock()
+}
+
 // A future like struct to hold the result of git clone
 type gitCloneResult struct {
 	ClonePath string // The abs path in os.TempDir() where the the item was cloned to
 	Error     error  // An error which occurred during the clone
 	mu        sync.RWMutex
+}
+
+// cache is a global git map cache of {[cacheKey]: gitCloneResult}
+var cache = gitCache{
+	cache: map[string]*gitCloneResult{},
 }
 
 // cacheKey combines a git-repo, branch, and commit into a unique key used for
@@ -64,7 +98,7 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 		cloneCommandArgs := []string{"clone"}
 
 		// check for access token and append to repo if present
-		if token, exists := GitAccessTokens.Get(repo); exists {
+		if token, exists := AccessTokens.Get(repo); exists {
 			// Only match when the repo string does not contain a an access token already
 			// "(https?)://(?!(.+:)?.+@)(.+)" would be preferred but go does not support negative lookahead
 			pattern, err := regexp.Compile("^(https?)://([^@]+@)?(.+)$")
@@ -143,9 +177,9 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 	return cloneResultChan
 }
 
-// CloneRepo is a helper func to centralize cloning a repository with the spec
+// Clone is a helper func to centralize cloning a repository with the spec
 // provided by its arguments.
-func CloneRepo(repo string, commit string, intoPath string, branch string) (err error) {
+func Clone(repo string, commit string, intoPath string, branch string) (err error) {
 	// Clone and get the location of where it was cloned to in tmp
 	result := <-cache.cloneRepo(repo, commit, branch)
 	clonePath := result.get()

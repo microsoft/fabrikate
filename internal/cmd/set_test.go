@@ -17,7 +17,7 @@ func TestSetValue(t *testing.T) {
 		_ = os.Chdir(cwd)
 	}()
 
-	err = os.Chdir("../testdata/set")
+	err = os.Chdir("../../testdata/set")
 	assert.Nil(t, err)
 	noNewConfigKeys := false
 
