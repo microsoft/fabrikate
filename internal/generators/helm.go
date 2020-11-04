@@ -267,7 +267,7 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 				return err
 			}
 
-			// Move the extracted chart from tmp to the _component dir
+			// Move the extracted chart from tmp to the helm_repos
 			extractedChartPath := path.Join(tmpHelmDir, c.Path)
 			if err := os.Rename(extractedChartPath, helmRepoPath); err != nil {
 				return err
