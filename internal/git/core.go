@@ -177,28 +177,36 @@ func (cache *gitCache) cloneRepo(repo string, commit string, branch string) chan
 	return cloneResultChan
 }
 
+// CloneOpts are the options you can pass to Clone
+type CloneOpts struct {
+	URL    string
+	SHA    string
+	Branch string
+	Into   string
+}
+
 // Clone is a helper func to centralize cloning a repository with the spec
 // provided by its arguments.
-func Clone(repo string, commit string, intoPath string, branch string) (err error) {
+func Clone(opts *CloneOpts) (err error) {
 	// Clone and get the location of where it was cloned to in tmp
-	result := <-cache.cloneRepo(repo, commit, branch)
+	result := <-cache.cloneRepo(opts.URL, opts.SHA, opts.Branch)
 	clonePath := result.get()
 	if result.Error != nil {
 		return result.Error
 	}
 
 	// Remove the into directory if it already exists
-	if err = os.RemoveAll(intoPath); err != nil {
+	if err = os.RemoveAll(opts.Into); err != nil {
 		return err
 	}
 
 	// copy the repo from tmp cache to component path
-	absIntoPath, err := filepath.Abs(intoPath)
+	absIntoPath, err := filepath.Abs(opts.Into)
 	if err != nil {
 		return err
 	}
 	logger.Info(emoji.Sprintf(":truck: Copying %s => %s", clonePath, absIntoPath))
-	if err = copy.Copy(clonePath, intoPath); err != nil {
+	if err = copy.Copy(clonePath, opts.Into); err != nil {
 		return err
 	}
 
