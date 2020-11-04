@@ -275,7 +275,7 @@ func (hg *HelmGenerator) Install(c *core.Component) (err error) {
 		case "git":
 			// Clone whole repo into helm repo path
 			logger.Info(emoji.Sprintf(":helicopter: Component '%s' requesting helm chart in path '%s' from git repository '%s'", c.Name, c.Source, c.PhysicalPath))
-			if err = git.CloneRepo(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
+			if err = git.Clone(c.Source, c.Version, helmRepoPath, c.Branch); err != nil {
 				return err
 			}
 			// Update chart dependencies in chart path -- this is manually done here but automatically done in downloadChart in the case of `method: helm`
