@@ -43,8 +43,8 @@ if [ $1 == "build" ]; then
   # build fabrikate
   if [ $2 == "fab" ]; then
     get-deps
-    echo "go build -o fab cmd/cli/main.go"
-    go build -o fab cmd/cli/main.go
+    echo "go build -o fab cmd/fab/main.go"
+    go build -o fab cmd/fab/main.go
     echo "finished building fab"
   fi
 
@@ -61,11 +61,11 @@ if [ $1 == "build" ]; then
     mkdir -p releases/$3
 
     echo "Building for Mac"
-    GOOS=darwin GOARCH=amd64 go build -o fab
+    GOOS=darwin GOARCH=amd64 go build -o fab cmd/fab/main.go
     zip releases/$3/fab-v$3-darwin-amd64.zip fab
 
     echo "Building for Linux"
-    GOOS=linux GOARCH=amd64 go build -o fab
+    GOOS=linux GOARCH=amd64 go build -o fab cmd/fab/main.go
     zip releases/$3/fab-v$3-linux-amd64.zip fab
 
     echo "Release zip files can be found in releases/$3"
