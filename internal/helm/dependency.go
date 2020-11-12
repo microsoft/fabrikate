@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/internal/logger"
-	"gopkg.in/yaml.v3"
+	"github.com/timfpark/yaml"
 )
 
 // DependencyUpdate attempts to run `helm dependency update` on chartPath

@@ -18,9 +18,11 @@ func Pull(repoURL string, chart string, version string, into string) error {
 
 	// arguments don't include --repo by default
 	pullArgs := []string{"pull", chart,
-		"--version", version,
 		"--untar",
 		"--untardir", into}
+	if version != "" {
+		pullArgs = append(pullArgs, "--version", version)
+	}
 
 	// use the --repo option to pull directly from URL if repo not on host Helm
 	if len(existingRepo) == 0 {

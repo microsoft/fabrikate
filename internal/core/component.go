@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/kyokomi/emoji"
@@ -19,19 +19,26 @@ import (
 	"github.com/timfpark/yaml"
 )
 
+type hooks struct {
+	BeforeInstall  []string `json:"before-install,omitempty" yaml:"before-install,omitempty"`
+	AfterInstall   []string `json:"after-install,omitempty" yaml:"after-install,omitempty"`
+	BeforeGenerate []string `json:"before-generate,omitempty" yaml:"before-generate,omitempty"`
+	AfterGenerate  []string `json:"after-generate,omitempty" yaml:"after-generate,omitempty"`
+}
+
 // Component documentation: https://github.com/microsoft/fabrikate/blob/master/docs/component.md
 type Component struct {
-	Name          string              `yaml:"name" json:"name"`
-	Config        ComponentConfig     `yaml:"-" json:"-"`
-	ComponentType string              `yaml:"type,omitempty" json:"type,omitempty"`
-	Generator     string              `yaml:"generator,omitempty" json:"generator,omitempty"`
-	Hooks         map[string][]string `yaml:"hooks,omitempty" json:"hooks,omitempty"`
-	Serialization string              `yaml:"-" json:"-"`
-	Source        string              `yaml:"source,omitempty" json:"source,omitempty"`
-	Method        string              `yaml:"method,omitempty" json:"method,omitempty"`
-	Path          string              `yaml:"path,omitempty" json:"path,omitempty"`
-	Version       string              `yaml:"version,omitempty" json:"version,omitempty"`
-	Branch        string              `yaml:"branch,omitempty" json:"branch,omitempty"`
+	Name          string          `yaml:"name" json:"name"`
+	Config        ComponentConfig `yaml:"-" json:"-"`
+	ComponentType string          `yaml:"type,omitempty" json:"type,omitempty"`
+	Generator     string          `yaml:"generator,omitempty" json:"generator,omitempty"`
+	Hooks         hooks           `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	Serialization string          `yaml:"-" json:"-"`
+	Source        string          `yaml:"source,omitempty" json:"source,omitempty"`
+	Method        string          `yaml:"method,omitempty" json:"method,omitempty"`
+	Path          string          `yaml:"path,omitempty" json:"path,omitempty"`
+	Version       string          `yaml:"version,omitempty" json:"version,omitempty"`
+	Branch        string          `yaml:"branch,omitempty" json:"branch,omitempty"`
 
 	Repositories  map[string]string `yaml:"repositories,omitempty" json:"repositories,omitempty"`
 	Subcomponents []Component       `yaml:"subcomponents,omitempty" json:"subcomponents,omitempty"`
@@ -150,24 +157,16 @@ func (c *Component) RelativePathTo() string {
 }
 
 // ExecuteHook executes the passed hook
-func (c *Component) ExecuteHook(hook string) (err error) {
-	if c.Hooks[hook] == nil {
-		return nil
-	}
-
-	for _, command := range c.Hooks[hook] {
-		logger.Info(emoji.Sprintf(":fishing_pole_and_fish: Executing command in hook '%s' for component '%s': %s", hook, c.Name, command))
+func (c *Component) ExecuteHook(hook string, commands []string) (err error) {
+	for _, command := range commands {
 		if len(command) != 0 {
 			cmd := exec.Command("sh", "-c", command)
 			cmd.Dir = c.PhysicalPath
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				logger.Error(emoji.Sprintf(":no_entry_sign: Error occurred in hook '%s' for component '%s'\n%s: %s", hook, c.Name, err, output))
-				return err
-			}
-			if len(output) > 0 {
-				outstring := emoji.Sprintf(":mag_right: Completed hook '%s' for component '%s':\n%s", hook, c.Name, output)
-				logger.Trace(strings.TrimSpace(outstring))
+			cmd.Stdout = os.Stdout
+			var stderr bytes.Buffer
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf(`error executing component hook "%v": %w`, hook, err)
 			}
 		}
 	}
@@ -177,22 +176,22 @@ func (c *Component) ExecuteHook(hook string) (err error) {
 
 // beforeGenerate executes the 'before-generate' hook (if any) of the component.
 func (c *Component) beforeGenerate() (err error) {
-	return c.ExecuteHook("before-generate")
+	return c.ExecuteHook("before-generate", c.Hooks.BeforeGenerate)
 }
 
 // afterGenerate executes the 'after-generate' hook (if any) of the component.
 func (c *Component) afterGenerate() (err error) {
-	return c.ExecuteHook("after-generate")
+	return c.ExecuteHook("after-generate", c.Hooks.AfterGenerate)
 }
 
 // beforeInstall executes the 'before-install' hook (if any) of the component.
 func (c *Component) beforeInstall() (err error) {
-	return c.ExecuteHook("before-install")
+	return c.ExecuteHook("before-install", c.Hooks.BeforeInstall)
 }
 
 // afterInstall executes the 'after-install' hook (if any) of the component.
 func (c *Component) afterInstall() (err error) {
-	return c.ExecuteHook("after-install")
+	return c.ExecuteHook("after-install", c.Hooks.AfterInstall)
 }
 
 // InstallComponent installs the component (if needed) utilizing its Method.

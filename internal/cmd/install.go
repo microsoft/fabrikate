@@ -2,76 +2,73 @@ package cmd
 
 import (
 	"errors"
-	"os/exec"
 
-	"github.com/kyokomi/emoji"
 	"github.com/microsoft/fabrikate/internal/core"
-	"github.com/microsoft/fabrikate/internal/generators"
-	"github.com/microsoft/fabrikate/internal/git"
-	"github.com/microsoft/fabrikate/internal/logger"
 	"github.com/spf13/cobra"
 )
 
 // Install implements the 'install' command.  It installs the component at the given path and all of
 // its subcomponents by iterating the component subtree.
 func Install(path string) (err error) {
-	// Make sure host system contains all utils needed by Fabrikate
-	requiredSystemTools := []string{"git", "helm", "sh", "curl"}
-	for _, tool := range requiredSystemTools {
-		path, err := exec.LookPath(tool)
-		if err != nil {
-			return err
-		}
-		logger.Info(emoji.Sprintf(":mag: Using %s: %s", tool, path))
-	}
+	return core.Install(path)
 
-	rootInit := func(startingPath string, environments []string, c core.Component) (component core.Component, err error) {
-		return c.InstallRoot(startingPath, environments)
-	}
+	// // Make sure host system contains all utils needed by Fabrikate
+	// requiredSystemTools := []string{"git", "helm", "sh", "curl"}
+	// for _, tool := range requiredSystemTools {
+	// 	path, err := exec.LookPath(tool)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	logger.Info(emoji.Sprintf(":mag: Using %s: %s", tool, path))
+	// }
 
-	results := core.WalkComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
-		logger.Info(emoji.Sprintf(":point_right: Starting install for component: %s", component.Name))
+	// rootInit := func(startingPath string, environments []string, c core.Component) (component core.Component, err error) {
+	// 	return c.InstallRoot(startingPath, environments)
+	// }
 
-		var generator core.Generator
+	// results := core.WalkComponentTree(path, []string{}, func(path string, component *core.Component) (err error) {
+	// 	logger.Info(emoji.Sprintf(":point_right: Starting install for component: %s", component.Name))
 
-		switch component.ComponentType {
-		case "helm":
-			generator = &generators.HelmGenerator{}
-		case "static":
-			generator = &generators.StaticGenerator{}
-		}
+	// 	var generator core.Generator
 
-		// Load access tokens and add them to the global token list. Do not overwrite if already present
-		if accessTokens, err := component.GetAccessTokens(); err != nil {
-			return err
-		} else if len(accessTokens) > 0 {
-			for repo, token := range accessTokens {
-				if _, exists := git.AccessTokens.Get(repo); !exists {
-					git.AccessTokens.Set(repo, token)
-				}
-			}
-		}
+	// 	switch component.ComponentType {
+	// 	case "helm":
+	// 		generator = &generators.HelmGenerator{}
+	// 	case "static":
+	// 		generator = &generators.StaticGenerator{}
+	// 	}
 
-		if err := component.Install(path, generator); err != nil {
-			return err
-		}
+	// 	// Load access tokens and add them to the global token list. Do not overwrite if already present
+	// 	if accessTokens, err := component.GetAccessTokens(); err != nil {
+	// 		return err
+	// 	} else if len(accessTokens) > 0 {
+	// 		for repo, token := range accessTokens {
+	// 			if _, exists := git.AccessTokens.Get(repo); !exists {
+	// 				git.AccessTokens.Set(repo, token)
+	// 			}
+	// 		}
+	// 	}
 
-		logger.Info(emoji.Sprintf(":point_left: Finished install for component: %s", component.Name))
+	// 	if err := component.Install(path, generator); err != nil {
+	// 		return err
+	// 	}
 
-		return err
-	}, rootInit)
+	// 	logger.Info(emoji.Sprintf(":point_left: Finished install for component: %s", component.Name))
 
-	components, err := core.SynchronizeWalkResult(results)
-	if err != nil {
-		return err
-	}
+	// 	return err
+	// }, rootInit)
 
-	for _, component := range components {
-		logger.Info(emoji.Sprintf(":white_check_mark: Installed successfully: %s", component.Name))
-	}
-	logger.Info(emoji.Sprintf(":raised_hands: Finished install"))
+	// components, err := core.SynchronizeWalkResult(results)
+	// if err != nil {
+	// 	return err
+	// }
 
-	return err
+	// for _, component := range components {
+	// 	logger.Info(emoji.Sprintf(":white_check_mark: Installed successfully: %s", component.Name))
+	// }
+	// logger.Info(emoji.Sprintf(":raised_hands: Finished install"))
+
+	// return err
 }
 
 var installCmd = &cobra.Command{
