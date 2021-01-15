@@ -1,9 +1,11 @@
 {
   "name": "microservices-workload",
   "type": "component",
+  "hooks": {},
   "subcomponents": [
     {
       "name": "infra",
+      "hooks": {},
       "source": "./infra"
     }
   ]

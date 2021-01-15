@@ -1,6 +1,8 @@
 package core
 
-import "testing"
+import (
+	"testing"
+)
 
 // func Test_install(t *testing.T) {
 // 	type args struct {
@@ -112,13 +114,13 @@ func Test_install(t *testing.T) {
 			"basic",
 			args{
 				queue: []Component{
-					{
-						Name:          "git/component-latest",
-						ComponentType: "component",
-						Method:        "git",
-						Source:        "https://github.com/microsoft/fabrikate-definitions",
-						Path:          "definitions/fabrikate-jaeger",
-					},
+					// {
+					// 	Name:          "git/component-latest",
+					// 	ComponentType: "component",
+					// 	Method:        "git",
+					// 	Source:        "https://github.com/microsoft/fabrikate-definitions",
+					// 	Path:          "definitions/fabrikate-jaeger",
+					// },
 					{
 						Name:          "helm/helm-latest",
 						ComponentType: "helm",

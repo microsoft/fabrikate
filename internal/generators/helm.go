@@ -127,23 +127,32 @@ func (hg *HelmGenerator) makeHelmRepoPath(c *core.Component) string {
 // getChartPath returns the absolute path to the directory containing the
 // Chart.yaml
 func (hg *HelmGenerator) getChartPath(c *core.Component) (string, error) {
-	if c.Method == "helm" || c.Method == "git" {
-		absHelmPath, err := filepath.Abs(hg.makeHelmRepoPath(c))
-		if err != nil {
-			return "", err
-		}
-		switch c.Method {
-		case "git":
-			// method: git downloads the entire repo into _helm_chart and the dir containing Chart.yaml specified by Path
-			return path.Join(absHelmPath, c.Path), nil
-		case "helm":
-			// method: helm only downloads target chart into _helm_chart
-			return absHelmPath, nil
-		}
+	installer, err := c.ToInstallable()
+	if err != nil {
+		return "", err
 	}
+	installPath, err := installer.GetInstallPath()
+	if err != nil {
+		return "", err
+	}
+	return installPath, nil
+	// if c.Method == "helm" || c.Method == "git" {
+	// 	absHelmPath, err := filepath.Abs(hg.makeHelmRepoPath(c))
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	switch c.Method {
+	// 	case "git":
+	// 		// method: git downloads the entire repo into _helm_chart and the dir containing Chart.yaml specified by Path
+	// 		return path.Join(absHelmPath, c.Path), nil
+	// 	case "helm":
+	// 		// method: helm only downloads target chart into _helm_chart
+	// 		return absHelmPath, nil
+	// 	}
+	// }
 
-	// Default to `method: local` and use the Path provided as location of the chart
-	return filepath.Abs(path.Join(c.PhysicalPath, c.Path))
+	// // Default to `method: local` and use the Path provided as location of the chart
+	// return filepath.Abs(path.Join(c.PhysicalPath, c.Path))
 }
 
 // Generate returns the helm templated manifests specified by this component.

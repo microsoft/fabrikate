@@ -59,7 +59,7 @@ func Load(componentDirectory string) (c Component, err error) {
 	return c, err
 }
 
-func (c Component) toInstallable() (installer installable.Installable, err error) {
+func (c Component) ToInstallable() (installer installable.Installable, err error) {
 	switch c.Method {
 	case "git":
 		installer = installable.Git{
@@ -96,7 +96,8 @@ func echo(level int, message interface{}) {
 	case 2:
 		decorator = "+"
 	}
-	indent := strings.Repeat("    ", level)
+	// indent := strings.Repeat("    ", level)
+	indent := strings.Repeat("\t", level)
 	fmt.Printf("%v%v %v\n", indent, decorator, message)
 }
 
@@ -142,7 +143,7 @@ func install(queue []Component, visited []Component) ([]Component, error) {
 		echo(2, fmt.Errorf(`error running "before-install" hook: %w`, err))
 	}
 
-	installer, err := first.toInstallable()
+	installer, err := first.ToInstallable()
 	if err != nil {
 		return visited, fmt.Errorf(`error installing component "%v": %w`, first.Name, err)
 	}
@@ -198,4 +199,102 @@ func install(queue []Component, visited []Component) ([]Component, error) {
 	echo(1, "Installation complete")
 
 	return install(rest, visited)
+}
+
+// func (c Component) toGeneratable() (generator generatable.Generatable, err error) {
+// 	installer, err := c.toInstallable()
+// 	if err != nil {
+// 		return generator, err
+// 	}
+// 	installPath, err := installer.GetInstallPath()
+// 	if err != nil {
+// 		return generator, err
+// 	}
+
+// 	switch c.ComponentType {
+// 	case "helm":
+// 		generator = generatable.Helm{
+// 			ChartPath: installPath,
+// 		}
+// 	case "static":
+// 		generator = generatable.Static{
+// 			ManifestPath: installPath,
+// 		}
+// 	case "":
+// 		fallthrough // same as "component"
+// 	case "component":
+// 		// noop
+// 	default:
+// 		return generator, fmt.Errorf(`unsupported type "%v" in component "%+v"`, c.ComponentType, c)
+// 	}
+
+// 	return generator, err
+// }
+
+type iterator = func(c Component) error
+
+func Iterate(startPath string, visit iterator) ([]Component, error) {
+	// Load starting component
+	component, err := Load(startPath)
+	if err != nil {
+		return nil, fmt.Errorf(`failed to load component at "%v": %w`, startPath, err)
+	}
+	// Initialize the tree tracking properties of the component
+	component.PhysicalPath = startPath
+	component.LogicalPath = fmt.Sprintf("%v", os.PathSeparator)
+
+	return iterate(visit, []Component{component}, []Component{})
+}
+
+func iterate(visit iterator, queue []Component, visited []Component) ([]Component, error) {
+	//----------------------------------------------------------------------------
+	// Base case
+	if len(queue) == 0 {
+		return visited, nil
+	}
+
+	//----------------------------------------------------------------------------
+	// Recursive case
+	first, rest := queue[0], queue[1:]
+	environments := []string{"common"}
+	if err := first.LoadConfig(environments); err != nil {
+		return visited, fmt.Errorf(`error loading configuration "%v" for component %+v: %w`, environments, first, err)
+	}
+
+	// Visit the component
+	if err := visit(first); err != nil {
+		return visited, fmt.Errorf(`error visiting component %+v during component iteration: %w`, first, err)
+	}
+
+	// Add all children to the queue
+	for _, child := range first.Subcomponents {
+		childType := strings.ToLower(child.ComponentType)
+		// If of type `component`, load the remote location on disk and enqueue.
+		// Else, it is inline, so just enqueue the inlined component
+		if childType == "" || childType == "component" {
+			installer, err := child.ToInstallable()
+			if err != nil {
+				return visited, fmt.Errorf(`error converting subcomponent %+v to installable: %w`, child, err)
+			}
+			physicalPath, err := installer.GetInstallPath()
+			if err != nil {
+				return visited, fmt.Errorf(`error computing installation path of subcomponent %+v: %w`, child, err)
+			}
+			remote, err := Load(physicalPath)
+			if err != nil {
+				return visited, fmt.Errorf(`error loading subcomponent in path "%+v": %w`, physicalPath, err)
+			}
+			// Remote components have their own component paths
+			remote.PhysicalPath = physicalPath
+			remote.LogicalPath = path.Join(first.LogicalPath, child.Name)
+			rest = append(rest, remote)
+		} else {
+			// Inlined components inherit component paths from the parent
+			child.PhysicalPath = first.PhysicalPath
+			child.LogicalPath = path.Join(first.LogicalPath, first.Name)
+			rest = append(rest, child)
+		}
+	}
+
+	return iterate(visit, rest, visited)
 }

@@ -28,7 +28,7 @@ func TestGetStaticComponentPath(t *testing.T) {
 	}
 
 	expectedComponentPath := "components/kv-flexvol"
-	componentPath := GetStaticManifestsPath(component)
+	componentPath, _ := GetStaticManifestsPath(component)
 
 	assert.Equal(t, expectedComponentPath, componentPath)
 }

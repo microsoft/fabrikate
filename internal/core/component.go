@@ -322,7 +322,7 @@ type WalkResult struct {
 func WalkComponentTree(startingPath string, environments []string, iterator componentIteration, rootInit rootComponentInit) <-chan WalkResult {
 	queue := make(chan Component)    // components enqueued to be 'visited' (ie; walked over)
 	results := make(chan WalkResult) // To pass WalkResults to
-	walking := sync.WaitGroup{}      // Keep track of all nodes being worked on
+	wg := sync.WaitGroup{}           // Keep track of all nodes being worked on
 
 	// Prepares `component` by loading/de-serializing the component.yaml/json and configs
 	// Note: this is only needed for non-inlined components
@@ -344,7 +344,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	// Enqueue the given component
 	enqueue := func(c Component) {
 		// Increment working counter; MUST happen BEFORE sending to queue or race condition can occur
-		walking.Add(1)
+		wg.Add(1)
 		logger.Debug(fmt.Sprintf("Adding subcomponent '%s' to queue with physical path '%s' and logical path '%s'\n", c.Name, c.PhysicalPath, c.LogicalPath))
 		queue <- c
 	}
@@ -352,7 +352,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 	// Mark a component as visited and report it back as a result; decrements the walking counter
 	markAsVisited := func(c *Component) {
 		results <- WalkResult{Component: c}
-		walking.Done()
+		wg.Done()
 	}
 
 	// Main worker thread to enqueue root node, wait, and close the channel once all nodes visited
@@ -375,7 +375,7 @@ func WalkComponentTree(startingPath string, environments []string, iterator comp
 		}
 
 		// Close results channel once all nodes visited
-		walking.Wait()
+		wg.Wait()
 		close(results)
 	}()
 

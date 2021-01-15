@@ -69,6 +69,12 @@ func Generate(startPath string, environments []string, validate bool) (component
 			generator = &generators.HelmGenerator{}
 		case "static":
 			generator = &generators.StaticGenerator{}
+		case "":
+			fallthrough
+		case "component":
+			// noop
+		default:
+			return fmt.Errorf(`invalid component type %v in component %+v`, component.ComponentType, component)
 		}
 
 		return component.Generate(generator)

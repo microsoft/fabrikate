@@ -21,19 +21,33 @@ type StaticGenerator struct{}
 // GetStaticManifestsPath returns the path where a static components YAML
 // manifest files are located, defaulting `path` unless `method: http` in which
 // case `<path>/components/<name>` is used.
-func GetStaticManifestsPath(c core.Component) string {
-	if strings.EqualFold(c.Method, "http") {
-		return path.Join(c.PhysicalPath, "components", c.Name)
+func GetStaticManifestsPath(c core.Component) (string, error) {
+	// if strings.EqualFold(c.Method, "http") {
+	// 	return path.Join(c.PhysicalPath, "components", c.Name)
+	// }
+
+	// return path.Join(c.PhysicalPath, c.Path)
+
+	i, err := c.ToInstallable()
+	if err != nil {
+		return "", err
+	}
+	installPath, err := i.GetInstallPath()
+	if err != nil {
+		return "", err
 	}
 
-	return path.Join(c.PhysicalPath, c.Path)
+	return installPath, nil
 }
 
 // Generate iterates a static directory of resource manifests and creates a multi-part manifest.
 func (sg *StaticGenerator) Generate(component *core.Component) (manifest string, err error) {
 	logger.Info(emoji.Sprintf(":truck: Generating component '%s' statically from path %s", component.Name, component.Path))
 
-	staticPath := GetStaticManifestsPath(*component)
+	staticPath, err := GetStaticManifestsPath(*component)
+	if err != nil {
+		return "", err
+	}
 	staticFiles, err := ioutil.ReadDir(staticPath)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error reading from directory %s", staticPath))
